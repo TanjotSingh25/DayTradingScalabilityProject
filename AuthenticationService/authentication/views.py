@@ -4,29 +4,29 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from .serializers import RegisterSerializer
-from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password, check_password
+from .models import Users
 
-# Register API for creating a new user
+
 @api_view(['POST'])
-@permission_classes([AllowAny])  # This allows the endpoint to be accessed by anyone
-def register(request): #hash passowrds
+@permission_classes([AllowAny])  
+def register(request): 
     if request.method == 'POST':
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            username = serializer.validated_data.get('username')
+            user_name = serializer.validated_data.get('user_name')
             password = serializer.validated_data.get('password')
             name = serializer.validated_data.get('name')
 
-            if User.objects.filter(username=username).exists():
+            if Users.objects.filter(user_name=user_name).exists():
                 return Response(
                     {"success": False, "data": None, "message": "Username already exists"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
             try:
-                user = User.objects.create_user(username=username, password=password)
-                user.first_name = name
-                user.save()
+                hashed_password = make_password(password)
+                user = Users.objects.create(user_name=user_name, password=hashed_password, name=name)
                 return Response(
                     {"success": True, "data": None},
                     status=status.HTTP_201_CREATED
@@ -43,13 +43,16 @@ def register(request): #hash passowrds
 
 @api_view(['POST'])
 def login(request):
-    username = request.data.get('username')
+    user_name = request.data.get('user_name')
     password = request.data.get('password')
 
     try:
-        user = User.objects.get(username=username)
-        if user.check_password(password):
-            refresh = RefreshToken.for_user(user)
+        user = Users.objects.get(user_name=user_name)
+        if check_password(password, user.password):
+            refresh = RefreshToken()
+            refresh.payload['user_id'] = user.id  
+            refresh.payload['user_name'] = user.user_name
+
             return Response({
                 'success': True,
                 'data': {'token': str(refresh.access_token)}
@@ -58,9 +61,9 @@ def login(request):
             return Response({
                 'success': False,
                 'message': 'Invalid password'
-            })
-    except User.DoesNotExist:
+            }, status=status.HTTP_401_UNAUTHORIZED)
+    except Users.DoesNotExist:
         return Response({
             'success': False,
             'message': 'User not found'
-        })
+        }, status=status.HTTP_404_NOT_FOUND)

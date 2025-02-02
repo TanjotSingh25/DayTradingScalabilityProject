@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+    auth_service:
+        build:
+            context: .
+            dockerfile: AuthenticationService/Dockerfile
+        volumes:
+            - ./AuthenticationService:/usr/src/app
+        ports:
+            - "8000:8000"
+        depends_on:
+            - db
+        environment:
+            - DB_HOST=db
+            - DB_PORT=5432
+            - DB_NAME=authdb
+            - DB_USER=admin
+            - DB_PASSWORD=adminpassword
+        networks:
+            - backend
+
+    db:
+        image: postgres:13
+        environment:
+            POSTGRES_DB: authdb
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: adminpassword
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        networks:
+            - backend
+
+networks:
+    backend:
+
+volumes:
+    pgdata:
