@@ -2,37 +2,49 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# 0.0.0.0 means listen on every host -- Inventory service URL and port
-# INVENTORY_SERVICE_URL = "http://0.0.0.0:5100/check_item"
-MATCHING_ENGINE_SERVICE_URL = "http://matching_engine_service:5100/"
+# Endpoint of the Matching Engine Service for order matching
+MATCHING_ENGINE_URL = "http://matching_engine_service:5300/matchOrder"
 
-@app.route('/add_to_cart', methods=['POST'])
-def add_to_cart():
-    # Example endpoint, can be replaced or expanded with real logic
+@app.route('/placeStockOrder', methods=['POST'])
+def place_stock_order():
+    """
+    Accepts JSON input:
+    { "token": "jwt_token", "stock_id": "uuid", "is_buy": true, "order_type": "MARKET", "quantity": 50 }
+    """
     data = request.get_json()
-    # TODO: Interact with INVENTORY_SERVICE_URL or validate data
-    return jsonify({"success": True, "data_received": data})
+    # TODO: Process order details, communicate with matching engine, store in Orders table, etc.
+    return jsonify({"success": True, "data": None})
 
-def is_authorized(username, token):
-    pass
+@app.route('/getStockTransactions', methods=['GET'])
+def get_stock_transactions():
+    """
+    Accepts JSON input:
+    { "token": "jwt_token" }
+    """
+    # TODO: Fetch and return stock transaction history
+    return jsonify({
+        "success": True,
+        "data": [
+            {
+                "stock_tx_id": "uuid",
+                "stock_id": "uuid",
+                "quantity": 50,
+                "order_status": "COMPLETED",
+                "price": 135,
+                "timestamp": "2025-01-26T12:00:00Z"
+            }
+        ]
+    })
 
-def has_money(username, amount_required):
-    pass
-
-def buy_sanity_check(stock_ticker, buy_price):
-    pass
-
-def sell_sanity_check(stock_ticker, quantity):
-    pass
-
-def buy(stock_ticker, quantity, buy_price):
-    pass
-
-def sell(stock_ticker, quantity, sell_price):
-    pass
-
-def cancel(order_id):
-    pass
+@app.route('/cancelStockTransaction', methods=['POST'])
+def cancel_stock_transaction():
+    """
+    Accepts JSON input:
+    { "token": "jwt_token", "stock_tx_id": "uuid" }
+    """
+    data = request.get_json()
+    # TODO: Cancel the specified stock order if possible
+    return jsonify({"success": True, "data": None})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
