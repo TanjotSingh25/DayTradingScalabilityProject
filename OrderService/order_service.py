@@ -6,8 +6,10 @@ app = Flask(__name__)
 
 # Endpoint of the Matching Engine Service for order matching
 MATCHING_ENGINE_URL = "http://matching_engine_service:5300/matchOrder"
+MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
+
 secret_key = os.environ.get("SECRET_KEY")
-print(secret_key)
+print("The Secret key is: ", secret_key, "In file Order_service")
 
 # Place new order -- Market Buy, Limit Sell
 # TODO: Process order details, communicate with matching engine, store in Orders table, etc.
@@ -28,6 +30,7 @@ def place_stock_order():
     # Read Order
     data = request.get_json()
     # Sanity Check -- Token and Data
+
     # 1 -- Decrypt and validate JWT token, if token is invalid, returns false message
     if not helpers.decrypt_and_validate_token(data.get["token"], secret_key):
         # If false, then invalid token -- 401 (Unauthorized) HTTP Code.
@@ -103,9 +106,29 @@ def cancel_stock_transaction():
     Accepts JSON input:
     { "token": "jwt_token", "stock_tx_id": "uuid" }
     """
+    code = 200
+    # Token Check - Decrypt and validate JWT token, if token is invalid, returns false message
+    if not helpers.decrypt_and_validate_token(data.get["token"], secret_key):
+        # If false, then invalid token -- 401 (Unauthorized) HTTP Code.
+        return jsonify({"success": "false", "data": "null" , "message": "The given JWT Token is Invalid"}), 401
+
+    # Sanity Check
+    if not data.get("stock_tx_id"):
+        return jsonify({"success": False, "error": "Did not send stock transaction ID"}), 200
+        
     data = request.get_json()
-    # TODO: Cancel the specified stock order if possible
-    return jsonify({"success": True, "data": None})
+    # Call the matching engine endpoint to cancel a transaction
+    try:
+        response = request.post(MATCHING_ENGINE_URL, json= {"stock_tx_id": data["stock_tx_id"]})
+        if response.status_code == 200:
+            matching_result = response.json()
+        else:
+            matching_result, code = {"success": False, "error": "Matching engine error"}, 400
+    except Exception as e:
+        matching_result, code = {"success": False, "error": str(e)}, 400
+    
+    return jsonify(matching_result), code
+    #return jsonify({"success": True, "data": None})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5200)
