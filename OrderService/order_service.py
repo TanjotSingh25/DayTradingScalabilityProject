@@ -57,9 +57,11 @@ def place_stock_order():
     # Prepare final order payload message for matching engine
     # 1 - Generate Order ID
     order_payload["order_id"] = helpers.generate_order_id()
-    # 2 - Set stock sticker ID
+    # 2 - Set All Data values
     order_payload["stock_id"] = data["stock_id"]
-    # 3 - Set stock purchase/sell price
+    order_payload["order_type"] = data["order_type"]
+    order_payload["quantity"] = data["quantity"]
+    order_payload["price"] = data["price"]
 
     # Call the matching engine endpoint
     try:
@@ -106,6 +108,7 @@ def cancel_stock_transaction():
     Accepts JSON input:
     { "token": "jwt_token", "stock_tx_id": "uuid" }
     """
+    data = request.get_json()
     code = 200
     # Token Check - Decrypt and validate JWT token, if token is invalid, returns false message
     if not helpers.decrypt_and_validate_token(data.get["token"], secret_key):
@@ -115,8 +118,7 @@ def cancel_stock_transaction():
     # Sanity Check
     if not data.get("stock_tx_id"):
         return jsonify({"success": False, "error": "Did not send stock transaction ID"}), 200
-        
-    data = request.get_json()
+
     # Call the matching engine endpoint to cancel a transaction
     try:
         response = request.post(MATCHING_ENGINE_URL, json= {"stock_tx_id": data["stock_tx_id"]})
