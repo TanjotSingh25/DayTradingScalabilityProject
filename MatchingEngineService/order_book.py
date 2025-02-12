@@ -31,6 +31,18 @@ def add_sell_order(ticker, price, quantity):
     sell_order_book[ticker].append([price, quantity])
     # Sort after modification (lowest price first, can adjust logic if needed)
     sell_order_book[ticker].sort(key=lambda x: x[0])
+    
+def cancel_sell_order(ticker, price, quantity):
+    """
+    Cancels a sell order if it exists in the sell order book.
+    Returns True if successful, False otherwise.
+    """
+    if ticker in sell_order_book:
+        for order in sell_order_book[ticker]:
+            if order[0] == price and order[1] == quantity:
+                sell_order_book[ticker].remove(order)
+                return True
+    return False
 
 def add_buy_order_awaiting(ticker, price, quantity):
     """
@@ -66,4 +78,7 @@ def process_awaiting_orders():
         for order_data in orders:
             add_sell_order(ticker, order_data[0], order_data[1])
     sell_order_book_awaiting.clear()
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
