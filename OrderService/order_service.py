@@ -25,7 +25,7 @@ def place_stock_order():
 
     # 1 -- Decrypt and validate JWT token, if token is invalid, returns false message
     ret_val, token_values = helpers.decrypt_and_validate_token(data.get["token"], secret_key)
-    if ret_val:
+    if ret_val != True:
         # If false, then invalid token -- 401 (Unauthorized) HTTP Code.
         return jsonify({"success": "false", "data": "null" , "message": "The given JWT Token is Invalid"}), 401
 
@@ -38,13 +38,17 @@ def place_stock_order():
     order_payload = {
         # Generate Order_ID
         "order_id": helpers.generate_order_id(),
+        
         # Set information to pass to Matching Engine
         "stock_id": data["stock_id"],
         "order_type": data["order_type"],
         "quantity": data["quantity"],
         "price": data["price"],
+        
         # Set the Type 'Buy Market' or 'Sell Limit'
         "type": "MARKET" if data["is_buy"] else "LIMIT",
+        
+        # Place token information in payload
         "user_id": token_values.get("user_id"),
         "user_name": token_values.get("user_name")
         }
@@ -98,7 +102,8 @@ def cancel_stock_transaction():
     data = request.get_json()
     code = 200
     # Token Check - Decrypt and validate JWT token, if token is invalid, returns false message
-    if not helpers.decrypt_and_validate_token(data.get["token"], secret_key):
+    ret_val, token_values = helpers.decrypt_and_validate_token(data.get["token"], secret_key)
+    if ret_val != True:
         # If false, then invalid token -- 401 (Unauthorized) HTTP Code.
         return jsonify({"success": "false", "data": "null" , "message": "The given JWT Token is Invalid"}), 401
 
@@ -108,7 +113,7 @@ def cancel_stock_transaction():
 
     # Call the matching engine endpoint to cancel a transaction
     try:
-        response = request.post(MATCHING_ENGINE_URL, json= {"stock_tx_id": data["stock_tx_id"]})
+        response = request.post(MATCHING_ENGINE_CANCELLATION_URL, json= {"stock_tx_id": data["stock_tx_id"]})
         if response.status_code == 200:
             matching_result = response.json()
         else:

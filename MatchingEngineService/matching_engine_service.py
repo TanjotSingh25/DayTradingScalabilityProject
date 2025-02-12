@@ -58,6 +58,19 @@ def match_orders():
     
     return jsonify({"success": True, "executed_trades": executed_trades})
 
+@app.route('/cancelOrder', methods=['POST'])
+def cancel_order():
+    """
+    Accepts JSON input:
+    { "stock_tx_id": "uuid" }
+    1 - Save remaining quanity and price
+    2 - Remove limit sell for ticker and MongoDB
+    3 - Add remaining stock quantity back to user profile
+    4 - Update stock transaction log to display cancelled
+    """
+    # TODO: set up a "for-loop" to search for stock id in buy and sell to cancel it
+    return {"success": True, "data": None}
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5300)
     
