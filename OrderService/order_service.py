@@ -16,14 +16,6 @@ print("The Secret key is: ", secret_key, "In file Order_service")
 @app.route('/placeStockOrder', methods=['POST'])
 def place_stock_order():
     """
-    Request body format for placeStockOrder:
-        • BuyMarket:
-            {“stock_id”:1,”is_buy”:true,”order_type”:”MARKET”,”quantity”:10,”price”:null}
-        • Sell Limit: 
-            {“stock_id”:1,”is_buy”:false,”order_type”:”LIMIT”,”quantity”:10,”price”:80}
-        • When market order is being placed price should be passed as null.
-        • If the API is fed any other values for the above keys, it should return an appropriate
-        response in error message
     Accepts JSON input:
     { "token": "jwt_token", "stock_id": "uuid", "is_buy": true, "order_type": "MARKET", "quantity": 50 }
     """
@@ -32,7 +24,8 @@ def place_stock_order():
     # Sanity Check -- Token and Data
 
     # 1 -- Decrypt and validate JWT token, if token is invalid, returns false message
-    if not helpers.decrypt_and_validate_token(data.get["token"], secret_key):
+    ret_val, token_values = helpers.decrypt_and_validate_token(data.get["token"], secret_key)
+    if ret_val:
         # If false, then invalid token -- 401 (Unauthorized) HTTP Code.
         return jsonify({"success": "false", "data": "null" , "message": "The given JWT Token is Invalid"}), 401
 
@@ -42,26 +35,19 @@ def place_stock_order():
         # 412 Precondition Failed -- Erronouse field(s)
         return jsonify(return_message), 412
 
-    order_payload = {}
-    # Filter by Order Type -- Market Buy or Limit Sell Order
-    if data["is_buy"] == True:
-        # Sanity Check -- Has enough Money -- If account doesn't have zero
-        order_payload["type"] = "MARKET"
-    else:
-        # Sanity Check -- Has enough stocks to sell
-        order_payload["type"] = "LIMIT"
-        # Price for limit sell
-        order_payload["quantity"] = data["quantity"]
-        print("Limit Sell")
-
-    # Prepare final order payload message for matching engine
-    # 1 - Generate Order ID
-    order_payload["order_id"] = helpers.generate_order_id()
-    # 2 - Set All Data values
-    order_payload["stock_id"] = data["stock_id"]
-    order_payload["order_type"] = data["order_type"]
-    order_payload["quantity"] = data["quantity"]
-    order_payload["price"] = data["price"]
+    order_payload = {
+        # Generate Order_ID
+        "order_id": helpers.generate_order_id(),
+        # Set information to pass to Matching Engine
+        "stock_id": data["stock_id"],
+        "order_type": data["order_type"],
+        "quantity": data["quantity"],
+        "price": data["price"],
+        # Set the Type 'Buy Market' or 'Sell Limit'
+        "type": "MARKET" if data["is_buy"] else "LIMIT",
+        "user_id": token_values.get("user_id"),
+        "user_name": token_values.get("user_name")
+        }
 
     # Call the matching engine endpoint
     try:
@@ -84,7 +70,8 @@ def get_stock_transactions():
     { "token": "jwt_token" }
     """
     # TODO: Fetch and return stock transaction history
-    # Fetch using user id, return user_id: data[]
+    # Fetch using user id, return user_id: data[] send mongodb get user_id, tranactions
+    # get 'user_id' : {}
 
     # Example
     return jsonify({

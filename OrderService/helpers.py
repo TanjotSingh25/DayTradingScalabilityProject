@@ -27,10 +27,20 @@ def order_service_sanity_check(message):
     if message.get("is_buy") not in [True, False]:
         return False, {"error": f"Invalid is_buy type", "status": "fail"}
 
+    # Check quantity is an integer
+    if not isinstance(message.get("quantity"), int):
+        return False, {"error": "Quantity must be an integer."}
+
     # Check for valid quantity and price based on order type
     if message["is_buy"]:  # Buy Market
-        if message["order_type"] != "MARKET" and message["quantity"] <= 0 and message["price"] is not None:
-            return False, {"error": f"Invalid Market Buy Order", "status": "fail"}
+        if message["order_type"] != "MARKET":
+            return False, {"error": f"Invalid Order Buy Order Type - Must be MARKET", "status": "fail"}
+        # Check if it a positive integer
+        elif message["quantity"] <= 0:
+            return False, {"error": f"Invalid Market Buy Order Quantity", "status": "fail"}
+        # Check If Buy market order is placed, if so the price must be null
+        elif message["price"] != "null":
+            return False, {"error": f"Invalid Market Buy Order Price - Must be null", "status": "fail"}
     else:  # Sell Limit
         if message["order_type"] != "LIMIT" and message["quantity"] <= 0 and message["price"] <= 0:
             return False, {"error": f"Invalid Sell Limit Order", "status": "fail"}
@@ -39,20 +49,27 @@ def order_service_sanity_check(message):
 
 def decrypt_and_validate_token(encrypted_message, secret_key):
     # Decrypts the message first using the secret key, and then validates the token. 
-    return validate_token(decrypt_message(encrypted_message, secret_key))
+    # 1 -- Decrpyt using Secret Key
+    decrypted_token = decrypt_message(decrypt_message, secret_key)
+
+    # 2 -- Validate token
+    ret_val, token_attributes = validate_token(decrypted_token)
+    # 3 - Return if token is valid or not, and user_id and user_name in the encoded in the token
+    return ret_val, decrypt_and_validate_token
 
 def decrypt_message(encrypted_message, secret_key):
     """
     Placeholder function to decrypt the message using the secret key.
     Replace this logic with your actual decryption implementation.
     """
-    # For demonstration, assume the message is not encrypted
+    # For demonstration, assume the message is not encrypted # return data: {token:"decrypted_token", user_id, etc}
     return encrypted_message
 
 def validate_token(token):
     """
     Verifies the provided JWT token (placeholder).
     Checks if the token is well-formed and not expired.
+    Return payload inside token as well
     """
     # TODO: Integrate with actual JWT validation logic
     return True

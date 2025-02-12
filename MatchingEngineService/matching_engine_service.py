@@ -22,8 +22,12 @@ def set_wallet():
 @app.route('/placeOrder', methods=['POST'])
 def place_order():
     """
-    Places a buy or sell order.
-    JSON expected: { "user_id": "uuid", "type": "BUY" or "SELL", "ticker": "AAPL", "quantity": 50, "price": 150 }
+    Accepts JSON input:
+    { "stock_tx_id": "uuid" }
+    1 - Save remaining quanity and price
+    2 - Remove limit sell from ticker
+    3 - Add remaining stock quantity back to user profile
+    4 - Update stock transaction log to display cancelled
     """
     data = request.get_json()
     order_id = data.get("order_id")
