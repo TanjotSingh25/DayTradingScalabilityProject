@@ -1,29 +1,83 @@
 from flask import Flask, request, jsonify
-import order_book
+from order_book import orderBookInst  # Correct import
 
 app = Flask(__name__)
 
-
-@app.route('/matchOrder', methods=['POST'])
-def match_order():
+@app.route('/setWallet', methods=['POST'])
+def set_wallet():
     """
-    Accepts JSON input:
-    { "order_id": "uuid", "type": "BUY_MARKET", "stock_id": "uuid", "quantity": 50 }
-    or
-    {}
+    Sets or updates a user's wallet balance.
+    JSON expected: { "user_id": "uuid", "balance": 5000 }
     """
     data = request.get_json()
-    # TODO: Matching logic: update in-memory order book, return matched orders
-    return jsonify({"success": True, "data": {"matched_orders": []}})
+    user_id = data.get("user_id")
+    balance = data.get("balance")
 
-@app.route('/cancelOrder', methods=['POST'])
-def cancel_order():
+    if not user_id or balance is None:
+        return jsonify({"success": False, "error": "Missing required fields"}), 400
+
+    orderBookInst.update_wallet_balance(user_id, balance)
+    return jsonify({"success": True, "message": f"Wallet balance for {user_id} set to {balance}."})
+
+@app.route('/placeOrder', methods=['POST'])
+def place_order():
     """
-    Accepts JSON input:
-    { "stock_tx_id": "uuid" }
+    Places a buy or sell order.
+    JSON expected: { "user_id": "uuid", "type": "BUY" or "SELL", "ticker": "AAPL", "quantity": 50, "price": 150 }
     """
-    # TODO: set up a "for-loop" to search for stock id in buy and sell to cancel it
-    return {"success": True, "data": None}
+    data = request.get_json()
+    order_id = data.get("order_id")
+    user_id = data.get("user_id")
+    order_type = data.get("type")
+    ticker = data.get("ticker")
+    quantity = data.get("quantity")
+    price = data.get("price")
+
+    # if not user_id or not order_type or not ticker or quantity is None or price is None:
+    #     return jsonify({"success": False, "error": "Missing required fields"}), 400
+
+    if order_type == "BUY":
+        result = orderBookInst.add_buy_order(user_id, order_id, ticker, price, quantity)
+        return jsonify(result), (200 if result["success"] else 400)
+    elif order_type == "SELL":
+        orderBookInst.add_sell_order(user_id, order_id, ticker, price, quantity)
+        return jsonify({"success": True, "message": f"Sell order placed for {ticker}."})
+    else:
+        return jsonify({"success": False, "error": "Invalid order type"}), 400
+    
+    return jsonify(result), (200 if result["success"] else 400)
+
+@app.route('/matchOrders', methods=['POST'])
+def match_orders():
+    """ Matches and executes orders from the order book. """
+    executed_trades = orderBookInst.match_orders()
+    
+    return jsonify({"success": True, "executed_trades": executed_trades})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5300)
+    
+    
+    
+    
+# @app.route('/registerStock', methods=['POST'])
+# def instantiate_stock():
+#     """
+#     Handles stock registration from User Profile Service.
+#     Accepts JSON input:
+#     { "stock_id": "uuid", "ticker": "AAPL", "quantity": 1000, "price": 150 }
+#     """
+#     data = request.get_json()
+#     stock_id = data.get("stock_id")
+#     ticker = data.get("ticker")
+#     quantity = data.get("quantity")
+#     price = data.get("price")
+#     if not stock_id or not ticker or quantity is None or price is None:
+#         return jsonify({"success": False, "error": "Missing required fields"}), 400
+    
+#     stocks[stock_id] = {"ticker": ticker, "quantity": quantity, "price": price}
+    
+#     # Store stock in order book
+#     order_book.orderBookInst.add_sell_order(ticker, price, quantity)
+    
+#     return jsonify({"success": True, "message": f"Stock {ticker} registered and added to order book."})
