@@ -154,7 +154,7 @@ class OrderBook:
                 "status": "COMPLETED",
                 "buyer_id": user_id,
                 "seller_id": seller_id,
-                "timestamp": datetime.utcnow()
+                "timestamp": datetime.now().isoformat()
             })
 
             # 7. Record this partial execution
