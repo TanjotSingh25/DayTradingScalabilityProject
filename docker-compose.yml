@@ -31,6 +31,17 @@ services:
         networks:
             - backend
 
+    mongodb:
+        image: mongo:latest
+        environment:
+            MONGO_INITDB_DATABASE: authdb
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: adminpassword
+        volumes:
+            - mongodbdata:/data/db
+        networks:
+            - backend
+
     order_service:
         build:
         context: .
@@ -63,3 +74,4 @@ networks:
 
 volumes:
     pgdata:
+    mongodbdata:
