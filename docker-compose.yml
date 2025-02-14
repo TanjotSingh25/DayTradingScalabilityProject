@@ -54,7 +54,7 @@ services:
         depends_on:
             - matching_engine_service
         environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/matchOrder
+            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
             - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
         networks:
             - backend

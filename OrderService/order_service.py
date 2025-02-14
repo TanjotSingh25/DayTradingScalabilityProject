@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # Endpoint of the Matching Engine Service for order matching
-MATCHING_ENGINE_URL = "http://matching_engine_service:5300/matchOrder"
+MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
 MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
 
 secret_key = os.environ.get("SECRET_KEY")
@@ -110,10 +110,16 @@ def cancel_stock_transaction():
     # Sanity Check
     if not data.get("stock_tx_id"):
         return jsonify({"success": False, "error": "Did not send stock transaction ID"}), 200
-
+    
+    cancelation_payload = {
+        "stock_tx_id": token_values.get("stock_tx_id"),
+        "user_id": token_values.get("user_id"),
+        "user_name": token_values.get("user_name")
+    }
+    
     # Call the matching engine endpoint to cancel a transaction
     try:
-        response = request.post(MATCHING_ENGINE_CANCELLATION_URL, json= {"stock_tx_id": data["stock_tx_id"]})
+        response = request.post(MATCHING_ENGINE_CANCELLATION_URL, json={cancelation_payload})
         if response.status_code == 200:
             matching_result = response.json()
         else:

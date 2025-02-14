@@ -63,6 +63,10 @@ def decrypt_message(encrypted_message, secret_key):
     Replace this logic with your actual decryption implementation.
     """
     # For demonstration, assume the message is not encrypted # return data: {token:"decrypted_token", user_id, etc}
+    token = auth_header_value.split(' ')[1]
+    # Decode using token, and return message
+    try:
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
     return encrypted_message
 
 def validate_token(token):
