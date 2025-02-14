@@ -4,24 +4,32 @@ from flask import Flask, request, jsonify
 from flask_restful import Api, Resource
 from pymongo import MongoClient, errors
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+import uuid
 
 # Initialize Flask app
 app = Flask(__name__)
 api = Api(app)
 
-# MongoDB connection
+MONGO_URI = os.getenv("MONGO_URI")
+
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI is not set. Make sure it's defined in docker-compose.yml.")
+
 try:
-    client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
+    client = MongoClient(MONGO_URI)
     db = client["trading_system"]
     stocks_collection = db["stocks"]
     portfolios_collection = db["portfolios"]
     wallets_collection = db["wallets"]
+
+    # Ensure necessary indexes for faster lookups
+    stocks_collection.create_index("stock_id", unique=True)
+    portfolios_collection.create_index("user_id", unique=True)
+    wallets_collection.create_index("user_id", unique=True)
+
 except errors.ConnectionFailure:
-    print("Error: Unable to connect to MongoDB. Ensure MongoDB is running.")
+    print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
+    raise
 
 # -----------------------
 # Helper Function for User Identification (JWT Ready)
@@ -63,7 +71,7 @@ class CreateStock(Resource):
             if not stock_name:
                 return {"success": False, "data": {"error": "Missing stock_name"}}, 400
 
-            stock_id = str(hash(stock_name))  # Simulating stock ID for now
+            stock_id = str(uuid.uuid4())  # Simulating stock ID for now
             stock = {"stock_id": stock_id, "stock_name": stock_name}
 
             stocks_collection.insert_one(stock)
