@@ -6,6 +6,11 @@ ENV PYTHONUNBUFFERED 1
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
+# Install system dependencies for psycopg2 and other Python packages
+RUN apt-get update && apt-get install -y \
+    libpq-dev gcc python3-dev postgresql-client && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy the requirements.txt first to leverage Docker cache
 COPY AuthenticationService/requirements.txt /usr/src/app/
 
@@ -19,4 +24,5 @@ COPY AuthenticationService /usr/src/app/
 EXPOSE 8000
 
 # Command to run the application using Django's development server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
