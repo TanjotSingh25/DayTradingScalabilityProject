@@ -4,12 +4,8 @@
       <form @submit.prevent="placeOrder">
         <input v-model="order.stock_id" placeholder="Stock ID" required />
         <select v-model="order.is_buy">
-          <option :value="true">Buy</option>
+          <option :value="true">Market Buy</option>
           <option :value="false">Sell</option>
-        </select>
-        <select v-model="order.order_type">
-            <option value="MARKET">Market</option>
-            <option value="LIMIT">Limit</option>
         </select>
         <input v-model.number="order.quantity" placeholder="Quantity" type="number" required />
         <input v-if="order.order_type === 'LIMIT'" v-model.number="order.price" placeholder="Price" type="number" />
