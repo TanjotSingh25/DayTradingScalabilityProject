@@ -41,22 +41,24 @@ def place_order():
     #     return jsonify({"success": False, "error": "Missing required fields"}), 400
 
     if order_type == "BUY":
-        result = orderBookInst.add_buy_order(user_id, order_id, ticker, price, quantity)
+        result = orderBookInst.add_buy_order(user_id, order_id, data["stock_id"], ticker, price, quantity)
         return jsonify(result), (200 if result["success"] else 400)
     elif order_type == "SELL":
         orderBookInst.add_sell_order(user_id, order_id, ticker, price, quantity)
-        return jsonify({"success": True, "message": f"Sell order placed for {ticker}."})
+        executed_trades = orderBookInst.match_orders()
+        executed_trades.append(f"Sell order placed for {ticker}.")
+        return jsonify({"success": True, "message": executed_trades })
     else:
         return jsonify({"success": False, "error": "Invalid order type"}), 400
     
     return jsonify(result), (200 if result["success"] else 400)
 
-@app.route('/matchOrders', methods=['POST'])
-def match_orders():
-    """ Matches and executes orders from the order book. """
-    executed_trades = orderBookInst.match_orders()
+# @app.route('/matchOrders', methods=['POST'])
+# def match_orders():
+#     """ Matches and executes orders from the order book. """
+#     executed_trades = orderBookInst.match_orders()
     
-    return jsonify({"success": True, "executed_trades": executed_trades})
+#     return jsonify({"success": True, "executed_trades": executed_trades})
 
 @app.route('/cancelOrder', methods=['POST'])
 def cancel_order():

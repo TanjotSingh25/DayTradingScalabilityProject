@@ -1,84 +1,4 @@
-# # order_book.py
 
-# from datetime import datetime
-
-# # Buy and Sell order books, each containing:
-# # { "stock_ticker": [ [price, quantity], [price, quantity], ... ] }
-# buy_order_book = {}
-# sell_order_book = {}
-
-# # Orders awaiting processing, sorted by timestamp:
-# # { "stock_ticker": [ (price, quantity, timestamp), (price, quantity, timestamp) ] }
-# buy_order_book_awaiting = {}
-# sell_order_book_awaiting = {}
-
-# def add_buy_order(ticker, price, quantity):
-#     """
-#     Adds a buy order (price, quantity) to buy_order_book[ticker] and sorts afterward.
-#     """
-#     if ticker not in buy_order_book:
-#         buy_order_book[ticker] = []
-#     buy_order_book[ticker].append([price, quantity])
-#     # Sort after modification (lowest price first, as example)
-#     buy_order_book[ticker].sort(key=lambda x: x[0])
-
-# def add_sell_order(ticker, price, quantity):
-#     """
-#     Adds a sell order (price, quantity) to sell_order_book[ticker] and sorts afterward.
-#     """
-#     if ticker not in sell_order_book:
-#         sell_order_book[ticker] = []
-#     sell_order_book[ticker].append([price, quantity])
-#     # Sort after modification (lowest price first, can adjust logic if needed)
-#     sell_order_book[ticker].sort(key=lambda x: x[0])
-    
-# def cancel_sell_order(ticker, price, quantity):
-#     """
-#     Cancels a sell order if it exists in the sell order book.
-#     Returns True if successful, False otherwise.
-#     """
-#     if ticker in sell_order_book:
-#         for order in sell_order_book[ticker]:
-#             if order[0] == price and order[1] == quantity:
-#                 sell_order_book[ticker].remove(order)
-#                 return True
-#     return False
-
-# def add_buy_order_awaiting(ticker, price, quantity):
-#     """
-#     Adds a buy order to buy_order_book_awaiting[ticker] with timestamp for sorting.
-#     """
-#     if ticker not in buy_order_book_awaiting:
-#         buy_order_book_awaiting[ticker] = []
-#     buy_order_book_awaiting[ticker].append((price, quantity, datetime.now()))
-
-# def add_sell_order_awaiting(ticker, price, quantity):
-#     """
-#     Adds a sell order to sell_order_book_awaiting[ticker] with timestamp for sorting.
-#     """
-#     if ticker not in sell_order_book_awaiting:
-#         sell_order_book_awaiting[ticker] = []
-#     sell_order_book_awaiting[ticker].append((price, quantity, datetime.now()))
-
-# def process_awaiting_orders():
-#     """
-#     Example of how to process awaiting orders (placeholder).
-#     Sort by timestamp and move them into main buy/sell order books.
-#     """
-#     for ticker, orders in buy_order_book_awaiting.items():
-#         # Sort by timestamp
-#         orders.sort(key=lambda x: x[2])
-#         for order_data in orders:
-#             add_buy_order(ticker, order_data[0], order_data[1])
-#     buy_order_book_awaiting.clear()
-
-#     for ticker, orders in sell_order_book_awaiting.items():
-#         # Sort by timestamp
-#         orders.sort(key=lambda x: x[2])
-#         for order_data in orders:
-#             add_sell_order(ticker, order_data[0], order_data[1])
-#     sell_order_book_awaiting.clear()
-    
 from datetime import datetime
 import logging
 from pymongo import MongoClient, errors
@@ -130,77 +50,226 @@ class OrderBook:
             
 
     def add_buy_order(self, user_id, order_id, stock_id, ticker, price, quantity):
-        """ Handles buy orders (limit or market). If market order, executes immediately at best sell price. """
-        
-        if price is None:  # Market Order
-            if ticker not in self.sell_orders or not self.sell_orders[ticker]:
-                logging.warning(f"No sellers available for {ticker}. Market order cannot be executed immediately.")
-                return {"success": False, "error": "No available sellers for market order"}
+        """
+        Handles a MARKET BUY order in a loop, allowing partial fills.
+        1. Continually purchases from the lowest-priced sell order until:
+        - The buy quantity is filled, or
+        - No more sell orders left, or
+        - Buyer runs out of funds.
+        2. Logs partial fills vs. completed orders.
+        3. Queues leftover (unfilled) quantity if no sellers remain.
+        """
 
-            # Take the best available (lowest price) sell order
+        # Make sure it's a market order (price == None).
+        # If you *only* allow MARKET buys, you could reject any non-None price.
+        if price is not None:
+            logging.warning(f"BUY ORDER REJECTED: Limit buy not allowed for {user_id}")
+            return {"success": False, "error": "Only market buy orders are allowed"}
+        
+         # Use the incoming order_id as the parent transaction ID (stock_tx_id)
+        parent_tx_id = order_id
+        stock_transactions_collection.insert_one({
+            "tx_id": parent_tx_id,
+            "stock_id": stock_id,
+            "ticker": ticker,
+            "user_id": user_id,
+            "order_type": "MARKET_BUY",
+            "original_quantity": quantity,
+            "remaining_quantity": quantity,
+            "status": "IN_PROGRESS",
+            "created_at": datetime.now().isoformat()
+        })
+
+        if ticker not in self.sell_orders or not self.sell_orders[ticker]:
+            # No sellers available at all -> queue the entire order as unfilled
+            # Mark status as INCOMPLETE, and put this buy into a "market buy queue".
+            self._queue_market_buy(user_id, quantity, ticker)  # We'll define this helper below
+            logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for {user_id}.")
+            return {
+                "success": True,
+                "message": "No sellers available. Order queued as market buy.",
+                "order_status": "INCOMPLETE",
+                "trade_details": [],
+                "stock_tx_id": parent_tx_id
+            }
+
+        remaining_qty = quantity
+        executed_trades = []
+        order_status = "INCOMPLETE"  # Will update as we fill
+
+        while remaining_qty > 0 and self.sell_orders.get(ticker):
+            # 1. Get best available (lowest price) sell order
             best_sell_order = self.sell_orders[ticker][0]
             seller_id, sell_price, sell_quantity, sell_time = best_sell_order
 
-            traded_quantity = min(quantity, sell_quantity)
-            trade_value = traded_quantity * sell_price  # Trade happens at sell price
+            # 2. How many shares can we buy from this particular seller?
+            trade_qty = min(remaining_qty, sell_quantity)
+            trade_value = trade_qty * sell_price
 
-            # Check wallet balance of buyer
-            wallet_balance = self.get_wallet_balance(user_id)
-            if wallet_balance < trade_value:
-                logging.warning(f"User {user_id} has insufficient funds for {traded_quantity} shares of {ticker} at {sell_price}")
-                return {"success": False, "error": "Insufficient wallet balance"}
+            # 3. Check buyer wallet
+            buyer_wallet_balance = self.get_wallet_balance(user_id)
+            if buyer_wallet_balance < trade_value:
+                # Buyer has insufficient funds to buy 'trade_qty' at 'sell_price'
+                # Maybe buyer can buy fewer shares or break out.
+                # Usually for a market order, it's "all or partial" until we run out of money.
+                max_shares_can_buy = int(buyer_wallet_balance // sell_price)
+                if max_shares_can_buy == 0:
+                    # If we can't buy even 1 share, we stop
+                    logging.warning(f"User {user_id} out of funds. Partially filled so far.")
+                    if executed_trades:
+                        order_status = "PARTIALLY_COMPLETED"
+                    else:
+                        order_status = "INCOMPLETE"  # nothing executed
+                    break
+                else:
+                    # We can partially buy some shares from this sell order
+                    trade_qty = max_shares_can_buy
+                    trade_value = trade_qty * sell_price
+                    logging.info(f"User {user_id} can only buy {trade_qty} shares due to insufficient funds.")
 
-            # Execute trade
-            self.update_wallet_balance(seller_id, trade_value)  # Seller receives money
-            self.update_wallet_balance(user_id, -trade_value)  # Buyer pays money
+            # 4. Execute trade
+            self.update_wallet_balance(seller_id, trade_value)   # Seller receives money
+            self.update_wallet_balance(user_id, -trade_value)    # Buyer pays money
 
-            # Update order books
-            if sell_quantity > traded_quantity:
-                self.sell_orders[ticker][0][2] -= traded_quantity
+            # 5. Update order books
+            # Reduce the sell order by 'trade_qty'
+            if sell_quantity > trade_qty:
+                self.sell_orders[ticker][0][2] -= trade_qty
             else:
-                self.sell_orders[ticker].pop(0)  # Remove fully matched sell order
+                # If fully filled, remove it
+                self.sell_orders[ticker].pop(0)
 
-            logging.info(f"BUY MARKET ORDER EXECUTED: {user_id} bought {traded_quantity} shares of {ticker} at {sell_price}")
+            # 6. Update buyer's remaining quantity
+            remaining_qty -= trade_qty
+            
+            # Log partial fill with a new transaction record
+            partial_tx_id = str(uuid.uuid4())
+            stock_transactions_collection.insert_one({
+                "tx_id": partial_tx_id,
+                "parent_tx_id": parent_tx_id,
+                "stock_id": stock_id,
+                "ticker": ticker,
+                "quantity": trade_qty,
+                "price": sell_price,
+                "status": "COMPLETED",
+                "buyer_id": user_id,
+                "seller_id": seller_id,
+                "timestamp": datetime.utcnow()
+            })
 
-            return {
-                "success": True,
-                "message": f"Market order executed: {traded_quantity} shares of {ticker} at {sell_price}",
-                "order_status": "COMPLETED",
-                "trade_details": {
-                    "ticker": ticker,
-                    "quantity": traded_quantity,
-                    "price": sell_price,
-                    "buyer_id": user_id,
-                    "seller_id": seller_id,
-                    "timestamp": datetime.now().isoformat()
-                }
-            }
+            # 7. Record this partial execution
+            executed_trades.append({
+                "tx_id": partial_tx_id,
+                "ticker": ticker,
+                "quantity": trade_qty,
+                "price": sell_price,
+                "buyer_id": user_id,
+                "seller_id": seller_id,
+                "timestamp": datetime.now().isoformat()
+            })
 
-        # If it's a LIMIT order, add to order book
-        total_cost = price * quantity
-        wallet_balance = self.get_wallet_balance(user_id)
+            logging.info(f"BUY MARKET TRADE: {user_id} bought {trade_qty} shares of {ticker} @ {sell_price}")
 
-        if wallet_balance < total_cost:
-            logging.warning(f"User {user_id} has insufficient funds for {quantity} shares of {ticker} at {price}")
-            return {"success": False, "error": "Insufficient wallet balance"}
+            # If we've run out of sellers, the loop will break automatically since self.sell_orders[ticker] might be empty
 
+        # End of the while loop
+        # Determine the final order status
+        filled = quantity - remaining_qty
+        if filled == 0:
+            # No shares actually bought
+            order_status = "INCOMPLETE"
+            # Optionally queue the entire order as a market buy
+            self._queue_market_buy(user_id, remaining_qty, ticker)
+        elif remaining_qty > 0:
+            # Some portion was filled, but not all
+            order_status = "PARTIALLY_COMPLETED"
+            # The leftover can also be queued as a market buy if desired
+            self._queue_market_buy(user_id, remaining_qty, ticker)
+        else:
+            # All shares were filled
+            order_status = "COMPLETED"
+            
+        # Update parent transaction record with final status and remaining quantity
+        stock_transactions_collection.update_one(
+            {"tx_id": parent_tx_id},
+            {"$set": {"remaining_quantity": remaining_qty, "status": order_status}}
+        )
+
+        return {
+            "success": True,
+            "message": f"Market buy of {quantity} shares of {ticker} processed. {filled} filled.",
+            "order_status": order_status,
+            "trade_details": executed_trades,
+            "stock_tx_id": parent_tx_id
+    }
+
+    def _queue_market_buy(self, user_id, quantity, ticker):
+        """
+        Helper method to queue leftover market buys if desired.
+        For example, you might store them in self.buy_orders[ticker]
+        with price=None. This is optional and depends on your design.
+        """
+        if quantity <= 0:
+            return
+
+        # If you want to store leftover as a 'market' entry in the buy book:
         if ticker not in self.buy_orders:
             self.buy_orders[ticker] = []
-        self.buy_orders[ticker].append([user_id, price, quantity, datetime.now()])
-        self.buy_orders[ticker].sort(key=lambda x: (-x[1], x[3]))  # Highest price first, FIFO
 
-        # Deduct money immediately for limit orders
-        self.update_wallet_balance(user_id, -total_cost)
-        logging.info(f"BUY LIMIT ORDER: {user_id} placed order for {quantity} shares of {ticker} at {price}")
+        # We'll store price as None to represent a market buy
+        self.buy_orders[ticker].append([user_id, None, quantity, datetime.now()])
 
-        return {"success": True, "message": "Limit buy order placed successfully"}
+        # You don't necessarily need to deduct funds here, because
+        # no trade is happening yet. The user will pay once a seller appears.
+
+        logging.info(f"Queued leftover market buy for {user_id}: {quantity} shares of {ticker}")
+
+    def get_user_stock_balance(user_id, ticker):
+        """Fetches the user's stock balance for a given ticker from MongoDB."""
+        try:
+            user_stock = wallets_collection.find_one({"user_id": user_id, "stocks.ticker": ticker}, 
+                                                    {"stocks.$": 1})
+            if user_stock and "stocks" in user_stock:
+                return user_stock["stocks"][0]["quantity"]
+            return 0  # User does not own this stock
+        except Exception as e:
+            logging.error(f"Error fetching stock balance for {user_id}, {ticker}: {e}")
+            return 0
+
+    def update_user_stock_balance(user_id, ticker, quantity):
+        """Subtracts stock quantity from the user's holdings after placing a sell order."""
+        try:
+            wallets_collection.update_one(
+                {"user_id": user_id, "stocks.ticker": ticker},
+                {"$inc": {"stocks.$.quantity": -quantity}}  # Subtracts stock quantity
+            )
+            logging.info(f"Updated stock balance for {user_id}: Sold {quantity} of {ticker}")
+            return True
+        except Exception as e:
+            logging.error(f"Error updating stock balance for {user_id}, {ticker}: {e}")
+            return False
 
     def add_sell_order(self, user_id, order_id, ticker, price, quantity):
-        """ Adds a sell order and maintains ascending order of price. """
+        """ Adds a sell order only if the user has enough stock balance. """
+
+        # Check if user has enough stock in MongoDB
+        current_stock_balance = get_user_stock_balance(user_id, ticker)
+        
+        if quantity > current_stock_balance:
+            logging.warning(f"SELL ORDER FAILED: {user_id} tried to sell {quantity} of {ticker}, but only has {current_stock_balance}.")
+            return {"success": False, "error": "Insufficient stock balance"}
+
+        # Deduct stock from user’s balance
+        if not update_user_stock_balance(user_id, ticker, quantity):
+            return {"success": False, "error": "Failed to update stock balance"}
+
+        # Add sell order to order book
         if ticker not in self.sell_orders:
             self.sell_orders[ticker] = []
+        
         self.sell_orders[ticker].append([user_id, price, quantity, datetime.now()])
         self.sell_orders[ticker].sort(key=lambda x: (x[1], x[3]))  # Lowest price first, FIFO
+
         logging.info(f"SELL ORDER: {user_id} listed {quantity} shares of {ticker} at {price}")
         return {"success": True, "message": "Sell order placed successfully"}
 
