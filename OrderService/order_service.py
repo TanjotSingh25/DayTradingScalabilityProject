@@ -66,30 +66,67 @@ def place_stock_order():
     # Return the response from matching engine
     return jsonify({"success": True, "data": matching_result}), 200
 
-# Gets and Return User Stock History
 @app.route('/getStockTransactions', methods=['GET'])
 def get_stock_transactions():
     """
     Accepts JSON input:
-    { "token": "jwt_token" }
-    """
-    # TODO: Fetch and return stock transaction history
-    # Fetch using user id, return user_id: data[] send mongodb get user_id, tranactions
-    # get 'user_id' : {}
+    {
+        "token": "jwt_token"
+    }
 
-    # Example
+    Returns a list of the user's stock transactions, e.g.:
+    {
+        "success": true,
+        "data": [
+        {
+            "stock_tx_id": "uuid",
+            "stock_id": "uuid",
+            "quantity": 50,
+            "order_status": "COMPLETED",
+            "price": 135,
+            "timestamp": "2025-01-26T12:00:00Z"
+        }
+                ]
+    }
+    """
+
+    # 1) Parse request body (if any)
+    request_data = request.get_json() or {}
+    token = request_data.get("token")
+
+    # 2) Validate and decrypt token
+    ret_val, token_values = helpers.decrypt_and_validate_token(token, secret_key)
+    if not ret_val:
+        return jsonify({"success": False, "data": None, "message": "Invalid Token"}), 401
+
+    user_id = token_values.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "data": None, "message": "No user_id in token"}), 400
+
+    # 3) Query MongoDB for this user's transactions
+    #    Example collection: "stock_transactions"
+    transactions_cursor = db["stock_transactions"].find({"user_id": user_id})
+
+    # 4) Build the response data array
+    user_transactions = []
+    for doc in transactions_cursor:
+        user_transactions.append({
+            "stock_tx_id": str(doc.get("tx_id")),      # Might be an ObjectId or a string
+            "parent_stock_tx_id": str(doc.get("parent_tx_id")) if doc.get("parent_tx_id") else None,
+            "stock_id": str(doc.get("stock_id")),
+            "quantity": doc.get("quantity", 0),
+            "order_status": doc.get("status", ""),
+            "price": doc.get("price", 0),
+            "is_buy": doc.get("is_buy", False),
+            "order_type": doc.get("order_type", ""),
+            # Use doc.get("timestamp") or doc.get("created_at"), depending on your schema
+            "timestamp": doc.get("timestamp") or doc.get("created_at") or ""
+        })
+
+    # 5) Return JSON response
     return jsonify({
         "success": True,
-        "data": [
-            {
-                "stock_tx_id": "uuid",
-                "stock_id": "uuid",
-                "quantity": 50,
-                "order_status": "COMPLETED",
-                "price": 135,
-                "timestamp": "2025-01-26T12:00:00Z"
-            }
-        ]
+        "data": user_transactions
     })
 
 # Cancel exisitng buy or sell order

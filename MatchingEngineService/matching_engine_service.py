@@ -8,7 +8,7 @@ def set_wallet():
     """
     Sets or updates a user's wallet balance.
     JSON expected: { "user_id": "uuid", "balance": 5000 }
-    """
+    """ 
     data = request.get_json()
     user_id = data.get("user_id")
     balance = data.get("balance")
@@ -41,12 +41,10 @@ def place_order():
     #     return jsonify({"success": False, "error": "Missing required fields"}), 400
 
     if order_type == "BUY":
-        stock_id = data.get("stock_id", "")  #  Safely handle missing stock_id
-        result = orderBookInst.add_buy_order(user_id, order_id, stock_id, ticker, price, quantity)
+        result = orderBookInst.add_buy_order(user_id, order_id, data["stock_id"], ticker, price, quantity)
         return jsonify(result), (200 if result["success"] else 400)
     elif order_type == "SELL":
-        stock_id = data.get("stock_id", "")  # Ensure stock_id is passed
-        result = orderBookInst.add_sell_order(user_id, order_id, stock_id, ticker, price, quantity)
+        orderBookInst.add_sell_order(user_id, order_id, ticker, price, quantity)
         executed_trades = orderBookInst.match_orders()
         executed_trades.append(f"Sell order placed for {ticker}.")
         return jsonify({"success": True, "message": executed_trades })
@@ -55,25 +53,22 @@ def place_order():
     
     return jsonify(result), (200 if result["success"] else 400)
 
-# @app.route('/matchOrders', methods=['POST'])
-# def match_orders():
-#     """ Matches and executes orders from the order book. """
-#     executed_trades = orderBookInst.match_orders()
+@app.route('/matchOrders', methods=['POST'])
+def match_orders():
+    """ Matches and executes orders from the order book. """
+    executed_trades = orderBookInst.match_orders()
     
-#     return jsonify({"success": True, "executed_trades": executed_trades})
+    return jsonify({"success": True, "executed_trades": executed_trades})
 
 @app.route('/cancelOrder', methods=['POST'])
 def cancel_order():
-    """
-    Accepts JSON input:
-    { "stock_tx_id": "uuid" }
-    1 - Save remaining quanity and price
-    2 - Remove limit sell for ticker and MongoDB
-    3 - Add remaining stock quantity back to user profile
-    4 - Update stock transaction log to display cancelled
-    """
-    # TODO: set up a "for-loop" to search for stock id in buy and sell to cancel it
-    return {"success": True, "data": None}
+
+    # False = Trade already executed/Trade does no exist
+    # True = Trade cancelled
+    data = request.get_json()
+    result, reason = orderBookInst.cancel_user_order(data['user_id'], data['stock_tx_id'])
+    
+    return result, reason
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5300)

@@ -66,7 +66,7 @@ class OrderBook:
             logging.warning(f"BUY ORDER REJECTED: Limit buy not allowed for {user_id}")
             return {"success": False, "error": "Only market buy orders are allowed"}
         
-         # Use the incoming order_id as the parent transaction ID (stock_tx_id)
+        # Use the incoming order_id as the parent transaction ID (stock_tx_id)
         parent_tx_id = order_id
         stock_transactions_collection.insert_one({
             "tx_id": parent_tx_id,
@@ -317,5 +317,55 @@ class OrderBook:
                     self.sell_orders[ticker].pop(0)  # Remove fully matched sell order
 
         return executed_trades
+    
+    def cancel_user_order(self, user_id, ticker, order_type, transaction_id):
+        # Decide which dictionary to check
+        is_buy = "BUY" in order_type.upper()
+        order_dict = self.buy_orders if is_buy else self.sell_orders
+
+        # 1) Check if the ticker is in the relevant dictionary
+        if ticker not in order_dict:
+            print(f"No active {'buy' if is_buy else 'sell'} orders for {ticker}. Nothing to cancel.")
+            return False, "No active order."
+        
+        order_list = order_dict[ticker]
+        
+        # 2) Find the matching order entry by user_id and transaction_id
+        found_item = None
+        for item in order_list:
+            # Example item format: [user_id, price, quantity, timestamp, transaction_id]
+            if item[0] == user_id and item[4] == transaction_id:
+                found_item = item
+                break
+        
+        if not found_item:
+            print(f"Order with transaction_id={transaction_id} not found in {ticker} list.")
+            return False, "Transaction ID not found in ticker list"
+
+        # Extract relevant info
+        quantity = found_item[2]
+        price = found_item[1]
+
+        # 3) Remove the order from the in-memory list
+        order_list.remove(found_item)
+        print(f"Removed {order_type} order for user={user_id}, ticker={ticker}, tx_id={transaction_id}")
+
+        # 4) Update a transaction/order record in MongoDB to "CANCELLED" 
+        self.db["transactions"].update_one(
+            {"tx_id": transaction_id, "user_id": user_id},
+            {"$set": {"status": "CANCELLED", "cancelled_at": datetime.now.utcnow()}}
+            )
+
+        # 5) If it's a SELL order, optionally return quantity to the user's portfolio in MongoDB
+        if not is_buy:
+            # Doc { "user_id": ..., "stocks": [{ "ticker": "AAPL", "quantity": ...}, ...] }
+            self.wallets_collection.update_one(
+                {"user_id": user_id, "stocks.ticker": ticker},
+                {"$inc": {"stocks.$.quantity": quantity}}
+            )
+            print(f"Returned {quantity} shares of {ticker} to user {user_id}'s portfolio.")
+        
+        return True, "Cancellation is complete and successful"
+
 # Instantiate a shared order book
 orderBookInst = OrderBook()
