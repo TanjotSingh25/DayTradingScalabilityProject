@@ -1,6 +1,6 @@
-FROM python:3.9-slim
+FROM python:3.11-slim
 WORKDIR /app
-COPY . /app
+COPY MatchingEngineService /app
 RUN pip install flask
 EXPOSE 5300
 CMD ["python", "matching_engine_service.py"]
