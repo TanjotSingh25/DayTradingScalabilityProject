@@ -41,10 +41,12 @@ def place_order():
     #     return jsonify({"success": False, "error": "Missing required fields"}), 400
 
     if order_type == "BUY":
-        result = orderBookInst.add_buy_order(user_id, order_id, data["stock_id"], ticker, price, quantity)
+        stock_id = data.get("stock_id", "")  #  Safely handle missing stock_id
+        result = orderBookInst.add_buy_order(user_id, order_id, stock_id, ticker, price, quantity)
         return jsonify(result), (200 if result["success"] else 400)
     elif order_type == "SELL":
-        orderBookInst.add_sell_order(user_id, order_id, ticker, price, quantity)
+        stock_id = data.get("stock_id", "")  # Ensure stock_id is passed
+        result = orderBookInst.add_sell_order(user_id, order_id, stock_id, ticker, price, quantity)
         executed_trades = orderBookInst.match_orders()
         executed_trades.append(f"Sell order placed for {ticker}.")
         return jsonify({"success": True, "message": executed_trades })

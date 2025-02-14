@@ -22,8 +22,8 @@ except errors.ConnectionFailure:
 
 class OrderBook:
     def __init__(self):
-        self.buy_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp], ...] }
-        self.sell_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp], ...] }
+        self.buy_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp, transaction_id], ...] }
+        self.sell_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp, transaction_id], ...] }
 
     def get_wallet_balance(self, user_id):
         """Fetches wallet balance from MongoDB for the user."""
@@ -83,7 +83,7 @@ class OrderBook:
         if ticker not in self.sell_orders or not self.sell_orders[ticker]:
             # No sellers available at all -> queue the entire order as unfilled
             # Mark status as INCOMPLETE, and put this buy into a "market buy queue".
-            self._queue_market_buy(user_id, quantity, ticker)  # We'll define this helper below
+            self._queue_market_buy(user_id, parent_tx_id, quantity, ticker)  # We'll define this helper below
             logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for {user_id}.")
             return {
                 "success": True,
@@ -160,6 +160,7 @@ class OrderBook:
             # 7. Record this partial execution
             executed_trades.append({
                 "tx_id": partial_tx_id,
+                "parent_tx_id" : parent_tx_id,
                 "ticker": ticker,
                 "quantity": trade_qty,
                 "price": sell_price,
@@ -179,12 +180,12 @@ class OrderBook:
             # No shares actually bought
             order_status = "INCOMPLETE"
             # Optionally queue the entire order as a market buy
-            self._queue_market_buy(user_id, remaining_qty, ticker)
+            self._queue_market_buy(user_id, parent_tx_id, remaining_qty, ticker)
         elif remaining_qty > 0:
             # Some portion was filled, but not all
             order_status = "PARTIALLY_COMPLETED"
             # The leftover can also be queued as a market buy if desired
-            self._queue_market_buy(user_id, remaining_qty, ticker)
+            self._queue_market_buy(user_id, parent_tx_id, remaining_qty, ticker)
         else:
             # All shares were filled
             order_status = "COMPLETED"
@@ -203,7 +204,7 @@ class OrderBook:
             "stock_tx_id": parent_tx_id
     }
 
-    def _queue_market_buy(self, user_id, quantity, ticker):
+    def _queue_market_buy(self, user_id, order_id, quantity, ticker):
         """
         Helper method to queue leftover market buys if desired.
         For example, you might store them in self.buy_orders[ticker]
@@ -217,7 +218,7 @@ class OrderBook:
             self.buy_orders[ticker] = []
 
         # We'll store price as None to represent a market buy
-        self.buy_orders[ticker].append([user_id, None, quantity, datetime.now()])
+        self.buy_orders[ticker].append([user_id, None, quantity, datetime.now(), order_id])
 
         # You don't necessarily need to deduct funds here, because
         # no trade is happening yet. The user will pay once a seller appears.
@@ -267,7 +268,7 @@ class OrderBook:
         if ticker not in self.sell_orders:
             self.sell_orders[ticker] = []
         
-        self.sell_orders[ticker].append([user_id, price, quantity, datetime.now()])
+        self.sell_orders[ticker].append([user_id, price, quantity, datetime.now(), order_id]) #added order_id
         self.sell_orders[ticker].sort(key=lambda x: (x[1], x[3]))  # Lowest price first, FIFO
 
         logging.info(f"SELL ORDER: {user_id} listed {quantity} shares of {ticker} at {price}")
@@ -279,8 +280,8 @@ class OrderBook:
 
         for ticker in list(self.sell_orders.keys()):  # Start with sell orders
             while self.sell_orders.get(ticker) and self.buy_orders.get(ticker):
-                buyer_id, buy_order_id, buy_price, buy_quantity, buy_time, stock_id = self.buy_orders[ticker][0]
-                seller_id, sell_order_id, sell_price, sell_quantity, sell_time, stock_id = self.sell_orders[ticker][0]
+                buyer_id, buy_price, buy_quantity, buy_time, buy_order_id, stock_id = self.buy_orders[ticker][0]
+                seller_id, sell_price, sell_quantity, sell_time, sell_order_id, stock_id = self.sell_orders[ticker][0]
 
                 # MARKET ORDER: Buy at best available sell price
                 if buy_price is None:
