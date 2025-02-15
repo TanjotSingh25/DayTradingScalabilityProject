@@ -19,21 +19,24 @@ def place_stock_order():
     Accepts JSON input:
     { "token": "jwt_token", "stock_id": "uuid", "is_buy": true, "order_type": "MARKET", "quantity": 50 }
     """
-    # Read Order
-    data = request.get_json()
-    # Sanity Check -- Token and Data
-
-    # 1 -- Decrypt and validate JWT token, if token is invalid, returns false message
-    ret_val, token_values = helpers.decrypt_and_validate_token(data.get["token"], secret_key)
-    if ret_val != True:
-        # If false, then invalid token -- 401 (Unauthorized) HTTP Code.
-        return jsonify({"success": "false", "data": "null" , "message": "The given JWT Token is Invalid"}), 401
-
-    # 2 -- Validate json data payload request
-    failed_sanity, return_message = helpers.order_service_sanity_check(data)
-    if failed_sanity:
+    # Grab the JSON body
+    request_data = request.get_json()
+    # Sanity check
+    # 1 - Validate the order request
+    is_valid, validation_response = helpers.order_service_sanity_check(request_data)
+    if not is_valid:
         # 412 Precondition Failed -- Erronouse field(s)
-        return jsonify(return_message), 412
+        return jsonify(validation_response), 412
+
+    # 2 - Decrypt & validate token
+    token = request_data.get("token")
+    success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
+    if not success:
+        return jsonify({"success": False, "error": token_payload["error"]}), 401
+    # 3 -  verify user_name exists via postgreSQL
+    user_id = token_payload.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "No user_id in token"}), 400
 
     order_payload = {
         # Generate Order_ID
@@ -89,22 +92,20 @@ def get_stock_transactions():
                 ]
     }
     """
-
-    # 1) Parse request body (if any)
-    request_data = request.get_json() or {}
+    # Grab the JSON body
+    request_data = request.get_json()
+    # Sanity check
+    # Validate and decrypt token
     token = request_data.get("token")
+    success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
+    if not success:
+        return jsonify({"success": False, "error": token_payload["error"]}), 401
 
-    # 2) Validate and decrypt token
-    ret_val, token_values = helpers.decrypt_and_validate_token(token, secret_key)
-    if not ret_val:
-        return jsonify({"success": False, "data": None, "message": "Invalid Token"}), 401
-
-    user_id = token_values.get("user_id")
+    user_id = token_payload.get("user_id")
     if not user_id:
-        return jsonify({"success": False, "data": None, "message": "No user_id in token"}), 400
+        return jsonify({"success": False, "data": None, "message": "No User ID in token"}), 400
 
-    # 3) Query MongoDB for this user's transactions
-    #    Example collection: "stock_transactions"
+    # 3) Query MongoDB for user's transactions
     transactions_cursor = db["stock_transactions"].find({"user_id": user_id})
 
     # 4) Build the response data array
@@ -137,23 +138,22 @@ def cancel_stock_transaction():
     { "token": "jwt_token", "stock_tx_id": "uuid" }
     """
     data = request.get_json()
-    code = 200
     # Token Check - Decrypt and validate JWT token, if token is invalid, returns false message
-    ret_val, token_values = helpers.decrypt_and_validate_token(data.get["token"], secret_key)
-    if ret_val != True:
-        # If false, then invalid token -- 401 (Unauthorized) HTTP Code.
-        return jsonify({"success": "false", "data": "null" , "message": "The given JWT Token is Invalid"}), 401
+    # Validate and decrypt token
+    token = data.get("token")
+    success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
+    if not success:
+        return jsonify({"success": False, "error": token_payload["error"]}), 401
 
     # Sanity Check
     if not data.get("stock_tx_id"):
         return jsonify({"success": False, "error": "Did not send stock transaction ID"}), 200
     
     cancelation_payload = {
-        "stock_tx_id": token_values.get("stock_tx_id"),
-        "user_id": token_values.get("user_id"),
-        "user_name": token_values.get("user_name")
+        "stock_tx_id": token_payload.get("stock_tx_id"),
+        "user_id": token_payload.get("user_id"),
+        "user_name": token_payload.get("user_name")
     }
-    
     # Call the matching engine endpoint to cancel a transaction
     try:
         response = request.post(MATCHING_ENGINE_CANCELLATION_URL, json={cancelation_payload})
