@@ -112,9 +112,5 @@ networks:
     backend:
 
 volumes:
-<<<<<<< HEAD
     pgdata:
     mongodb_data:
-=======
-    pgdata:
->>>>>>> frontend

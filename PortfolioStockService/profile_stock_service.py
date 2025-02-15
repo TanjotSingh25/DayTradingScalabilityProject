@@ -5,6 +5,8 @@ from flask_restful import Api, Resource
 from pymongo import MongoClient, errors
 import os
 import uuid
+import jwt
+import requests
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -35,14 +37,33 @@ except errors.ConnectionFailure:
 # Helper Function for User Identification (JWT Ready)
 # -----------------------
 
+JWT_SECRET = "your_jwt_secret_here"
+JWT_ALGORITHM = "HS256"
+
 def get_user_id():
     """
-    Placeholder function for now.
-    - Currently: Extracts user_id from request body or query params
-    - Later: Will extract from JWT token in the Authorization header
+    Extracts user_id from the Authorization JWT token.
+    - Validates and decodes JWT from the request headers.
+    - If valid, extracts `user_id` from the payload.
+    - Returns an error message if token is missing or invalid.
     """
-    data = request.get_json(silent=True) or {}
-    return data.get("user_id") or request.args.get("user_id")  # Support both body & query
+
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return {"error": "Missing or invalid Authorization header"}
+
+    token = auth_header.split(" ")[1]  # Extract token
+
+    try:
+        # Decode the JWT token
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return {"user_id": payload.get("user_id")}
+    except jwt.ExpiredSignatureError:
+        return {"error": "Token has expired"}
+    except jwt.InvalidTokenError:
+        return {"error": "Invalid token"}
+
+
 
 
 # -----------------------
@@ -65,6 +86,11 @@ class CreateStock(Resource):
     """
     def post(self):
         try:
+            user_data = get_user_id()
+            if "error" in user_data:
+                return {"success": False, "data": {"error": user_data["error"]}}, 401  # Unauthorized
+            user_id = user_data["user_id"]
+
             data = request.get_json()
             stock_name = data.get("stock_name")
 
@@ -99,7 +125,10 @@ class AddStockToUser(Resource):
     """
     def post(self):
         try:
-            user_id = get_user_id()
+            user_data = get_user_id()
+            if "error" in user_data:
+                return {"success": False, "data": {"error": user_data["error"]}}, 401  # Unauthorized
+            user_id = user_data["user_id"]
             data = request.get_json()
             stock_id = data.get("stock_id")
             quantity = data.get("quantity", 1)
@@ -149,7 +178,10 @@ class GetStockPortfolio(Resource):
     """
     def get(self):
         try:
-            user_id = get_user_id()
+            user_data = get_user_id()
+            if "error" in user_data:
+                return {"success": False, "data": {"error": user_data["error"]}}, 401  # Unauthorized
+            user_id = user_data["user_id"]
             portfolio = portfolios_collection.find_one({"user_id": user_id}, {"data": 1})
 
             # If user has no portfolio, return empty list instead of error
@@ -181,7 +213,10 @@ class AddMoneyToWallet(Resource):
     """
     def post(self):
         try:
-            user_id = get_user_id()
+            user_data = get_user_id()
+            if "error" in user_data:
+                return {"success": False, "data": {"error": user_data["error"]}}, 401  # Unauthorized
+            user_id = user_data["user_id"]
             data = request.get_json()
             amount = data.get("amount")
 
@@ -214,7 +249,10 @@ class GetWalletBalance(Resource):
     """
     def get(self):
         try:
-            user_id = get_user_id()
+            user_data = get_user_id()
+            if "error" in user_data:
+                return {"success": False, "data": {"error": user_data["error"]}}, 401  # Unauthorized
+            user_id = user_data["user_id"]
             wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
             if not wallet:
                 return {"success": False, "data": {"error": "User wallet not found"}}, 404
@@ -236,7 +274,10 @@ class GetWalletTransactions(Resource):
     """
     def get(self):
         try:
-            user_id = get_user_id()
+            user_data = get_user_id()
+            if "error" in user_data:
+                return {"success": False, "data": {"error": user_data["error"]}}, 401  # Unauthorized
+            user_id = user_data["user_id"]
             wallet = wallets_collection.find_one({"user_id": user_id}, {"transactions": 1})
             if not wallet or "transactions" not in wallet:
                 return {"success": False, "data": {"error": "No transactions found"}}, 404
