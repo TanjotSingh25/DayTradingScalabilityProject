@@ -43,58 +43,67 @@ def place_stock_order():
         "order_id": helpers.generate_order_id(),
         
         # Set information to pass to Matching Engine
-        "stock_id": data["stock_id"],
-        "order_type": data["order_type"],
-        "quantity": data["quantity"],
-        "price": data["price"],
+        "stock_id": request_data["stock_id"],
+        "order_type": request_data["order_type"],
+        "quantity": request_data["quantity"],
+        "price": request_data["price"],
         
         # Set the Type 'Buy Market' or 'Sell Limit'
-        "type": "MARKET" if data["is_buy"] else "LIMIT",
+        "type": "MARKET" if request_data["is_buy"] else "LIMIT",
         
         # Place token information in payload
-        "user_id": token_values.get("user_id"),
-        "user_name": token_values.get("user_name")
+        "user_id": user_id
         }
 
     # Call the matching engine endpoint
     try:
         response = request.post(MATCHING_ENGINE_URL, json=order_payload)
+
+        # Check if response is successful (status code 200)
         if response.status_code == 200:
             matching_result = response.json()
+            return matching_result, 200
         else:
-            matching_result = {"success": False, "error": "Matching engine error"}
+            matching_result = {"error": f"Matching engine responded with status {response.status_code}"}
+
     except Exception as e:
-        matching_result = {"success": False, "error": str(e)}
+        matching_result = {"error": f"Request failed: {str(e)}"}
 
     # Return the response from matching engine
-    return jsonify({"success": True, "data": matching_result}), 200
+    return matching_result, response.status_code
 
 @app.route('/getStockTransactions', methods=['GET'])
 def get_stock_transactions():
     """
+    Retrieves a list of the user's stock transactions.
+
     Accepts JSON input:
     {
         "token": "jwt_token"
     }
 
-    Returns a list of the user's stock transactions, e.g.:
+    Returns:
     {
         "success": true,
         "data": [
-        {
-            "stock_tx_id": "uuid",
-            "stock_id": "uuid",
-            "quantity": 50,
-            "order_status": "COMPLETED",
-            "price": 135,
-            "timestamp": "2025-01-26T12:00:00Z"
-        }
-                ]
+            {
+                "stock_tx_id": "uuid",
+                "parent_stock_tx_id": "uuid" or None,
+                "stock_id": "uuid",
+                "wallet_tx_id": "uuid" or None,
+                "quantity": 50,
+                "order_status": "COMPLETED",
+                "price": 135,
+                "is_buy": true,
+                "order_type": "MARKET",
+                "timestamp": "2025-01-26T12:00:00Z"
+            }
+        ]
     }
     """
     # Grab the JSON body
     request_data = request.get_json()
-    # Sanity check
+
     # Validate and decrypt token
     token = request_data.get("token")
     success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
@@ -105,67 +114,77 @@ def get_stock_transactions():
     if not user_id:
         return jsonify({"success": False, "data": None, "message": "No User ID in token"}), 400
 
-    # 3) Query MongoDB for user's transactions
-    transactions_cursor = db["stock_transactions"].find({"user_id": user_id})
+    # Query MongoDB for user's transactions (from `stock_transactions_collection`)
+    transactions_cursor = stock_transactions_collection.find({"user_id": user_id})
 
-    # 4) Build the response data array
+    # Build the response data array
     user_transactions = []
     for doc in transactions_cursor:
         user_transactions.append({
-            "stock_tx_id": str(doc.get("tx_id")),      # Might be an ObjectId or a string
-            "parent_stock_tx_id": str(doc.get("parent_tx_id")) if doc.get("parent_tx_id") else None,
-            "stock_id": str(doc.get("stock_id")),
+            "stock_tx_id": str(doc.get("stock_tx_id")),  # Unique transaction ID
+            "parent_stock_tx_id": str(doc.get("parent_stock_tx_id")) if doc.get("parent_stock_tx_id") else None,
+            "stock_id": str(doc.get("stock_id")),  # Associated stock ID
+            "wallet_tx_id": str(doc.get("wallet_tx_id")) if doc.get("wallet_tx_id") else None,  # Wallet transaction reference
             "quantity": doc.get("quantity", 0),
-            "order_status": doc.get("status", ""),
-            "price": doc.get("price", 0),
+            "order_status": doc.get("order_status", ""),  # Use correct field for status
+            "price": doc.get("stock_price", 0),  # Ensuring price is retrieved correctly
             "is_buy": doc.get("is_buy", False),
-            "order_type": doc.get("order_type", ""),
-            # Use doc.get("timestamp") or doc.get("created_at"), depending on your schema
-            "timestamp": doc.get("timestamp") or doc.get("created_at") or ""
+            "order_type": doc.get("order_type", ""),  # Order type (MARKET, LIMIT, etc.)
+            "timestamp": doc.get("time_stamp") or doc.get("created_at") or ""
         })
 
-    # 5) Return JSON response
+    # Return JSON response
     return jsonify({
         "success": True,
         "data": user_transactions
-    })
+    }), 200
 
-# Cancel exisitng buy or sell order
+
 @app.route('/cancelStockTransaction', methods=['POST'])
 def cancel_stock_transaction():
     """
     Accepts JSON input:
     { "token": "jwt_token", "stock_tx_id": "uuid" }
+
+    Calls the Matching Engine to cancel the stock order.
     """
     data = request.get_json()
-    # Token Check - Decrypt and validate JWT token, if token is invalid, returns false message
+
     # Validate and decrypt token
     token = data.get("token")
     success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
     if not success:
         return jsonify({"success": False, "error": token_payload["error"]}), 401
 
-    # Sanity Check
-    if not data.get("stock_tx_id"):
-        return jsonify({"success": False, "error": "Did not send stock transaction ID"}), 200
-    
-    cancelation_payload = {
-        "stock_tx_id": token_payload.get("stock_tx_id"),
-        "user_id": token_payload.get("user_id"),
-        "user_name": token_payload.get("user_name")
+    # Ensure stock transaction ID is provided
+    stock_tx_id = data.get("stock_tx_id")
+    if not stock_tx_id:
+        return jsonify({"success": False, "error": "Missing stock transaction ID"}), 400
+
+    # Extract user details from token payload
+    user_id = token_payload.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Missing user ID in token"}), 400
+
+    # Prepare cancellation payload
+    cancellation_payload = {
+        "user_id": user_id,
+        "stock_tx_id": stock_tx_id
     }
-    # Call the matching engine endpoint to cancel a transaction
+
+    # Call the Matching Engine `/cancelOrder` endpoint
     try:
-        response = request.post(MATCHING_ENGINE_CANCELLATION_URL, json={cancelation_payload})
+        response = request.post(MATCHING_ENGINE_CANCELLATION_URL, json=cancellation_payload)
+
         if response.status_code == 200:
             matching_result = response.json()
         else:
-            matching_result, code = {"success": False, "error": "Matching engine error"}, 400
+            matching_result, code = {"success": False, "error": "Matching Engine error"}, response.status_code
     except Exception as e:
-        matching_result, code = {"success": False, "error": str(e)}, 400
-    
+        matching_result, code = {"success": False, "error": str(e)}, 500
+
     return jsonify(matching_result), code
-    #return jsonify({"success": True, "data": None})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5200)

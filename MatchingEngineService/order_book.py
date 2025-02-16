@@ -451,46 +451,59 @@ class OrderBook:
 
         return executed_trades
     
-    def cancel_user_order(self, user_id, stock_id, order_type, transaction_id):
-        # Decide which dictionary to check
-        is_buy = "BUY" in order_type.upper()
-        order_dict = self.buy_orders if is_buy else self.sell_orders
-
-        # 1) Check if the stock_id exists in the relevant dictionary
-        if stock_id not in order_dict:
-            logging.warning(f"No active {'buy' if is_buy else 'sell'} orders for {stock_id}.")
-            return False, "No active order."
-
-        order_list = order_dict[stock_id]
+    def cancel_user_order(self, user_id, stock_tx_id):
         
-        # 2) Find the matching order entry by user_id and transaction_id
         found_item = None
-        for item in order_list:
-            # Example item format: [user_id, price, quantity, timestamp, transaction_id]
-            if item[0] == user_id and item[4] == transaction_id:
-                found_item = item
+        order_type = None
+        stock_id = None
+
+        # 1) Search for the order in BUY orders
+        for stock, orders in self.buy_orders.items():
+            for order in orders:
+                if order[0] == user_id and order[4] == stock_tx_id:
+                    found_item = order
+                    order_type = "BUY"
+                    stock_id = stock
+                    break
+            if found_item:
                 break
         
+       # 2) Search for the order in SELL orders
         if not found_item:
-            logging.warning(f"Order with transaction_id={transaction_id} not found in {stock_id} list.")
-            return False, "Transaction ID not found in ticker list"
+            for stock, orders in self.sell_orders.items():
+                for order in orders:
+                    if order[0] == user_id and order[4] == stock_tx_id:
+                        found_item = order
+                        order_type = "SELL"
+                        stock_id = stock
+                        break
+                if found_item:
+                    break
+
+        # 3) If no order found, return failure
+        if not found_item:
+            logging.warning(f"Order with stock_tx_id={stock_tx_id} not found for user_id={user_id}.")
+            return False, "Order not found."
 
         # Extract relevant info
         quantity = found_item[2]
         price = found_item[1]
 
-        # 3) Remove the order from the in-memory list
-        order_list.remove(found_item)
-        logging.info(f"Removed {order_type} order for user={user_id}, stock_id={stock_id}, tx_id={transaction_id}")
+        # 4) Remove the order from in-memory order book
+        if order_type == "BUY":
+            self.buy_orders[stock_id].remove(found_item)
+        else:
+            self.sell_orders[stock_id].remove(found_item)
 
-      # 4) Update transaction status in `stock_transactions_collection`
+        logging.info(f"Cancelled {order_type} order for user_id={user_id}, stock_id={stock_id}, stock_tx_id={stock_tx_id}")
+       # 5) Update MongoDB: Mark transaction as CANCELLED
         stock_transactions_collection.update_one(
-            {"stock_tx_id": transaction_id, "user_id": user_id},
+            {"stock_tx_id": stock_tx_id, "user_id": user_id},
             {"$set": {"order_status": "CANCELLED", "cancelled_at": datetime.now().isoformat()}}
         )
 
-        # 5) If it's a SELL order, return the stock quantity to the user's portfolio
-        if not is_buy:
+        # 6) If it's a SELL order, return the stock quantity to the user's portfolio
+        if order_type == "SELL":
             result = portfolios_collection.update_one(
                 {"user_id": user_id, "data.stock_id": stock_id},
                 {"$inc": {"data.$.quantity_owned": quantity}}

@@ -50,10 +50,8 @@ def place_order():
         executed_trades = orderBookInst.match_orders()
         executed_trades.append(f"Sell order placed for {stock_id}.")
         return jsonify({"success": True, "message": executed_trades })
-    else:
-        return jsonify({"success": False, "error": "Invalid order type"}), 400
-    
-    return jsonify(result), (200 if result["success"] else 400)
+
+    return jsonify({"success": False, "error": "Invalid order type"}), 400
 
 @app.route('/matchOrders', methods=['POST'])
 def match_orders():
