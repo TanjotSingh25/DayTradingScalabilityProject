@@ -33,7 +33,6 @@ def place_order():
     order_id = data.get("order_id")
     user_id = data.get("user_id")
     order_type = data.get("type")
-    ticker = data.get("ticker")
     quantity = data.get("quantity")
     price = data.get("price")
     
@@ -43,13 +42,13 @@ def place_order():
     # if not user_id or not order_type or not ticker or quantity is None or price is None:
     #     return jsonify({"success": False, "error": "Missing required fields"}), 400
 
-    if order_type == "BUY":
-        result = orderBookInst.add_buy_order(user_id, order_id, stock_id, ticker, price, quantity)
+    if order_type == "MARKET":
+        result = orderBookInst.add_buy_order(user_id, order_id, stock_id, price, quantity)
         return jsonify(result), (200 if result["success"] else 400)
-    elif order_type == "SELL":
-        result = orderBookInst.add_sell_order(user_id, order_id, stock_id, ticker, price, quantity)
+    elif order_type == "LIMIT":
+        result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
         executed_trades = orderBookInst.match_orders()
-        executed_trades.append(f"Sell order placed for {ticker}.")
+        executed_trades.append(f"Sell order placed for {stock_id}.")
         return jsonify({"success": True, "message": executed_trades })
     else:
         return jsonify({"success": False, "error": "Invalid order type"}), 400

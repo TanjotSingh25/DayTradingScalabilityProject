@@ -13,12 +13,31 @@ logging.basicConfig(filename='matching_engine.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # MongoDB connection
-try:
-    client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
-    db = client["trading_system"]
-    wallets_collection = db["wallets"]
-except errors.ConnectionFailure:
-    logging.error("Error: Unable to connect to MongoDB. Ensure MongoDB is running.")
+
+# MongoDB connection with retry mechanism
+max_retries = 5
+retry_delay = 3  # seconds between retries
+
+for attempt in range(max_retries):
+    try:
+        client = MongoClient(os.getenv("MONGO_URI", "mongodb://mongo:27017/trading_system"), serverSelectionTimeoutMS=5000)
+        db = client["trading_system"]
+        wallets_collection = db["wallets"]
+        portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized
+        stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
+
+        # Ensure necessary indexes for faster lookups
+        stock_transactions_collection.create_index("tx_id", unique=True)  # Use tx_id, not user_id
+
+        logging.info("MongoDB connection established successfully.")
+        break  # Exit the loop if connection is successful
+
+    except errors.ConnectionFailure:
+        logging.warning(f"MongoDB connection attempt {attempt + 1} failed. Retrying in {retry_delay} seconds...")
+        time.sleep(retry_delay)
+else:
+    logging.error("Failed to connect to MongoDB after multiple attempts. Exiting...")
+    raise RuntimeError("MongoDB connection failed after 5 retries.")
 
 class OrderBook:
     def __init__(self):
@@ -250,38 +269,70 @@ class OrderBook:
             logging.error(f"Error updating stock balance for {user_id}, {ticker}: {e}")
             return False
 
-    def add_sell_order(self, user_id, order_id, ticker, price, quantity):
+    def add_sell_order(self, user_id, order_id, stock_id, price, quantity):
         """ Adds a sell order only if the user has enough stock balance. """
 
         # Check if user has enough stock in MongoDB
-        current_stock_balance = get_user_stock_balance(user_id, ticker)
+        current_stock_balance = get_user_stock_balance(user_id, stock_id)
+        
+        # Check if user has enough stock in MongoDB
+        user_portfolio = portfolios_collection.find_one(
+            {"user_id": user_id, "data.stock_id": ticker},
+            {"data.$": 1}  # Fetch only the relevant stock data
+        )
+        
+        if not user_portfolio or not user_portfolio.get("data"):
+            logging.warning(f"SELL ORDER FAILED: {user_id} does not own stock {ticker}.")
+            return {"success": False, "error": "User does not own this stock."}
+        
+        #if no error continue
+        user_stock = user_portfolio["data"][0]  # Extract stock details
+        current_stock_balance = user_stock["quantity_owned"]
         
         if quantity > current_stock_balance:
-            logging.warning(f"SELL ORDER FAILED: {user_id} tried to sell {quantity} of {ticker}, but only has {current_stock_balance}.")
+            logging.warning(f"SELL ORDER FAILED: {user_id} tried to sell {quantity} of {stock_id}, but only has {current_stock_balance}.")
             return {"success": False, "error": "Insufficient stock balance"}
 
-        # Deduct stock from user’s balance
-        if not update_user_stock_balance(user_id, ticker, quantity):
-            return {"success": False, "error": "Failed to update stock balance"}
+    # Deduct stock from user's portfolio
+        result = portfolios_collection.update_one(
+            {"user_id": user_id, "data.stock_id": stock_id},
+            {"$inc": {"data.$.quantity_owned": -quantity}}
+        )
+        if result.matched_count == 0:
+            logging.error(f"SELL ORDER ERROR: Failed to update portfolio for {user_id}.")
+            return {"success": False, "error": "Portfolio update failed"}
+        
+         # Log sell order in `stock_transactions_collection`
+        stock_tx_id = str(uuid.uuid4())  # Unique transaction ID
+        stock_transactions_collection.insert_one({
+            "tx_id": stock_tx_id,
+            "user_id": user_id,
+            "stock_id": stock_id,   
+            "quantity": quantity,
+            "order_type": "SELL",
+            "price": price,
+            "status": "PENDING",
+            "timestamp": datetime.now().isoformat()
+        })
 
         # Add sell order to order book
-        if ticker not in self.sell_orders:
-            self.sell_orders[ticker] = []
+        if stock_id not in self.sell_orders:
+            self.sell_orders[stock_id] = []
         
-        self.sell_orders[ticker].append([user_id, price, quantity, datetime.now(), order_id]) #added order_id
-        self.sell_orders[ticker].sort(key=lambda x: (x[1], x[3]))  # Lowest price first, FIFO
+        self.sell_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id]) #added order_id
+        self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))  # Lowest price first, FIFO
 
-        logging.info(f"SELL ORDER: {user_id} listed {quantity} shares of {ticker} at {price}")
+        logging.info(f"SELL ORDER: {user_id} listed {quantity} shares of {stock_id} at {price}")
         return {"success": True, "message": "Sell order placed successfully"}
 
     def match_orders(self):
         """ Matches buy and sell orders using FIFO logic. Market orders execute immediately. """
         executed_trades = []
 
-        for ticker in list(self.sell_orders.keys()):  # Start with sell orders
-            while self.sell_orders.get(ticker) and self.buy_orders.get(ticker):
-                buyer_id, buy_price, buy_quantity, buy_time, buy_order_id, stock_id = self.buy_orders[ticker][0]
-                seller_id, sell_price, sell_quantity, sell_time, sell_order_id, stock_id = self.sell_orders[ticker][0]
+        for cur_stock in list(self.sell_orders.keys()):  # Start with sell orders
+            while self.sell_orders.get(cur_stock) and self.buy_orders.get(cur_stock):
+                buyer_id, buy_price, buy_quantity, buy_time, buy_order_id, stock_id = self.buy_orders[cur_stock][0]
+                seller_id, sell_price, sell_quantity, sell_time, sell_order_id, stock_id = self.sell_orders[cur_stock][0]
 
                 # MARKET ORDER: Buy at best available sell price
                 if buy_price is None:
@@ -289,32 +340,73 @@ class OrderBook:
 
                 traded_quantity = min(buy_quantity, sell_quantity)
                 trade_value = traded_quantity * sell_price  # Trade happens at sell price
-
-                executed_trades.append({
-                    "ticker": ticker,
+                
+                # Update seller's wallet (add money)
+                wallets_collection.update_one(
+                    {"user_id": seller_id},
+                    {"$inc": {"balance": trade_value}},  # Add the money to seller's balance
+                    upsert=True
+                )
+                
+                # Deduct from buyer's wallet
+                wallets_collection.update_one(
+                    {"user_id": buyer_id},
+                    {"$inc": {"balance": -trade_value}},  # Deduct money from buyer's balance
+                    upsert=True
+                )
+                
+                    # Add stock to buyer's portfolio
+                result = portfolios_collection.update_one(
+                    {"user_id": buyer_id, "data.stock_id": stock_id},
+                    {"$inc": {"data.$.quantity_owned": traded_quantity}},
+                    upsert=False
+                )
+                
+                if result.matched_count == 0:
+                    portfolios_collection.update_one(
+                        {"user_id": buyer_id},
+                        {"$push": {"data": {"stock_id": cur_stock, "quantity_owned": traded_quantity}}},
+                        upsert=True
+                    )
+                    
+                 # Log transaction in `stock_transactions_collection`
+                stock_tx_id = str(uuid.uuid4())  # Unique transaction ID
+                stock_transactions_collection.insert_one({
+                    "tx_id": stock_tx_id,
+                    "quantity": traded_quantity,
                     "buy_price": buy_price,
                     "sell_price": sell_price,
+                    "buyer_id": buyer_id,
+                    "seller_id": seller_id,
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "COMPLETED"
+                })
+
+                executed_trades.append({
+                    "tx_id": stock_tx_id,
                     "quantity": traded_quantity,
+                    "buy_price": buy_price,
+                    "sell_price": sell_price,
                     "buyer_id": buyer_id,
                     "seller_id": seller_id,
                     "timestamp": datetime.now().isoformat()
                 })
-                logging.info(f"MATCHED ORDER: {buyer_id} bought {traded_quantity} shares of {ticker} from {seller_id} at {sell_price}")
+                logging.info(f"MATCHED ORDER: {buyer_id} bought {traded_quantity} shares of {cur_stock} from {seller_id} at {sell_price}")
 
-                # Update wallet balances
-                self.update_wallet_balance(seller_id, trade_value)  # Seller receives money
-                self.update_wallet_balance(buyer_id, -trade_value)  # Buyer is charged
+                # # Update wallet balances
+                # self.update_wallet_balance(seller_id, trade_value)  # Seller receives money
+                # self.update_wallet_balance(buyer_id, -trade_value)  # Buyer is charged
 
                 # Adjust remaining quantities
                 if buy_quantity > traded_quantity:
-                    self.buy_orders[ticker][0][2] -= traded_quantity
+                    self.buy_orders[cur_stock][0][2] -= traded_quantity
                 else:
-                    self.buy_orders[ticker].pop(0)  # Remove fully matched buy order
+                    self.buy_orders[cur_stock].pop(0)  # Remove fully matched buy order
 
                 if sell_quantity > traded_quantity:
-                    self.sell_orders[ticker][0][2] -= traded_quantity
+                    self.sell_orders[cur_stock][0][2] -= traded_quantity
                 else:
-                    self.sell_orders[ticker].pop(0)  # Remove fully matched sell order
+                    self.sell_orders[cur_stock].pop(0)  # Remove fully matched sell order
 
         return executed_trades
     
