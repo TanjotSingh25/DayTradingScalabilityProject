@@ -80,8 +80,8 @@ services:
         volumes:
             - mongodb_data:/data/db
         environment:
-            MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: adminpassword
         networks:
             - backend
 
@@ -96,7 +96,7 @@ services:
         depends_on:
             - mongo
         environment:
-            - MONGO_URI=mongodb://mongo:27017/trading_system
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system
         networks:
             - backend
 
