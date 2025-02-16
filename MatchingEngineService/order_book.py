@@ -407,7 +407,7 @@ class OrderBook:
                 stock_transactions_collection.insert_one({
                     "stock_tx_id": stock_tx_id,
                     "parent_stock_tx_id": None,  # If this is a partial order, update later
-                    "stock_id": stock_id,
+                    "stock_id": cur_stock,
                     "wallet_tx_id": str(uuid4()),  # Generate a new wallet transaction ID
                     "quantity": traded_quantity,
                     "stock_price": sell_price,  # Aligning with API response field name
@@ -422,7 +422,7 @@ class OrderBook:
                 executed_trades.append({
                     "stock_tx_id": stock_tx_id,
                     "parent_stock_tx_id": None,  # Parent transaction reference (if applicable)
-                    "stock_id": stock_id,
+                    "stock_id": cur_stock,
                     "wallet_tx_id": str(uuid4()),  # Matching wallet transaction
                     "quantity": traded_quantity,
                     "stock_price": sell_price,
