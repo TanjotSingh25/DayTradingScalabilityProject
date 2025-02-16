@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from uuid import uuid4
 
+
 # Load environment variables
 load_dotenv()
 
