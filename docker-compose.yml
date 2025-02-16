@@ -22,6 +22,7 @@ services:
         depends_on:
             - db
         environment:
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
             - DB_HOST=db
             - DB_PORT=5432
             - DB_NAME=authdb
@@ -39,17 +40,6 @@ services:
             POSTGRES_PASSWORD: adminpassword
         volumes:
             - pgdata:/var/lib/postgresql/data
-        networks:
-            - backend
-
-    mongodb:
-        image: mongo:latest
-        environment:
-            MONGO_INITDB_DATABASE: authdb
-            MONGO_INITDB_ROOT_USERNAME: admin
-            MONGO_INITDB_ROOT_PASSWORD: adminpassword
-        volumes:
-            - mongodbdata:/data/db
         networks:
             - backend
 
@@ -89,6 +79,9 @@ services:
             - "27017:27017"
         volumes:
             - mongodb_data:/data/db
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
         networks:
             - backend
 
@@ -114,3 +107,4 @@ volumes:
     pgdata:
     mongodb_data:
     mongodbdata:
+

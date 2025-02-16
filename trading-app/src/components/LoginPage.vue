@@ -37,7 +37,7 @@ export default {
 
         localStorage.setItem("token", response.data.data.token);
         this.message = "Login successful!";
-        this.$router.push("/dashboard");
+        this.$router.push("/homepage");
       } catch (error) {
         this.message = "Invalid credentials. Try again.";
       }

@@ -9,8 +9,8 @@ from .models import Users
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  
-def register(request): 
+@permission_classes([AllowAny])
+def register(request):
     if request.method == 'POST':
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():

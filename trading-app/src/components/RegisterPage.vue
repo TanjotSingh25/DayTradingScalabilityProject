@@ -13,7 +13,6 @@
   
   <script>
   import axios from "axios";
-  const API_BASE_URL= process.env.VUE_APP_API_BASE_URL || "http://localhost/api/v1";
   export default {
     name: "RegisterPage",
     data() {
@@ -27,7 +26,7 @@
     methods: {
       async handleRegister() {
         try {
-          const response = await axios.post(`${API_BASE_URL}/auth/register/`, {
+          const response = await axios.post("http://localhost/api/v1/auth/register/", {
             user_name: this.user_name,
             password: this.password,
             name: this.name,
@@ -42,7 +41,7 @@
             if (error.response.status === 400 && error.response.data.message === "Username already exists") {
               this.message = "Username already exists";
             } else {
-                this.message = error.response.data?.message || "Error: Something went wrong.";
+                this.message = error.response.data?.message || `Error: ${error.response.status}`;
             }
           } else if (error.request) {
             this.message = "Error: Cannot reach backend";

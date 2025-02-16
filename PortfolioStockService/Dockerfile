@@ -7,13 +7,13 @@ FROM python:3.9
 WORKDIR /app
 
 # Copy only requirements.txt first (for better caching)
-COPY requirements.txt /app/
+COPY PortfolioStockService/requirements.txt /app/requirements.txt
 
 # Install dependencies
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application files into /app/
-COPY . /app/
+COPY . /app
 
 # Expose Flask port
 EXPOSE 5000
