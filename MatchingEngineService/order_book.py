@@ -19,9 +19,14 @@ logging.basicConfig(filename='matching_engine.log', level=logging.INFO,
 max_retries = 5
 retry_delay = 3  # seconds between retries
 
+MONGO_URI = os.getenv("MONGO_URI")
+
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI is not set. Make sure it's defined in docker-compose.yml.")
+
 for attempt in range(max_retries):
     try:
-        client = MongoClient(os.getenv("MONGO_URI", "mongodb://mongo:27017/trading_system"), serverSelectionTimeoutMS=5000)
+        client = MongoClient(os.getenv(MONGO_URI))
         db = client["trading_system"]
         wallets_collection = db["wallets"]
         portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized

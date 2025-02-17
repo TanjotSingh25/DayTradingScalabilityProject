@@ -1,38 +1,24 @@
 from flask import Flask, request, jsonify
 import helpers
 import os
-import time
-from datetime import datetime
-import logging
 from pymongo import MongoClient, errors
-from uuid import uuid4
 
 app = Flask(__name__)
 
-# MongoDB connection with retry mechanism
-max_retries = 5
-retry_delay = 3  # seconds between retries
+MONGO_URI = os.getenv("MONGO_URI")
 
-for attempt in range(max_retries):
-    try:
-        client = MongoClient(os.getenv("MONGO_URI", "mongodb://mongo:27017/trading_system"), serverSelectionTimeoutMS=5000)
-        db = client["trading_system"]
-        wallets_collection = db["wallets"]
-        portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized
-        stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI is not set. Make sure it's defined in docker-compose.yml.")
 
-        # Ensure necessary indexes for faster lookups
-        stock_transactions_collection.create_index("tx_id", unique=True)  # Use tx_id, not user_id
+try:
+    client = MongoClient(MONGO_URI)
+    db = client["trading_system"]
+    # MongoDB collections
+    wallet_transactions_collection = db["wallet_transactions"]
 
-        logging.info("MongoDB connection established successfully.")
-        break  # Exit the loop if connection is successful
-
-    except errors.ConnectionFailure:
-        logging.warning(f"MongoDB connection attempt {attempt + 1} failed. Retrying in {retry_delay} seconds...")
-        time.sleep(retry_delay)
-else:
-    logging.error("Failed to connect to MongoDB after multiple attempts. Exiting...")
-    raise RuntimeError("MongoDB connection failed after 5 retries.")
+except errors.ConnectionFailure:
+    print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
+    raise
 
 # Endpoint of the Matching Engine Service for order matching
 MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
