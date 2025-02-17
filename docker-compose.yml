@@ -42,7 +42,7 @@ services:
             - pgdata:/var/lib/postgresql/data
         networks:
             - backend
-
+            
     order_service:
         build:
             context: .
@@ -53,9 +53,11 @@ services:
             - "5200:5200"         # Expose Order Service on port 5200
         depends_on:
             - matching_engine_service
+            - mongo
         environment:
             - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
             - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system
         networks:
             - backend
 
@@ -67,6 +69,10 @@ services:
             - ./MatchingEngineService:/app
         ports:
             - "5300:5300"         # Expose Matching Engine on port 5300
+        depends_on:
+            - mongo
+        environment:
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system
         networks:
             - backend
 
