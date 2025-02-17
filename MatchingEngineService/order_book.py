@@ -26,7 +26,7 @@ if not MONGO_URI:
 
 for attempt in range(max_retries):
     try:
-        client = MongoClient(os.getenv(MONGO_URI))
+        client = MongoClient(MONGO_URI)
         db = client["trading_system"]
         wallets_collection = db["wallets"]
         portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized

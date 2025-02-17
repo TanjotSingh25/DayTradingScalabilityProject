@@ -59,7 +59,8 @@ services:
         environment:
             - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
             - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+
         networks:
             - backend
 
@@ -75,7 +76,7 @@ services:
             mongo:
                 condition: service_healthy
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
         networks:
             - backend
 
