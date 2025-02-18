@@ -37,7 +37,7 @@ except errors.ConnectionFailure:
 # Helper Function for User Identification (JWT Ready)
 # -----------------------
 
-JWT_SECRET = "ydjango-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#"
+JWT_SECRET = "django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#"
 JWT_ALGORITHM = "HS256"
 
 def get_user_id():
