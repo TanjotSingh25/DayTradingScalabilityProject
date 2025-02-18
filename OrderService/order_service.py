@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 import helpers
 import os
 from pymongo import MongoClient, errors
+import logging
+import requests
 
 app = Flask(__name__)
 
@@ -42,20 +44,23 @@ def place_stock_order():
     """
     # Grab the JSON body
     request_data = request.get_json()
-    # Sanity check
-    # 1 - Validate the order request
+    logging.info(request_data, "Printing Here-----------------------------------")
+    print(request_data, "Printing Here-----------------------------------")
+    # ------ Sanity check ------
+    # 1 - Decrypt & validate token
+    token = request.headers.get("Authorization")
+    token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
+    if "error" in token_decoded:
+        return jsonify({"success: false", token_decoded})
+    
+    # 2 - Validate the order request
     is_valid, validation_response = helpers.order_service_sanity_check(request_data)
     if not is_valid:
         # 412 Precondition Failed -- Erronouse field(s)
         return jsonify(validation_response), 412
 
-    # 2 - Decrypt & validate token
-    token = request_data.get("token")
-    success, token_payload = helpers.decrypt_and_validate_token(token, JWT_SECRET)
-    if not success:
-        return jsonify({"success": False, "error": token_payload["error"]}), 401
     # 3 -  verify user_name exists via postgreSQL
-    user_id = token_payload.get("user_id")
+    user_id = token_decoded.get("user_id")
     if not user_id:
         return jsonify({"success": False, "error": "No user_id in token"}), 400
 
@@ -67,7 +72,7 @@ def place_stock_order():
         "stock_id": request_data["stock_id"],
         "order_type": request_data["order_type"],
         "quantity": request_data["quantity"],
-        "price": request_data["price"],
+        "price": request_data.get("price"),
         
         # Set the Type 'Buy Market' or 'Sell Limit'
         "type": "MARKET" if request_data["is_buy"] else "LIMIT",
@@ -78,7 +83,7 @@ def place_stock_order():
 
     # Call the matching engine endpoint
     try:
-        response = request.post(MATCHING_ENGINE_URL, json=order_payload)
+        response = requests.post(MATCHING_ENGINE_URL, json=order_payload)
 
         # Check if response is successful (status code 200)
         if response.status_code == 200:
@@ -91,7 +96,7 @@ def place_stock_order():
         matching_result = {"error": f"Request failed: {str(e)}"}
 
     # Return the response from matching engine
-    return matching_result, response.status_code
+    return jsonify(matching_result), 200
 
 @app.route('/getStockTransactions', methods=['GET'])
 def get_stock_transactions():
@@ -126,12 +131,12 @@ def get_stock_transactions():
     request_data = request.get_json()
 
     # Validate and decrypt token
-    token = request_data.get("token")
-    success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
-    if not success:
-        return jsonify({"success": False, "error": token_payload["error"]}), 401
+    token = request.headers.get("Authorization")
+    token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
+    if "error" in token_decoded:
+        return jsonify({"success: false", token_decoded})
 
-    user_id = token_payload.get("user_id")
+    user_id = token_decoded.get("user_id")
     if not user_id:
         return jsonify({"success": False, "data": None, "message": "No User ID in token"}), 400
 
@@ -172,10 +177,10 @@ def cancel_stock_transaction():
     data = request.get_json()
 
     # Validate and decrypt token
-    token = data.get("token")
-    success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
-    if not success:
-        return jsonify({"success": False, "error": token_payload["error"]}), 401
+    token = request.headers.get("Authorization")
+    token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
+    if "error" in token_decoded:
+        return jsonify({"success: false", token_decoded})
 
     # Ensure stock transaction ID is provided
     stock_tx_id = data.get("stock_tx_id")
@@ -183,7 +188,7 @@ def cancel_stock_transaction():
         return jsonify({"success": False, "error": "Missing stock transaction ID"}), 400
 
     # Extract user details from token payload
-    user_id = token_payload.get("user_id")
+    user_id = token_decoded.get("user_id")
     if not user_id:
         return jsonify({"success": False, "error": "Missing user ID in token"}), 400
 
@@ -195,7 +200,7 @@ def cancel_stock_transaction():
 
     # Call the Matching Engine `/cancelOrder` endpoint
     try:
-        response = request.post(MATCHING_ENGINE_CANCELLATION_URL, json=cancellation_payload)
+        response = requests.post(MATCHING_ENGINE_CANCELLATION_URL, json=cancellation_payload)
 
         if response.status_code == 200:
             matching_result = response.json()

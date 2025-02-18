@@ -169,7 +169,7 @@ class OrderBook:
             remaining_qty -= trade_qty
             
             # Log partial fill with a new transaction record
-            partial_tx_id = str(uuid.uuid4())
+            partial_tx_id = str(uuid4())
             stock_transactions_collection.insert_one({
                 "stock_tx_id": partial_tx_id,
                 "parent_stock_tx_id": parent_tx_id if remaining_qty > 0 else None,
