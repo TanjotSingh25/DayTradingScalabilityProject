@@ -74,9 +74,6 @@ def place_stock_order():
         "quantity": request_data["quantity"],
         "price": request_data.get("price"),
         
-        # Set the Type 'Buy Market' or 'Sell Limit'
-        "type": "MARKET" if request_data["is_buy"] else "LIMIT",
-        
         # Place token information in payload
         "user_id": user_id
         }

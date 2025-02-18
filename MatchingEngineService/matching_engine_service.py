@@ -71,7 +71,7 @@ def cancel_order():
 
     # False = Trade already executed/Trade does no exist
     # True = Trade cancelled
-    data = request.get_json()
+    data = requests.get_json()
     result, reason = orderBookInst.cancel_user_order(data['user_id'], data['stock_tx_id'])
     
     return result, reason
