@@ -252,12 +252,15 @@ class GetWalletBalance(Resource):
             user_data = get_user_id()
             if "error" in user_data:
                 return {"success": False, "data": {"error": user_data["error"]}}, 401  # Unauthorized
-            user_id = user_data["user_id"]
-            wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
-            if not wallet:
-                return {"success": False, "data": {"error": "User wallet not found"}}, 404
 
-            return {"success": True, "data": {"balance": wallet["balance"]}}, 200
+            user_id = user_data["user_id"]
+            balance = 0  # Initialize balance to 0
+
+            wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
+            if wallet and "balance" in wallet:
+                balance = wallet["balance"]
+
+            return {"success": True, "data": {"balance": balance}}, 200
 
         except Exception as e:
             return {"success": False, "data": {"error": str(e)}}, 500
