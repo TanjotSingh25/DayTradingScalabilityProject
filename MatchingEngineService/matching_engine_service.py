@@ -36,7 +36,7 @@ def place_order():
     quantity = data.get("quantity")
     price = data.get("price")
     
-     # Ensure stock_id is safely extracted
+    # Ensure stock_id is safely extracted
     stock_id = data.get("stock_id", "")
 
     # if not user_id or not order_type or not ticker or quantity is None or price is None:

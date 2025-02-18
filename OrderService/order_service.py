@@ -7,6 +7,9 @@ app = Flask(__name__)
 
 MONGO_URI = os.getenv("MONGO_URI")
 
+JWT_SECRET = "django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#"
+JWT_ALGORITHM = "HS256"
+
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI is not set. Make sure it's defined in docker-compose.yml.")
 
@@ -14,7 +17,9 @@ try:
     client = MongoClient(MONGO_URI)
     db = client["trading_system"]
     # MongoDB collections
-    wallet_transactions_collection = db["wallet_transactions"]
+    wallet_transactions_collection = db["wallets"]
+    portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized
+    stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
 
 except errors.ConnectionFailure:
     print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
@@ -24,8 +29,8 @@ except errors.ConnectionFailure:
 MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
 MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
 
-secret_key = os.environ.get("SECRET_KEY")
-print("The Secret key is: ", secret_key, "In file Order_service")
+#secret_key = os.environ.get("SECRET_KEY")
+#print("The Secret key is: ", secret_key, "In file Order_service")
 
 # Place new order -- Market Buy, Limit Sell
 # TODO: Process order details, communicate with matching engine, store in Orders table, etc.
@@ -46,7 +51,7 @@ def place_stock_order():
 
     # 2 - Decrypt & validate token
     token = request_data.get("token")
-    success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
+    success, token_payload = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if not success:
         return jsonify({"success": False, "error": token_payload["error"]}), 401
     # 3 -  verify user_name exists via postgreSQL
@@ -203,63 +208,63 @@ def cancel_stock_transaction():
 
 
 
-@app.route('/getWalletTransactions', methods=['POST'])
-def get_wallet_transactions():
-    """
-    Accepts JSON input:
-    { "token": "user1Token" }
+# @app.route('/getWalletTransactions', methods=['POST'])
+# def get_wallet_transactions():
+#     """
+#     Accepts JSON input:
+#     { "token": "user1Token" }
 
-    Returns user's wallet transactions in the expected format:
-    {
-        "success": true,
-        "data": [
-            {
-                "wallet_tx_id": "<googleWalletTxId>",
-                "stock_tx_id": "<googleStockTxId>",
-                "is_debit": true,
-                "amount": 1350,
-                "time_stamp": "<timestamp>"
-            }
-        ]
-    }
-    """
+#     Returns user's wallet transactions in the expected format:
+#     {
+#         "success": true,
+#         "data": [
+#             {
+#                 "wallet_tx_id": "<googleWalletTxId>",
+#                 "stock_tx_id": "<googleStockTxId>",
+#                 "is_debit": true,
+#                 "amount": 1350,
+#                 "time_stamp": "<timestamp>"
+#             }
+#         ]
+#     }
+#     """
 
-    # Get request JSON data
-    data = request.get_json()
+#     # Get request JSON data
+#     data = request.get_json()
     
-    # Extract token from request
-    token = data.get("token")
-    if not token:
-        return jsonify({"success": False, "error": "Missing token"}), 400
+#     # Extract token from request
+#     token = data.get("token")
+#     if not token:
+#         return jsonify({"success": False, "error": "Missing token"}), 400
 
-    # Validate and decrypt token
-    success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
-    if not success:
-        return jsonify({"success": False, "error": token_payload["error"]}), 401
+#     # Validate and decrypt token
+#     success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
+#     if not success:
+#         return jsonify({"success": False, "error": token_payload["error"]}), 401
 
-    # Extract user_id from decrypted token
-    user_id = token_payload.get("user_id")
-    if not user_id:
-        return jsonify({"success": False, "error": "Invalid token: Missing user ID"}), 400
+#     # Extract user_id from decrypted token
+#     user_id = token_payload.get("user_id")
+#     if not user_id:
+#         return jsonify({"success": False, "error": "Invalid token: Missing user ID"}), 400
 
-    # Query MongoDB for wallet transactions
-    transactions_cursor = wallet_transactions_collection.find({"user_id": user_id})
+#     # Query MongoDB for wallet transactions
+#     transactions_cursor = wallet_transactions_collection.find({"user_id": user_id})
 
-    # Build response data
-    wallet_transactions = []
-    for doc in transactions_cursor:
-        wallet_transactions.append({
-            "wallet_tx_id": str(doc.get("wallet_tx_id")),
-            "stock_tx_id": str(doc.get("stock_tx_id")) if doc.get("stock_tx_id") else None,
-            "is_debit": doc.get("is_debit", False),
-            "amount": doc.get("amount", 0),
-            "time_stamp": doc.get("time_stamp") or doc.get("created_at") or datetime.now().isoformat()
-        })
+#     # Build response data
+#     wallet_transactions = []
+#     for doc in transactions_cursor:
+#         wallet_transactions.append({
+#             "wallet_tx_id": str(doc.get("wallet_tx_id")),
+#             "stock_tx_id": str(doc.get("stock_tx_id")) if doc.get("stock_tx_id") else None,
+#             "is_debit": doc.get("is_debit", False),
+#             "amount": doc.get("amount", 0),
+#             "time_stamp": doc.get("time_stamp") or doc.get("created_at") or datetime.now().isoformat()
+#         })
 
-    return jsonify({
-        "success": True,
-        "data": wallet_transactions
-    }), 200
+#     return jsonify({
+#         "success": True,
+#         "data": wallet_transactions
+#     }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5200)
