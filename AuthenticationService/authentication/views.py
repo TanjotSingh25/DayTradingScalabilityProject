@@ -20,7 +20,7 @@ def register(request):
 
             if Users.objects.filter(user_name=user_name).exists():
                 return Response(
-                    {"success": False, "data": None, "message": "Username already exists"},
+                    {"success": False, "data": {"error": "Username already exists"}},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -33,11 +33,11 @@ def register(request):
                 )
             except Exception as e:
                 return Response(
-                    {"success": False, "data": None, "message": str(e)},
+                    {"success": False, "data": {"error": str(e)} },
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         return Response(
-            {"success": False, "data": None, "message": "Invalid data"},
+            {"success": False, "data": {"error": "Invalid data"}},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -60,10 +60,30 @@ def login(request):
         else:
             return Response({
                 'success': False,
-                'message': 'Invalid password'
+                'data': {'error': 'Invalid password'}
             }, status=status.HTTP_401_UNAUTHORIZED)
     except Users.DoesNotExist:
         return Response({
             'success': False,
-            'message': 'User not found'
+            'data': {'error': 'User not found'}
         }, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+def delete(request, user_name):
+    try:
+        user = Users.objects.get(user_name=user_name)
+        user.delete()
+        return Response(
+            {"success": True, "data": None},
+            status=status.HTTP_204_NO_CONTENT
+        )
+    except Users.DoesNotExist:
+        return Response(
+            {"success": False, "data": {"error": "User not found"}},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {"success": False, "data": {"error": str(e)}},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
