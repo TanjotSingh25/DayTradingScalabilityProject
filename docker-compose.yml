@@ -102,7 +102,6 @@ services:
             timeout: 5s
             retries: 5
 
-    # Added PortfolioStockService microservice
     portfolio_stock_service:
         build:
             context: ./PortfolioStockService

@@ -49,7 +49,7 @@ def place_stock_order():
     print(request_data, "Printing Here-----------------------------------")
     # ------ Sanity check ------
     # 1 - Decrypt & validate token
-    token = request.headers.get("Authorization")
+    token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
         return jsonify({"success: false", token_decoded})
@@ -136,7 +136,7 @@ def get_stock_transactions():
     request_data = request.get_json()
 
     # Validate and decrypt token
-    token = request.headers.get("Authorization")
+    token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
         return jsonify({"success: false", token_decoded})
@@ -183,14 +183,12 @@ def cancel_stock_transaction():
     data = request.get_json() or {}
 
     # Extract token from Authorization header, expecting "Bearer <token>"
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header.split(" ")[1]
-    else:
-        return jsonify({"success": False, "error": "Missing or invalid Authorization header"}), 401
+    token_header = request.headers.get("token", "")
+    if not token_header:
+        return jsonify({"success": False, "error": "Missing token header"}), 401
 
     # Validate and decrypt token using JWT_SECRET
-    token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
+    token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
     if not token_decoded.get("success", False):
         error_msg = token_decoded.get("error", "Token validation failed")
         return jsonify({"success": False, "error": error_msg}), 401

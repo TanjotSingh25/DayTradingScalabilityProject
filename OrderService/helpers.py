@@ -59,10 +59,10 @@ def decrypt_and_validate_token(encrypted_message, secret_key):
     Returns (bool, dict) => (True/False, token_attributes or error).
     """
 
-    if not encrypted_message or not encrypted_message.startswith("Bearer "):
-        return {"error": "Missing or invalid Authorization header"}
+    if not encrypted_message:# or not encrypted_message.startswith("Bearer "):
+        return {"error": "Missing or invalid token header"}
 
-    token = encrypted_message.split(" ")[1]  # Extract token
+    token = encrypted_message#.split(" ")[1]  # Extract token
 
     try:
         # Decode the JWT token
