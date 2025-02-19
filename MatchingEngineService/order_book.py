@@ -265,18 +265,18 @@ class OrderBook:
             if user_portfolio and "data" in user_portfolio and len(user_portfolio["data"]) > 0:
                 return user_portfolio["data"][0]["quantity_owned"]  # Extract stock quantity
             
-            return False  # User does not own this stock
+            return 0  # User does not own this stock
 
         except Exception as e:
             logging.error(f"Error fetching stock balance for {user_id}, {stock_id}: {e}")
-            return False
+            return 0
 
     def update_user_stock_balance(user_id, stock_id, quantity):
         """Subtracts stock quantity from the user's holdings after placing a sell order."""
         try:
             result = portfolios_collection.update_one(
                 {"user_id": user_id, "data.stock_id": stock_id},
-                {"$inc": {"data.$.quantity_owned": -quantity}}  # Decrease stock quantity
+                {"$inc": {"data.$.quantity_owned": quantity}}  # Decrease stock quantity
             )
 
             if result.matched_count == 0:
@@ -290,68 +290,121 @@ class OrderBook:
             logging.error(f"Error updating stock balance for {user_id}, {stock_id}: {e}")
             return False
 
+    # def add_sell_order(self, user_id, order_id, stock_id, price, quantity):
+    #     """ Adds a sell order only if the user has enough stock balance. """
+
+    #     # Check if user has enough stock in MongoDB
+    #     stock_balance = self.get_user_stock_balance(user_id, stock_id)
+        
+    #     # Check if user has enough stock in MongoDB
+    #     # user_portfolio = portfolios_collection.find_one(
+    #     #     {"user_id": user_id, "data.stock_id": ticker},
+    #     #     {"data.$": 1}  # Fetch only the relevant stock data
+    #     # )
+        
+    #     if not stock_balance or not stock_balance.get("data"):
+    #         logging.warning(f"SELL ORDER FAILED: {user_id} does not own stock {stock_id}.")
+    #         return {"success": False, "error": "User does not own this stock."}
+        
+    #     #if no error continue
+    #     user_stock = stock_balance["data"][0]  # Extract stock details
+    #     curr_stock_balance = user_stock["quantity_owned"]
+        
+    #     if quantity > curr_stock_balance:
+    #         logging.warning(f"SELL ORDER FAILED: {user_id} tried to sell {quantity} of {stock_id}, but only has {curr_stock_balance}.")
+    #         return {"success": False, "error": "Insufficient stock balance"}
+
+    # # Deduct stock from user's portfolio
+    #     # result = portfolios_collection.update_one(
+    #     #     {"user_id": user_id, "data.stock_id": stock_id},
+    #     #     {"$inc": {"data.$.quantity_owned": -quantity}}
+    #     # )
+        
+    #     # Replace direct MongoDB update call with method call
+    #     result = self.update_user_stock_balance(user_id, stock_id, -quantity)
+        
+        
+    #     if result.matched_count == 0:
+    #         logging.error(f"SELL ORDER ERROR: Failed to update portfolio for {user_id}.")
+    #         return {"success": False, "error": "Portfolio update failed"}
+        
+    # # Log sell order in `stock_transactions_collection`
+    #     stock_tx_id = str(uuid4())  # Unique transaction ID
+    #     wallet_tx_id = None  # No wallet transaction ID at this stage
+
+    #     stock_transactions_collection.insert_one({
+    #         "stock_tx_id": stock_tx_id,  # Unique transaction ID
+    #         "parent_stock_tx_id": None,  # Initial transaction, no parent
+    #         "stock_id": stock_id,
+    #         "wallet_tx_id": wallet_tx_id,  # No wallet transaction for a limit order yet
+    #         "user_id": user_id,
+    #         "order_status": "IN_PROGRESS",  # Updated to match API response
+    #         "is_buy": False,  # Sell order
+    #         "order_type": "LIMIT",  # Ensure it's stored correctly
+    #         "stock_price": price,  # Renamed to match API response
+    #         "quantity": quantity,  # Ensure quantity is correctly stored
+    #         "time_stamp": datetime.now().isoformat()  # Renamed for consistency
+    #     })
+
+    #     # Add sell order to order book
+    #     if stock_id not in self.sell_orders:
+    #         self.sell_orders[stock_id] = []
+        
+    #     self.sell_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id]) #added order_id
+    #     self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))  # Lowest price first, FIFO
+
+    #     logging.info(f"SELL ORDER: {user_id} listed {quantity} shares of {stock_id} at {price}")
+    #     return {"success": True, "message": "Sell order placed successfully"}
     def add_sell_order(self, user_id, order_id, stock_id, price, quantity):
         """ Adds a sell order only if the user has enough stock balance. """
 
-        # Check if user has enough stock in MongoDB
+        # Get the user's stock balance (returns an integer)
         stock_balance = self.get_user_stock_balance(user_id, stock_id)
-        
-        # Check if user has enough stock in MongoDB
-        # user_portfolio = portfolios_collection.find_one(
-        #     {"user_id": user_id, "data.stock_id": ticker},
-        #     {"data.$": 1}  # Fetch only the relevant stock data
-        # )
-        
-        if not stock_balance or not stock_balance.get("data"):
+
+        # Ensure user has enough stock
+        if stock_balance <= 0:
             logging.warning(f"SELL ORDER FAILED: {user_id} does not own stock {stock_id}.")
             return {"success": False, "error": "User does not own this stock."}
-        
-        #if no error continue
-        user_stock = stock_balance["data"][0]  # Extract stock details
-        curr_stock_balance = user_stock["quantity_owned"]
-        
-        if quantity > curr_stock_balance:
-            logging.warning(f"SELL ORDER FAILED: {user_id} tried to sell {quantity} of {stock_id}, but only has {curr_stock_balance}.")
-            return {"success": False, "error": "Insufficient stock balance"}
 
-    # Deduct stock from user's portfolio
-        # result = portfolios_collection.update_one(
-        #     {"user_id": user_id, "data.stock_id": stock_id},
-        #     {"$inc": {"data.$.quantity_owned": -quantity}}
-        # )
-        
-        # Replace direct MongoDB update call with method call
+        # Amount you want to sell is more than the amount you want to sell
+        if quantity > stock_balance:
+            logging.warning(f"SELL ORDER FAILED: {user_id} tried to sell {quantity} of {stock_id}, but only has {stock_balance}.")
+            return {"success": False, "error": "Insufficient stock balance."}
+
+        # Deduct stock from user's portfolio
         result = self.update_user_stock_balance(user_id, stock_id, -quantity)
-        
-        
-        if result.matched_count == 0:
+
+        if not result:  # Ensure the update succeeded
             logging.error(f"SELL ORDER ERROR: Failed to update portfolio for {user_id}.")
-            return {"success": False, "error": "Portfolio update failed"}
-        
-    # Log sell order in `stock_transactions_collection`
-        stock_tx_id = str(uuid4())  # Unique transaction ID
-        wallet_tx_id = None  # No wallet transaction ID at this stage
+            return {"success": False, "error": "Portfolio update failed."}
 
-        stock_transactions_collection.insert_one({
-            "stock_tx_id": stock_tx_id,  # Unique transaction ID
-            "parent_stock_tx_id": None,  # Initial transaction, no parent
-            "stock_id": stock_id,
-            "wallet_tx_id": wallet_tx_id,  # No wallet transaction for a limit order yet
-            "user_id": user_id,
-            "order_status": "IN_PROGRESS",  # Updated to match API response
-            "is_buy": False,  # Sell order
-            "order_type": "LIMIT",  # Ensure it's stored correctly
-            "stock_price": price,  # Renamed to match API response
-            "quantity": quantity,  # Ensure quantity is correctly stored
-            "time_stamp": datetime.now().isoformat()  # Renamed for consistency
-        })
+        # Insert order into stock_transactions_collection
+        try:
+            stock_transactions_collection.insert_one({
+                "stock_tx_id": order_id,
+                "parent_stock_tx_id": None,
+                "stock_id": stock_id,
+                "wallet_tx_id": str(uuid4),  # No wallet transaction for a limit order yet
+                "user_id": user_id,
+                "order_status": "IN_PROGRESS",
+                "is_buy": False,
+                "order_type": "LIMIT",
+                "stock_price": price,
+                "quantity": quantity,
+                "time_stamp": datetime.now().isoformat()
+            })
+        except errors.DuplicateKeyError:
+            logging.error(f"DUPLICATE KEY ERROR: stock_tx_id={order_id} already exists. Retrying...")
+            return {"success": False, "error": "Duplicate stock transaction ID. Try again."}
 
-        # Add sell order to order book
+        # Add the sell order to in-memory order book
         if stock_id not in self.sell_orders:
             self.sell_orders[stock_id] = []
-        
-        self.sell_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id]) #added order_id
-        self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))  # Lowest price first, FIFO
+
+        self.sell_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
+
+        # Ensure orders are sorted (Lowest price first, FIFO for equal prices)
+        self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))
 
         logging.info(f"SELL ORDER: {user_id} listed {quantity} shares of {stock_id} at {price}")
         return {"success": True, "message": "Sell order placed successfully"}
