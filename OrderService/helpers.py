@@ -1,15 +1,8 @@
-import uuid
 import re
 import jwt
 import time
 
 # SECRET_KEY = env("SECRET_KEY")
-
-def generate_order_id():
-    """
-    Creates a unique identifier for a new order.
-    """
-    return str(uuid.uuid4())
 
 def order_service_sanity_check(message):
     """

@@ -91,7 +91,7 @@ class OrderBook:
         #     logging.warning(f"BUY ORDER REJECTED: Limit buy not allowed for {user_id}")
         #     return {"success": False, "error": "Only market buy orders are allowed"}
         
-   # Generate unique transaction IDs
+    # Generate unique transaction IDs
         parent_tx_id = order_id  # Use order_id as the main stock transaction ID
         wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
 
@@ -254,7 +254,7 @@ class OrderBook:
         logging.info(f"Queued leftover market buy for {user_id}: {quantity} shares of {stock_id}")
 
     # gets the stock info from the portflio collectoion in the db mongo
-    def get_user_stock_balance(user_id, stock_id):
+    def get_user_stock_balance(self, user_id, stock_id):
         """Fetches the user's stock balance for a given stock_id from MongoDB portfolios collection."""
         try:
             user_portfolio = portfolios_collection.find_one(
@@ -265,11 +265,11 @@ class OrderBook:
             if user_portfolio and "data" in user_portfolio and len(user_portfolio["data"]) > 0:
                 return user_portfolio["data"][0]["quantity_owned"]  # Extract stock quantity
             
-            return 0  # User does not own this stock
+            return False  # User does not own this stock
 
         except Exception as e:
             logging.error(f"Error fetching stock balance for {user_id}, {stock_id}: {e}")
-            return 0
+            return False
 
     def update_user_stock_balance(user_id, stock_id, quantity):
         """Subtracts stock quantity from the user's holdings after placing a sell order."""
