@@ -48,11 +48,11 @@ def get_user_id():
     - Returns an error message if token is missing or invalid.
     """
 
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return {"error": "Missing or invalid Authorization header"}
+    token_header = request.headers.get("token")
+    if not token_header:#auth_header or not auth_header.startswith("Bearer "):
+        return {"error": "Missing token header"}
 
-    token = auth_header.split(" ")[1]  # Extract token
+    token = token_header#auth_header.split(" ")[1]  # Extract token
 
     try:
         # Decode the JWT token

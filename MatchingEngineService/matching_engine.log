@@ -52,3 +52,222 @@
  * Running on http://127.0.0.1:5300
  * Running on http://172.22.0.6:5300
 2025-02-18 23:27:12,859 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 00:13:20,867 - INFO - MongoDB connection established successfully.
+2025-02-19 00:13:20,898 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-19 00:13:20,899 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 01:09:21,163 - INFO - MongoDB connection established successfully.
+2025-02-19 01:09:21,180 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-19 01:09:21,180 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 02:01:10,318 - INFO - MongoDB connection established successfully.
+2025-02-19 02:01:10,331 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 02:01:10,331 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 02:18:52,116 - INFO - MongoDB connection established successfully.
+2025-02-19 02:18:52,169 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-19 02:18:52,173 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 02:32:21,773 - INFO - MongoDB connection established successfully.
+2025-02-19 02:32:21,798 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-19 02:32:21,798 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 03:02:28,021 - INFO - MongoDB connection established successfully.
+2025-02-19 03:02:28,079 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 03:02:28,080 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 03:06:43,674 - INFO - MongoDB connection established successfully.
+2025-02-19 03:06:43,698 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 03:06:43,699 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 03:27:19,120 - INFO - MongoDB connection established successfully.
+2025-02-19 03:27:19,295 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 03:27:19,297 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 03:32:21,306 - INFO - MongoDB connection established successfully.
+2025-02-19 03:32:21,367 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 03:32:21,369 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 03:51:29,803 - INFO - MongoDB connection established successfully.
+2025-02-19 03:51:29,833 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 03:51:29,834 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 04:13:09,447 - INFO - MongoDB connection established successfully.
+2025-02-19 04:13:09,462 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-19 04:13:09,462 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 04:26:42,153 - INFO - MongoDB connection established successfully.
+2025-02-19 04:26:42,160 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-19 04:26:42,160 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 05:04:42,676 - INFO - MongoDB connection established successfully.
+2025-02-19 05:04:42,712 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 05:04:42,718 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 05:16:28,282 - INFO - MongoDB connection established successfully.
+2025-02-19 05:16:28,306 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 05:16:28,307 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 05:20:15,568 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:20:15,570 - INFO - 172.22.0.7 - - [19/Feb/2025 05:20:15] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:21:05,075 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:21:05,077 - INFO - 172.22.0.7 - - [19/Feb/2025 05:21:05] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:21:36,613 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:21:36,615 - INFO - 172.22.0.7 - - [19/Feb/2025 05:21:36] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:22:08,691 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:22:08,694 - INFO - 172.22.0.7 - - [19/Feb/2025 05:22:08] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:32:29,493 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:32:29,495 - INFO - 172.22.0.7 - - [19/Feb/2025 05:32:29] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:35:38,284 - INFO - MongoDB connection established successfully.
+2025-02-19 05:35:38,310 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-19 05:35:38,313 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 05:37:00,607 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:37:00,610 - INFO - 172.22.0.7 - - [19/Feb/2025 05:37:00] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:39:20,035 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:39:20,037 - INFO - 172.22.0.7 - - [19/Feb/2025 05:39:20] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:46:14,815 - INFO - MongoDB connection established successfully.
+2025-02-19 05:46:14,829 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-19 05:46:14,836 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-19 05:47:29,280 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:47:29,282 - INFO - 172.22.0.7 - - [19/Feb/2025 05:47:29] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:48:05,893 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:48:05,895 - INFO - 172.22.0.7 - - [19/Feb/2025 05:48:05] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 05:57:16,772 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 05:57:16,775 - INFO - 172.22.0.7 - - [19/Feb/2025 05:57:16] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 06:32:09,497 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 06:32:09,505 - INFO - 172.22.0.7 - - [19/Feb/2025 06:32:09] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 06:32:10,021 - ERROR - Error processing order:
+Traceback (most recent call last):
+  File "/app/matching_engine_service.py", line 51, in place_order
+    result = orderBookInst.add_sell_order(user_id, order_id, stock_id, price, quantity)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/order_book.py", line 297, in add_sell_order
+    stock_balance = self.get_user_stock_balance(user_id, stock_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OrderBook.get_user_stock_balance() takes 2 positional arguments but 3 were given
+2025-02-19 06:32:10,024 - INFO - 172.22.0.7 - - [19/Feb/2025 06:32:10] "[35m[1mPOST /placeOrder HTTP/1.1[0m" 500 -
+2025-02-19 06:32:15,027 - INFO - Queued leftover market buy for 24: 10 shares of f34d3172-1fa9-43bf-a370-e1afda1a43ff
+2025-02-19 06:32:15,028 - WARNING - BUY MARKET ORDER: No sellers. Queued 10 shares for 24.
+2025-02-19 06:32:15,028 - INFO - 172.22.0.7 - - [19/Feb/2025 06:32:15] "POST /placeOrder HTTP/1.1" 200 -

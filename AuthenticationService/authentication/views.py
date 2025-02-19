@@ -61,12 +61,12 @@ def login(request):
             return Response({
                 'success': False,
                 'data': {'error': 'Invalid password'}
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            }, status=status.HTTP_400_BAD_REQUEST)
     except Users.DoesNotExist:
         return Response({
             'success': False,
             'data': {'error': 'User not found'}
-        }, status=status.HTTP_404_NOT_FOUND)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
 def delete(request, user_name):
@@ -75,7 +75,7 @@ def delete(request, user_name):
         user.delete()
         return Response(
             {"success": True, "data": None},
-            status=status.HTTP_204_NO_CONTENT
+            status=status.HTTP_200_OK
         )
     except Users.DoesNotExist:
         return Response(

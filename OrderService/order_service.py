@@ -48,7 +48,7 @@ def place_stock_order():
     print(request_data, "Printing Here-----------------------------------")
     # ------ Sanity check ------
     # 1 - Decrypt & validate token
-    token = request.headers.get("Authorization")
+    token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
         return jsonify({"success: false", token_decoded})
@@ -87,7 +87,7 @@ def place_stock_order():
             matching_result = response.json()
             return matching_result, 200
         else:
-            matching_result = {"error": f"Matching engine responded with status {response.status_code}"}
+            matching_result = {"error": f"Matching engine responded with status {response}, order payload: {order_payload}"}
 
     except Exception as e:
         matching_result = {"error": f"Request failed: {str(e)}"}
@@ -128,7 +128,7 @@ def get_stock_transactions():
     request_data = request.get_json()
 
     # Validate and decrypt token
-    token = request.headers.get("Authorization")
+    token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
         return jsonify({"success: false", token_decoded})
