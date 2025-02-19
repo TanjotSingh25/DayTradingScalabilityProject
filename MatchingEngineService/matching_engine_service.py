@@ -71,10 +71,14 @@ def cancel_order():
 
     # False = Trade already executed/Trade does no exist
     # True = Trade cancelled
-    data = requests.get_json()
+    data = request.get_json()
     result, reason = orderBookInst.cancel_user_order(data['user_id'], data['stock_tx_id'])
     
-    return result, reason
+    code = 400
+    if result:
+        code = 200
+
+    return {"success" : result, "data": reason}, 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5300)

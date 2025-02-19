@@ -2,8 +2,9 @@ from flask import Flask, request, jsonify
 import helpers
 import os
 from pymongo import MongoClient, errors
-import logging
+import logging as logger
 import requests
+import uuid
 
 app = Flask(__name__)
 
@@ -44,7 +45,7 @@ def place_stock_order():
     """
     # Grab the JSON body
     request_data = request.get_json()
-    logging.info(request_data, "Printing Here-----------------------------------")
+    logger.info(request_data, "Printing Here-----------------------------------")
     print(request_data, "Printing Here-----------------------------------")
     # ------ Sanity check ------
     # 1 - Decrypt & validate token
@@ -65,8 +66,8 @@ def place_stock_order():
         return jsonify({"success": False, "error": "No user_id in token"}), 400
 
     order_payload = {
-        # Generate Order_ID
-        "order_id": helpers.generate_order_id(),
+        # Generate Order_ID -- str makes uuid mutable
+        "order_id": str(uuid.uuid4()),
         
         # Set information to pass to Matching Engine
         "stock_id": request_data["stock_id"],
@@ -77,6 +78,13 @@ def place_stock_order():
         # Place token information in payload
         "user_id": user_id
         }
+
+    # if buy then set first 4 bytes to BUYS, and if sell, set first 4 bytes to SELL
+    if request_data["is_buy"]:
+        order_payload["order_id"] = "BUYS" + order_payload["order_id"][4:]
+    else:
+        order_payload["order_id"] = "SELL" + order_payload["order_id"][4:]
+    logger.warning(order_payload["order_id"])
 
     # Call the matching engine endpoint
     try:
@@ -171,15 +179,23 @@ def cancel_stock_transaction():
 
     Calls the Matching Engine to cancel the stock order.
     """
-    data = request.get_json()
+    # Parse JSON body
+    data = request.get_json() or {}
 
-    # Validate and decrypt token
-    token = request.headers.get("Authorization")
+    # Extract token from Authorization header, expecting "Bearer <token>"
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+    else:
+        return jsonify({"success": False, "error": "Missing or invalid Authorization header"}), 401
+
+    # Validate and decrypt token using JWT_SECRET
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
-    if "error" in token_decoded:
-        return jsonify({"success: false", token_decoded})
+    if not token_decoded.get("success", False):
+        error_msg = token_decoded.get("error", "Token validation failed")
+        return jsonify({"success": False, "error": error_msg}), 401
 
-    # Ensure stock transaction ID is provided
+    # Ensure stock transaction ID is provided in the JSON body
     stock_tx_id = data.get("stock_tx_id")
     if not stock_tx_id:
         return jsonify({"success": False, "error": "Missing stock transaction ID"}), 400
@@ -189,22 +205,24 @@ def cancel_stock_transaction():
     if not user_id:
         return jsonify({"success": False, "error": "Missing user ID in token"}), 400
 
-    # Prepare cancellation payload
+    # Prepare cancellation payload for the Matching Engine
     cancellation_payload = {
         "user_id": user_id,
         "stock_tx_id": stock_tx_id
     }
 
-    # Call the Matching Engine `/cancelOrder` endpoint
+    # Call the Matching Engine /cancelOrder endpoint
     try:
         response = requests.post(MATCHING_ENGINE_CANCELLATION_URL, json=cancellation_payload)
-
         if response.status_code == 200:
             matching_result = response.json()
+            code = 200
         else:
-            matching_result, code = {"success": False, "error": "Matching Engine error"}, response.status_code
+            matching_result = {"success": False, "error": "Matching Engine error"}
+            code = response.status_code
     except Exception as e:
-        matching_result, code = {"success": False, "error": str(e)}, 500
+        matching_result = {"success": False, "error": str(e)}
+        code = 500
 
     return jsonify(matching_result), code
 
