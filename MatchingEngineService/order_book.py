@@ -33,7 +33,7 @@ for attempt in range(max_retries):
         stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
 
         # Ensure necessary indexes for faster lookups
-        stock_transactions_collection.create_index("tx_id", unique=True)  # Use tx_id, not user_id
+        stock_transactions_collection.create_index("stock_tx_id", unique=True)
 
         logging.info("MongoDB connection established successfully.")
         break  # Exit the loop if connection is successful
@@ -66,7 +66,10 @@ class OrderBook:
         try:
             wallets_collection.update_one(
                 {"user_id": user_id},
-                {"$inc": {"balance": amount}},  # Deducts if negative, adds if positive
+                {
+                    "$inc": {"balance": amount},
+                    "$setOnInsert": {"balance": 0}
+                },
                 upsert=True
             )
             logging.info(f"Updated wallet balance for {user_id} by {amount}")
@@ -92,7 +95,7 @@ class OrderBook:
         #     return {"success": False, "error": "Only market buy orders are allowed"}
         
     # Generate unique transaction IDs
-        parent_tx_id = order_id  # Use order_id as the main stock transaction ID
+        parent_tx_id = str(uuid4())  # Use order_id as the main stock transaction ID
         wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
 
         stock_transactions_collection.insert_one({
@@ -220,7 +223,7 @@ class OrderBook:
             
         # Update parent transaction record with final status and remaining quantity
         stock_transactions_collection.update_one(
-            {"tx_id": parent_tx_id},
+            {"stock_tx_id": parent_tx_id},
             {"$set": {"remaining_quantity": remaining_qty, "status": order_status}}
         )
 
@@ -271,7 +274,7 @@ class OrderBook:
             logging.error(f"Error fetching stock balance for {user_id}, {stock_id}: {e}")
             return 0
 
-    def update_user_stock_balance(user_id, stock_id, quantity):
+    def update_user_stock_balance(self, user_id, stock_id, quantity):
         """Subtracts stock quantity from the user's holdings after placing a sell order."""
         try:
             result = portfolios_collection.update_one(
@@ -381,7 +384,7 @@ class OrderBook:
         # Insert order into stock_transactions_collection
         try:
             stock_transactions_collection.insert_one({
-                "stock_tx_id": order_id,
+                "stock_tx_id": str(uuid4()),
                 "parent_stock_tx_id": None,
                 "stock_id": stock_id,
                 "wallet_tx_id": str(uuid4),  # No wallet transaction for a limit order yet
