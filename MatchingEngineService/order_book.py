@@ -265,11 +265,11 @@ class OrderBook:
             if user_portfolio and "data" in user_portfolio and len(user_portfolio["data"]) > 0:
                 return user_portfolio["data"][0]["quantity_owned"]  # Extract stock quantity
             
-            return False  # User does not own this stock
+            return 0  # User does not own this stock
 
         except Exception as e:
             logging.error(f"Error fetching stock balance for {user_id}, {stock_id}: {e}")
-            return False
+            return 0
 
     def update_user_stock_balance(user_id, stock_id, quantity):
         """Subtracts stock quantity from the user's holdings after placing a sell order."""
