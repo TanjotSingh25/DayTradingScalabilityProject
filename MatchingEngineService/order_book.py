@@ -387,7 +387,7 @@ class OrderBook:
                 "stock_tx_id": str(uuid4()),
                 "parent_stock_tx_id": None,
                 "stock_id": stock_id,
-                "wallet_tx_id": str(uuid4),  # No wallet transaction for a limit order yet
+                "wallet_tx_id": str(uuid4()),  # No wallet transaction for a limit order yet
                 "user_id": user_id,
                 "order_status": "IN_PROGRESS",
                 "is_buy": False,
