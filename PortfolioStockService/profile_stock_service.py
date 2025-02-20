@@ -230,6 +230,46 @@ class GetWalletBalance(Resource):
 
         except Exception as e:
             return {"success": False, "data": {"error": str(e)}}, 500
+        
+class GetStockPrices(Resource):
+    """
+    Endpoint: GET /getStockPrices
+    Description: Retrieves the prices for stocks.
+
+    Expected Request:
+    Headers:
+      Authorization: Bearer <JWT_TOKEN> (future authentication)
+    """
+    def get(self):
+        try:
+            user_data = get_user_id()
+            if "error" in user_data:
+                return {"success": False, "data":{"error":user_data["error"]}},401
+            user_id = user_data["user_id"]
+            portfolio = portfolios_collection.find_one({"user_id":user_id})
+            if not portfolio or "data" not in portfolio:
+                return {"success": True, "data": []}, 200
+            
+            stock_prices = []
+            for stock_item in portfolio["data"]:
+                stock_id = stock_item["stock_id"]
+                stock = stocks_collection.find_one({"stock_id": stock_id})
+                if stock:
+                    price = stock.get("price",None)
+                    stock_prices.append({
+                        "stock_id":stock_id,
+                        "stock_name": stock_item["stock_name"],
+                        "price": price,
+                        "quantity_owned": stock_item["quantity_owned"]
+                    })
+                else:
+                    stock_prices.append({
+                        "stock_id": stock_id,
+                        "error": "Stock details not found"
+                    })
+            return {"success":True,"data":stock_prices}, 200
+        except Exception as e:
+            return {"success":False,"data":{"error":str(e)}}, 500
 
 # -----------------------
 # API Route Mapping
