@@ -263,7 +263,7 @@ def get_stock_prices():
 
     return jsonify(matching_result), code
 
-@app.route('/getWalletTransactions', methods=['POST'])
+@app.route('/getWalletTransactions', methods=['GET'])
 def get_wallet_transactions():
     """
     Accepts JSON input:

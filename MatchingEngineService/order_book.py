@@ -484,26 +484,34 @@ class OrderBook:
         return executed_trades
     
     def cancel_user_order(self, user_id, stock_tx_id):
-        
+        """
+        Cancels an order (either BUY or SELL) for the given user and transaction ID.
+        If it's found in the buy orders: [user_id, quantity, timestamp, transaction_id]
+        If it's found in the sell orders: [user_id, price, quantity, timestamp, transaction_id]
+        """
         found_item = None
         order_type = None
         stock_id = None
 
         # 1) Search for the order in BUY orders
+        #    (where transaction_id is at index 3)
         for stock, orders in self.buy_orders.items():
             for order in orders:
-                if order[0] == user_id and order[4] == stock_tx_id:
+                # order = [user_id, quantity, timestamp, transaction_id]
+                if order[0] == user_id and order[3] == stock_tx_id:
                     found_item = order
                     order_type = "BUY"
                     stock_id = stock
                     break
             if found_item:
                 break
-        
-       # 2) Search for the order in SELL orders
+
+        # 2) Search for the order in SELL orders, if not found in BUY
+        #    (where transaction_id is at index 4)
         if not found_item:
             for stock, orders in self.sell_orders.items():
                 for order in orders:
+                    # order = [user_id, price, quantity, timestamp, transaction_id]
                     if order[0] == user_id and order[4] == stock_tx_id:
                         found_item = order
                         order_type = "SELL"
@@ -517,9 +525,15 @@ class OrderBook:
             logging.warning(f"Order with stock_tx_id={stock_tx_id} not found for user_id={user_id}.")
             return False, "Order not found."
 
-        # Extract relevant info
-        quantity = found_item[2]
-        price = found_item[1]
+        # Extract relevant info from found_item
+        if order_type == "BUY":
+            # found_item = [user_id, quantity, timestamp, transaction_id]
+            quantity = found_item[1]
+            # price is typically None for buy order, but we can set it if needed
+        else:  # SELL
+            # found_item = [user_id, price, quantity, timestamp, transaction_id]
+            price = found_item[1]
+            quantity = found_item[2]
 
         # 4) Remove the order from in-memory order book
         if order_type == "BUY" and stock_id in self.buy_orders and found_item in self.buy_orders[stock_id]:
@@ -528,7 +542,8 @@ class OrderBook:
             self.sell_orders[stock_id].remove(found_item)
 
         logging.info(f"Cancelled {order_type} order for user_id={user_id}, stock_id={stock_id}, stock_tx_id={stock_tx_id}")
-       # 5) Update MongoDB: Mark transaction as CANCELLED
+
+        # 5) Update MongoDB: Mark transaction as CANCELLED
         stock_transactions_collection.update_one(
             {"stock_tx_id": stock_tx_id, "user_id": user_id},
             {"$set": {"order_status": "CANCELLED", "cancelled_at": datetime.now().isoformat()}}
