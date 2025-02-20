@@ -266,16 +266,16 @@ def get_stock_prices():
 @app.route('/getWalletTransactions', methods=['GET'])
 def get_wallet_transactions():
     """
-    Accepts JSON input:
-    { "token": "user1Token" }
+    Accepts JSON input via headers:
+    "token": "user1Token"
 
     Returns user's wallet transactions in the expected format:
     {
         "success": true,
         "data": [
             {
-                "wallet_tx_id": "<googleWalletTxId>",
-                "stock_tx_id": "<googleStockTxId>",
+                "wallet_tx_id": "<walletTxId>",
+                "stock_tx_id": "<stockTxId>",
                 "is_debit": true,
                 "amount": 1350,
                 "time_stamp": "<timestamp>"
@@ -283,41 +283,39 @@ def get_wallet_transactions():
         ]
     }
     """
-    
+
+    # 1) Validate token
     token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
-        return jsonify({"success": False, "data": token_decoded})
+        return jsonify({"success": False, "data": token_decoded}), 401
 
     user_id = token_decoded.get("user_id")
     if not user_id:
         return jsonify({"success": False, "data": None, "message": "No User ID in token"}), 400
 
-    # Query MongoDB for wallet transactions
-    transactions_cursor = wallet_transactions_collection.find({"user_id": user_id})
+    # 2) Fetch the user's single wallet document
+    doc = wallet_transactions_collection.find_one({"user_id": user_id})
 
-    # if not transactions_cursor:
-    #     return jsonify({"success": False, "data":{"error": "No records of transaction found"}}), 400
-    
-     # Check if transactions exist
-    if wallet_transactions_collection.count_documents({"user_id": user_id}) == 0:
+    # If no doc for this user, return empty array
+    if not doc:
         return jsonify({"success": True, "data": []}), 200
 
-    # Build response data
+    # 3) Build response data from the "transactions" array
+    #    Each transaction object in doc["transactions"] has keys like
+    #      "tx_id", "tx_id2", "is_debit", "amount", "time_stamp"
     wallet_transactions = []
-    for doc in transactions_cursor:
+    for tx in doc.get("transactions", []):
+        # "tx_id2" corresponds to the old "wallet_tx_id"
         wallet_transactions.append({
-            "wallet_tx_id": str(doc.get("wallet_tx_id")),
-            "stock_tx_id": str(doc.get("stock_tx_id")) if doc.get("stock_tx_id") else None,
-            "is_debit": doc.get("is_debit", False),
-            "amount": doc.get("amount", 0),
-            "time_stamp": doc.get("time_stamp") or doc.get("created_at") or datetime.now().isoformat()
+            "wallet_tx_id": tx.get("tx_id2"),       # The unique wallet transaction ID
+            "stock_tx_id": tx.get("tx_id"),         # The "stock" transaction ID
+            "is_debit": tx.get("is_debit", False),
+            "amount": tx.get("amount", 0),
+            "time_stamp": tx.get("time_stamp") or datetime.now().isoformat()
         })
 
-    return jsonify({
-        "success": True,
-        "data": wallet_transactions
-    }), 200
+    return jsonify({"success": True, "data": wallet_transactions}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5200)
