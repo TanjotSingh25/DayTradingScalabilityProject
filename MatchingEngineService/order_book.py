@@ -196,25 +196,60 @@ class OrderBook:
             # Generate a unique wallet transaction ID for seller credit
             seller_wallet_tx_id = str(uuid4())
             
-               # Log wallet transaction for buyer (debit)
-            wallet_transactions_collection.insert_one({
-                "wallet_tx_id": wallet_tx_id,
-                "user_id": user_id,
-                "stock_tx_id": partial_tx_id,
-                "is_debit": True,  # Money deducted from buyer
-                "amount": trade_value,
-                "time_stamp": datetime.now().isoformat()
-            })
+            #    # Log wallet transaction for buyer (debit)
+            # wallet_transactions_collection.insert_one({
+            #     "wallet_tx_id": wallet_tx_id,
+            #     "user_id": user_id,
+            #     "stock_tx_id": partial_tx_id,
+            #     "is_debit": True,  # Money deducted from buyer
+            #     "amount": trade_value,
+            #     "time_stamp": datetime.now().isoformat()
+            # })
             
-             # Log wallet transaction for seller (credit)
-            wallet_transactions_collection.insert_one({
-                "wallet_tx_id": seller_wallet_tx_id,
-                "user_id": seller_id,
-                "stock_tx_id": partial_tx_id,
-                "is_debit": False,  # Money credited to seller
+            # Log wallet transaction for buyer (debit)
+            wallet_transactions_collection.update_one(
+                {"user_id": user_id},
+                {
+                "$push": {
+                    "transactions": {
+                    "tx_id": partial_tx_id,
+                    "tx_id2": wallet_tx_id,
+                    "is_debit": True,
+                    "amount": trade_value,
+                    "time_stamp": datetime.now().isoformat()
+                    }
+                }
+                },
+                upsert=True
+            )
+            
+            
+            #  # Log wallet transaction for seller (credit)
+            # wallet_transactions_collection.insert_one({
+            #     "wallet_tx_id": seller_wallet_tx_id,
+            #     "user_id": seller_id,
+            #     "stock_tx_id": partial_tx_id,
+            #     "is_debit": False,  # Money credited to seller
+            #     "amount": trade_value,
+            #     "time_stamp": datetime.now().isoformat()
+            # })
+            
+            wallet_transactions_collection.update_one(
+            {"user_id": seller_id},
+            {
+            "$push": {
+                "transactions": {
+                "tx_id": partial_tx_id,
+                "tx_id2": seller_wallet_tx_id,
+                "is_debit": False,
                 "amount": trade_value,
                 "time_stamp": datetime.now().isoformat()
-            })
+                }
+            }
+            },
+            upsert=True
+        )
+
 
             # 7. Record this partial execution
             executed_trades.append({
@@ -431,28 +466,63 @@ class OrderBook:
                 })
                 
                 
-                # Log transaction in `wallet_transactions_collection` for buyer (money deducted)
-                wallet_transactions_collection.insert_one({
-                    "wallet_tx_id": wallet_tx_id,  # Unique wallet transaction ID
-                    "user_id": buyer_id,
-                    "stock_tx_id": stock_tx_id,  # Reference to stock transaction
-                    "is_debit": True,  # Buyer is paying money
+                # # Log transaction in `wallet_transactions_collection` for buyer (money deducted)
+                # wallet_transactions_collection.insert_one({
+                #     "wallet_tx_id": wallet_tx_id,  # Unique wallet transaction ID
+                #     "user_id": buyer_id,
+                #     "stock_tx_id": stock_tx_id,  # Reference to stock transaction
+                #     "is_debit": True,  # Buyer is paying money
+                #     "amount": trade_value,
+                #     "time_stamp": datetime.now().isoformat()
+                # })
+                
+                wallet_transactions_collection.update_one(
+                {"user_id": buyer_id},
+                {
+                "$push": {
+                    "transactions": {
+                    "tx_id": stock_tx_id,       # The "stock" transaction ID
+                    "tx_id2": wallet_tx_id,     # The buyer’s unique wallet transaction ID
+                    "is_debit": True,           # Buyer is paying money
                     "amount": trade_value,
                     "time_stamp": datetime.now().isoformat()
-                })
+                    }
+                }
+                },
+                upsert=True
+               )
                 
-                # Generate a separate wallet transaction ID for seller (money credited)
+                # # Generate a separate wallet transaction ID for seller (money credited)
+                # seller_wallet_tx_id = str(uuid4())
+                
+                #  # Log transaction in `wallet_transactions_collection` for seller (money credited)
+                # wallet_transactions_collection.insert_one({
+                #     "wallet_tx_id": seller_wallet_tx_id,  # New unique ID for seller's credit transaction
+                #     "user_id": seller_id,
+                #     "stock_tx_id": stock_tx_id,  # Reference to stock transaction
+                #     "is_debit": False,  # Seller is receiving money
+                #     "amount": trade_value,
+                #     "time_stamp": datetime.now().isoformat()
+                # })
+                
+                # 2) Seller transaction (money credited)
                 seller_wallet_tx_id = str(uuid4())
-                
-                 # Log transaction in `wallet_transactions_collection` for seller (money credited)
-                wallet_transactions_collection.insert_one({
-                    "wallet_tx_id": seller_wallet_tx_id,  # New unique ID for seller's credit transaction
-                    "user_id": seller_id,
-                    "stock_tx_id": stock_tx_id,  # Reference to stock transaction
-                    "is_debit": False,  # Seller is receiving money
-                    "amount": trade_value,
-                    "time_stamp": datetime.now().isoformat()
-                })
+
+                wallet_transactions_collection.update_one(
+                    {"user_id": seller_id},
+                    {
+                    "$push": {
+                        "transactions": {
+                        "tx_id": stock_tx_id,
+                        "tx_id2": seller_wallet_tx_id,
+                        "is_debit": False,       # Seller is receiving money
+                        "amount": trade_value,
+                        "time_stamp": datetime.now().isoformat()
+                        }
+                    }
+                    },
+                    upsert=True
+                )
 
                 # Append transaction to executed_trades (for return output)
                 executed_trades.append({
