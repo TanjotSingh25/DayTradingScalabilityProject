@@ -31,9 +31,10 @@ for attempt in range(max_retries):
         wallets_collection = db["wallets"]
         portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized
         stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
-
+        wallet_transactions_collection = db["wallets_transaction"]
         # Ensure necessary indexes for faster lookups
         stock_transactions_collection.create_index("stock_tx_id", unique=True)
+        wallet_transactions_collection.create_index("user_id", unique = True)
 
         logging.info("MongoDB connection established successfully.")
         break  # Exit the loop if connection is successful
@@ -115,7 +116,7 @@ class OrderBook:
         if stock_id not in self.sell_orders or not self.sell_orders[stock_id]:
             # No sellers available at all -> queue the entire order as unfilled
             # Mark status as INCOMPLETE, and put this buy into a "market buy queue".
-            self._queue_market_buy(user_id, parent_tx_id, quantity, stock_id)  # We'll define this helper below
+            self._queue_market_buy(user_id, parent_tx_id, quantity, stock_id) 
             logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for {user_id}.")
             return {
                 "success": True,
@@ -186,6 +187,29 @@ class OrderBook:
                 "seller_id": seller_id,
                 "time_stamp": datetime.now().isoformat()
             })
+            
+            # Generate a unique wallet transaction ID for seller credit
+            seller_wallet_tx_id = str(uuid4())
+            
+               # Log wallet transaction for buyer (debit)
+            wallet_transactions_collection.insert_one({
+                "wallet_tx_id": wallet_tx_id,
+                "user_id": user_id,
+                "stock_tx_id": partial_tx_id,
+                "is_debit": True,  # Money deducted from buyer
+                "amount": trade_value,
+                "time_stamp": datetime.now().isoformat()
+            })
+            
+             # Log wallet transaction for seller (credit)
+            wallet_transactions_collection.insert_one({
+                "wallet_tx_id": seller_wallet_tx_id,
+                "user_id": seller_id,
+                "stock_tx_id": partial_tx_id,
+                "is_debit": False,  # Money credited to seller
+                "amount": trade_value,
+                "time_stamp": datetime.now().isoformat()
+            })
 
             # 7. Record this partial execution
             executed_trades.append({
@@ -218,7 +242,7 @@ class OrderBook:
             # The leftover can also be queued as a market buy if desired
             self._queue_market_buy(user_id, parent_tx_id, remaining_qty, stock_id)
         else:
-            # All shares were filled
+            # All shares filled
             order_status = "COMPLETED"
             
         # Update parent transaction record with final status and remaining quantity
@@ -427,26 +451,15 @@ class OrderBook:
 
                 traded_quantity = min(buy_quantity, sell_quantity)
                 trade_value = traded_quantity * sell_price  # Trade happens at sell price
-                
-                # # Update seller's wallet (add money)
-                # wallets_collection.update_one(
-                #     {"user_id": seller_id},
-                #     {"$inc": {"balance": trade_value}},  # Add the money to seller's balance
-                #     upsert=True
-                # )
-                
-                # # Deduct from buyer's wallet
-                # wallets_collection.update_one(
-                #     {"user_id": buyer_id},
-                #     {"$inc": {"balance": -trade_value}},  # Deduct money from buyer's balance
-                #     upsert=True
-                # )
+                wallet_tx_id = str(uuid4()) #unique wallet transaction id
                 
                   # Update seller's wallet balance (add money)
                 self.update_wallet_balance(seller_id, trade_value)  
 
                 # Deduct money from buyer's wallet
                 self.update_wallet_balance(buyer_id, -trade_value)  
+                
+                
                 
                      # Add stock to buyer's portfolio
                 result = portfolios_collection.update_one(
@@ -462,15 +475,13 @@ class OrderBook:
                          upsert=True
                      )
                     
-              
-                    
-                            # Log transaction in `stock_transactions_collection`
+                # Log transaction in `stock_transactions_collection`
                 stock_tx_id = str(uuid4())  # Unique transaction ID
                 stock_transactions_collection.insert_one({
                     "stock_tx_id": stock_tx_id,
                     "parent_stock_tx_id": None,  # If this is a partial order, update later
                     "stock_id": cur_stock,
-                    "wallet_tx_id": str(uuid4()),  # Generate a new wallet transaction ID
+                    "wallet_tx_id": wallet_tx_id, 
                     "quantity": traded_quantity,
                     "stock_price": sell_price,  # Aligning with API response field name
                     "order_status": "COMPLETED",  # Using API terminology
@@ -479,13 +490,37 @@ class OrderBook:
                     "seller_id": seller_id,
                     "time_stamp": datetime.now().isoformat()
                 })
+                
+                
+                # Log transaction in `wallet_transactions_collection` for buyer (money deducted)
+                wallet_transactions_collection.insert_one({
+                    "wallet_tx_id": wallet_tx_id,  # Unique wallet transaction ID
+                    "user_id": buyer_id,
+                    "stock_tx_id": stock_tx_id,  # Reference to stock transaction
+                    "is_debit": True,  # Buyer is paying money
+                    "amount": trade_value,
+                    "time_stamp": datetime.now().isoformat()
+                })
+                
+                # Generate a separate wallet transaction ID for seller (money credited)
+                seller_wallet_tx_id = str(uuid4())
+                
+                 # Log transaction in `wallet_transactions_collection` for seller (money credited)
+                wallet_transactions_collection.insert_one({
+                    "wallet_tx_id": seller_wallet_tx_id,  # New unique ID for seller's credit transaction
+                    "user_id": seller_id,
+                    "stock_tx_id": stock_tx_id,  # Reference to stock transaction
+                    "is_debit": False,  # Seller is receiving money
+                    "amount": trade_value,
+                    "time_stamp": datetime.now().isoformat()
+                })
 
                 # Append transaction to executed_trades (for return output)
                 executed_trades.append({
                     "stock_tx_id": stock_tx_id,
                     "parent_stock_tx_id": None,  # Parent transaction reference (if applicable)
                     "stock_id": cur_stock,
-                    "wallet_tx_id": str(uuid4()),  # Matching wallet transaction
+                    "wallet_tx_id": wallet_tx_id,  # Matching wallet transaction
                     "quantity": traded_quantity,
                     "stock_price": sell_price,
                     "order_status": "COMPLETED",
@@ -552,9 +587,9 @@ class OrderBook:
         price = found_item[1]
 
         # 4) Remove the order from in-memory order book
-        if order_type == "BUY":
+        if order_type == "BUY" and stock_id in self.buy_orders and found_item in self.buy_orders[stock_id]:
             self.buy_orders[stock_id].remove(found_item)
-        else:
+        elif order_type == "SELL" and stock_id in self.sell_orders and found_item in self.sell_orders[stock_id]:
             self.sell_orders[stock_id].remove(found_item)
 
         logging.info(f"Cancelled {order_type} order for user_id={user_id}, stock_id={stock_id}, stock_tx_id={stock_tx_id}")

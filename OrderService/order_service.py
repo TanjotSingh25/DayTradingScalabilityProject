@@ -253,7 +253,7 @@ def get_wallet_transactions():
     token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
-        return jsonify({"success: false", token_decoded})
+        return jsonify({"success": False, "data": token_decoded})
 
     user_id = token_decoded.get("user_id")
     if not user_id:
@@ -262,8 +262,12 @@ def get_wallet_transactions():
     # Query MongoDB for wallet transactions
     transactions_cursor = wallet_transactions_collection.find({"user_id": user_id})
 
-    if not transactions_cursor:
-        return jsonify({"success": False, "data":{"error": "No records of transaction found"}}), 400
+    # if not transactions_cursor:
+    #     return jsonify({"success": False, "data":{"error": "No records of transaction found"}}), 400
+    
+     # Check if transactions exist
+    if wallet_transactions_collection.count_documents({"user_id": user_id}) == 0:
+        return jsonify({"success": True, "data": []}), 200
 
     # Build response data
     wallet_transactions = []
