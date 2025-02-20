@@ -112,7 +112,7 @@ class OrderBook:
             "order_status": "IN_PROGRESS",  # Renamed from "status" to match API response
             "is_buy": True,  # Added missing is_buy field (since it's a market buy order)
             "order_type": "MARKET",  # Ensuring order type is consistent
-            "stock_price": None,  # Ensuring stock price is stored
+            "stock_price": price,  # Ensuring stock price is stored
             "quantity": quantity,  # Ensuring quantity is stored
             "time_stamp": datetime.now().isoformat()  # Renamed from "created_at" to match API response
         })
