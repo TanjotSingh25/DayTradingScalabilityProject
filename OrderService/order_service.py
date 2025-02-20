@@ -226,63 +226,60 @@ def cancel_stock_transaction():
 
 
 
-# @app.route('/getWalletTransactions', methods=['POST'])
-# def get_wallet_transactions():
-#     """
-#     Accepts JSON input:
-#     { "token": "user1Token" }
+@app.route('/getWalletTransactions', methods=['POST'])
+def get_wallet_transactions():
+    """
+    Accepts JSON input:
+    { "token": "user1Token" }
 
-#     Returns user's wallet transactions in the expected format:
-#     {
-#         "success": true,
-#         "data": [
-#             {
-#                 "wallet_tx_id": "<googleWalletTxId>",
-#                 "stock_tx_id": "<googleStockTxId>",
-#                 "is_debit": true,
-#                 "amount": 1350,
-#                 "time_stamp": "<timestamp>"
-#             }
-#         ]
-#     }
-#     """
+    Returns user's wallet transactions in the expected format:
+    {
+        "success": true,
+        "data": [
+            {
+                "wallet_tx_id": "<googleWalletTxId>",
+                "stock_tx_id": "<googleStockTxId>",
+                "is_debit": true,
+                "amount": 1350,
+                "time_stamp": "<timestamp>"
+            }
+        ]
+    }
+    """
 
-#     # Get request JSON data
-#     data = request.get_json()
+    # Get request JSON data
+    data = request.get_json()
     
-#     # Extract token from request
-#     token = data.get("token")
-#     if not token:
-#         return jsonify({"success": False, "error": "Missing token"}), 400
+    token = request.headers.get("token")
+    token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
+    if "error" in token_decoded:
+        return jsonify({"success: false", token_decoded})
 
-#     # Validate and decrypt token
-#     success, token_payload = helpers.decrypt_and_validate_token(token, secret_key)
-#     if not success:
-#         return jsonify({"success": False, "error": token_payload["error"]}), 401
+    user_id = token_decoded.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "data": None, "message": "No User ID in token"}), 400
 
-#     # Extract user_id from decrypted token
-#     user_id = token_payload.get("user_id")
-#     if not user_id:
-#         return jsonify({"success": False, "error": "Invalid token: Missing user ID"}), 400
+    # Query MongoDB for wallet transactions
+    transactions_cursor = wallet_transactions_collection.find({"user_id": user_id})
 
-#     # Query MongoDB for wallet transactions
-#     transactions_cursor = wallet_transactions_collection.find({"user_id": user_id})
+    if not transactions_cursor:
+        return jsonify({"success": False, "data":{"error": "No records of transaction found"}}), 400
 
-#     # Build response data
-#     wallet_transactions = []
-#     for doc in transactions_cursor:
-#         wallet_transactions.append({
-#             "wallet_tx_id": str(doc.get("wallet_tx_id")),
-#             "stock_tx_id": str(doc.get("stock_tx_id")) if doc.get("stock_tx_id") else None,
-#             "is_debit": doc.get("is_debit", False),
-#             "amount": doc.get("amount", 0),
-#             "time_stamp": doc.get("time_stamp") or doc.get("created_at") or datetime.now().isoformat()
-#         })
+    # Build response data
+    wallet_transactions = []
+    for doc in transactions_cursor:
+        wallet_transactions.append({
+            "wallet_tx_id": str(doc.get("wallet_tx_id")),
+            "stock_tx_id": str(doc.get("stock_tx_id")) if doc.get("stock_tx_id") else None,
+            "is_debit": doc.get("is_debit", False),
+            "amount": doc.get("amount", 0),
+            "time_stamp": doc.get("time_stamp") or doc.get("created_at") or datetime.now().isoformat()
+        })
 
-#     return jsonify({
-#         "success": True,
-#         "data": wallet_transactions
-#     }), 200
+    return jsonify({
+        "success": True,
+        "data": wallet_transactions
+    }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5200)
