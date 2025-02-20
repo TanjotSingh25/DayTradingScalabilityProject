@@ -304,8 +304,8 @@ def get_wallet_transactions():
     for tx in doc.get("transactions", []):
         # "tx_id2" corresponds to the old "wallet_tx_id"
         wallet_transactions.append({
-            "wallet_tx_id": tx.get("tx_id2"),       # The unique wallet transaction ID
-            "stock_tx_id": tx.get("tx_id"),         # The "stock" transaction ID
+            "wallet_tx_id": tx.get("wallet_tx_id"),       # The unique wallet transaction ID
+            "stock_tx_id": tx.get("stock_tx_id"),         # The "stock" transaction ID
             "is_debit": tx.get("is_debit", False),
             "amount": tx.get("amount", 0),
             "time_stamp": tx.get("time_stamp") or datetime.now().isoformat()

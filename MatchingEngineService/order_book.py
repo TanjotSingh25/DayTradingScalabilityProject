@@ -215,8 +215,8 @@ class OrderBook:
                 {
                 "$push": {
                     "transactions": {
-                    "tx_id": partial_tx_id,
-                    "tx_id2": wallet_tx_id,
+                    "stock_tx_id": partial_tx_id,
+                    "wallet_tx_id": wallet_tx_id,
                     "is_debit": True,
                     "amount": trade_value,
                     "time_stamp": datetime.now().isoformat()
@@ -240,8 +240,8 @@ class OrderBook:
             {
             "$push": {
                 "transactions": {
-                "tx_id": partial_tx_id,
-                "tx_id2": seller_wallet_tx_id,
+                "stock_tx_id": partial_tx_id,
+                "wallet_tx_id": seller_wallet_tx_id,
                 "is_debit": False,
                 "amount": trade_value,
                 "time_stamp": datetime.now().isoformat()
@@ -565,8 +565,8 @@ class OrderBook:
                 {
                 "$push": {
                     "transactions": {
-                    "tx_id": stock_tx_id,       # The "stock" transaction ID
-                    "tx_id2": wallet_tx_id,     # The buyer’s unique wallet transaction ID
+                    "stock_tx_id": stock_tx_id,       # The "stock" transaction ID
+                    "wallet_tx_id": wallet_tx_id,     # The buyer’s unique wallet transaction ID
                     "is_debit": True,           # Buyer is paying money
                     "amount": trade_value,
                     "time_stamp": datetime.now().isoformat()
@@ -597,8 +597,8 @@ class OrderBook:
                     {
                     "$push": {
                         "transactions": {
-                        "tx_id": stock_tx_id,
-                        "tx_id2": seller_wallet_tx_id,
+                        "stock_tx_id": stock_tx_id,
+                        "wallet_tx_id": seller_wallet_tx_id,
                         "is_debit": False,       # Seller is receiving money
                         "amount": trade_value,
                         "time_stamp": datetime.now().isoformat()
