@@ -154,13 +154,17 @@ class OrderBook:
                     trade_qty = max_shares_can_buy
                     trade_value = trade_qty * sell_price
                     logging.info(f"User {user_id} can only buy {trade_qty} shares due to insufficient funds.")
+                    
+              # Update user portfolio (buyer gets stocks)
+            r = self.update_user_stock_balance(user_id, stock_id, trade_qty)
+            if r == False:
+                 return {"success": False, "error": "updateStockBalance,Returned false"}
 
             # 4. Execute trade, update balance in mongodb wallets collection
             self.update_wallet_balance(seller_id, trade_value)   # Seller receives money
             self.update_wallet_balance(user_id, -trade_value)    # Buyer pays money
             
-             # Update user portfolio (buyer gets stocks)
-            self.update_user_stock_balance(user_id, stock_id, trade_qty)
+           
 
             # 5. Update order books
             # Reduce the sell order by 'trade_qty'
@@ -338,7 +342,7 @@ class OrderBook:
         # Deduct stock from user's portfolio
         result = self.update_user_stock_balance(user_id, stock_id, -quantity)
 
-        if not result:  # Ensure the update succeeded
+        if result == False:  # Ensure the update succeeded
             logging.error(f"SELL ORDER ERROR: Failed to update portfolio for {user_id}.")
             return {"success": False, "error": "Portfolio update failed."}
 
