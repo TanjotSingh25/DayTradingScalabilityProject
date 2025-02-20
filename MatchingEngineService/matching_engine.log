@@ -1,0 +1,100 @@
+2025-02-20 05:27:09,914 - INFO - MongoDB connection established successfully.
+2025-02-20 05:27:09,922 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-20 05:27:09,922 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 05:34:30,113 - INFO - Updated stock balance for 1: Sold -550 of stock 574d0b5e-3bcf-41ef-ac1a-19b988c2525a
+2025-02-20 05:34:30,116 - INFO - SELL ORDER: 1 listed 550 shares of 574d0b5e-3bcf-41ef-ac1a-19b988c2525a at 135
+2025-02-20 05:34:30,117 - INFO - 172.22.0.7 - - [20/Feb/2025 05:34:30] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 05:34:30,628 - INFO - Updated stock balance for 1: Sold -350 of stock 9d2f2323-5cf0-48ea-a9a3-a28e0e4bc54c
+2025-02-20 05:34:30,629 - INFO - SELL ORDER: 1 listed 350 shares of 9d2f2323-5cf0-48ea-a9a3-a28e0e4bc54c at 140
+2025-02-20 05:34:30,630 - INFO - 172.22.0.7 - - [20/Feb/2025 05:34:30] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 05:34:35,727 - ERROR - Error updating wallet balance for 1: Updating the path 'balance' would create a conflict at 'balance', full error: {'index': 0, 'code': 40, 'errmsg': "Updating the path 'balance' would create a conflict at 'balance'"}
+2025-02-20 05:34:35,728 - ERROR - Error updating wallet balance for 2: Updating the path 'balance' would create a conflict at 'balance', full error: {'index': 0, 'code': 40, 'errmsg': "Updating the path 'balance' would create a conflict at 'balance'"}
+2025-02-20 05:34:35,729 - WARNING - Sell order failed: 2 does not own stock 574d0b5e-3bcf-41ef-ac1a-19b988c2525a or insufficient balance.
+2025-02-20 05:34:35,731 - INFO - BUY MARKET TRADE: 2 bought 10 shares of 574d0b5e-3bcf-41ef-ac1a-19b988c2525a @ 135
+2025-02-20 05:34:35,732 - INFO - 172.22.0.7 - - [20/Feb/2025 05:34:35] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:01:59,507 - WARNING - SELL ORDER FAILED: 3 does not own stock .
+2025-02-20 06:01:59,508 - INFO - 172.22.0.7 - - [20/Feb/2025 06:01:59] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:02:00,020 - WARNING - SELL ORDER FAILED: 3 does not own stock .
+2025-02-20 06:02:00,021 - INFO - 172.22.0.7 - - [20/Feb/2025 06:02:00] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:02:05,031 - INFO - Queued leftover market buy for 4: 10 shares of 
+2025-02-20 06:02:05,032 - WARNING - BUY MARKET ORDER: No sellers. Queued 10 shares for 4.
+2025-02-20 06:02:05,032 - INFO - 172.22.0.7 - - [20/Feb/2025 06:02:05] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:48:06,778 - INFO - MongoDB connection established successfully.
+2025-02-20 06:48:06,788 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-20 06:48:06,789 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 06:49:23,953 - WARNING - SELL ORDER FAILED: 3 does not own stock .
+2025-02-20 06:49:23,954 - INFO - 172.22.0.7 - - [20/Feb/2025 06:49:23] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:49:24,483 - WARNING - SELL ORDER FAILED: 3 does not own stock .
+2025-02-20 06:49:24,483 - INFO - 172.22.0.7 - - [20/Feb/2025 06:49:24] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:49:29,205 - INFO - Queued leftover market buy for 4: 10 shares of 
+2025-02-20 06:49:29,205 - WARNING - BUY MARKET ORDER: No sellers. Queued 10 shares for 4.
+2025-02-20 06:49:29,205 - INFO - 172.22.0.7 - - [20/Feb/2025 06:49:29] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:55:03,428 - INFO - MongoDB connection established successfully.
+2025-02-20 06:55:03,442 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-20 06:55:03,443 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 06:59:08,760 - WARNING - SELL ORDER FAILED: 3 does not own stock .
+2025-02-20 06:59:08,761 - INFO - 172.22.0.7 - - [20/Feb/2025 06:59:08] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:59:09,279 - WARNING - SELL ORDER FAILED: 3 does not own stock .
+2025-02-20 06:59:09,279 - INFO - 172.22.0.7 - - [20/Feb/2025 06:59:09] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 06:59:13,827 - INFO - Queued leftover market buy for 4: 10 shares of 
+2025-02-20 06:59:13,827 - WARNING - BUY MARKET ORDER: No sellers. Queued 10 shares for 4.
+2025-02-20 06:59:13,827 - INFO - 172.22.0.7 - - [20/Feb/2025 06:59:13] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:04:08,160 - INFO - MongoDB connection established successfully.
+2025-02-20 07:04:08,169 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-20 07:04:08,170 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 07:07:49,972 - WARNING - SELL ORDER FAILED: 3 does not own stock .
+2025-02-20 07:07:49,973 - INFO - 172.22.0.7 - - [20/Feb/2025 07:07:49] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:07:50,486 - WARNING - SELL ORDER FAILED: 3 does not own stock .
+2025-02-20 07:07:50,486 - INFO - 172.22.0.7 - - [20/Feb/2025 07:07:50] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:07:53,497 - INFO - 172.22.0.7 - - [20/Feb/2025 07:07:53] "[33mPOST /getPrices HTTP/1.1[0m" 404 -
+2025-02-20 07:07:55,049 - INFO - Queued leftover market buy for 4: 10 shares of 
+2025-02-20 07:07:55,050 - WARNING - BUY MARKET ORDER: No sellers. Queued 10 shares for 4.
+2025-02-20 07:07:55,050 - INFO - 172.22.0.7 - - [20/Feb/2025 07:07:55] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:17:23,719 - INFO - MongoDB connection established successfully.
+2025-02-20 07:17:23,726 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-20 07:17:23,726 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 07:17:49,550 - INFO - Updated stock balance for 1: Sold -550 of stock cba2ac02-d5d7-479d-8135-fa180b4c5b70
+2025-02-20 07:17:49,551 - INFO - SELL ORDER: 1 listed 550 shares of cba2ac02-d5d7-479d-8135-fa180b4c5b70 at 135
+2025-02-20 07:17:49,551 - INFO - 172.22.0.7 - - [20/Feb/2025 07:17:49] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:17:50,064 - INFO - Updated stock balance for 1: Sold -350 of stock 450eb09b-6d33-4218-9620-45d177cae5b1
+2025-02-20 07:17:50,065 - INFO - SELL ORDER: 1 listed 350 shares of 450eb09b-6d33-4218-9620-45d177cae5b1 at 140
+2025-02-20 07:17:50,065 - INFO - 172.22.0.7 - - [20/Feb/2025 07:17:50] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:17:53,542 - INFO - 172.22.0.7 - - [20/Feb/2025 07:17:53] "[33mPOST /getPrices HTTP/1.1[0m" 404 -
+2025-02-20 07:17:55,099 - ERROR - Error updating wallet balance for 1: Updating the path 'balance' would create a conflict at 'balance', full error: {'index': 0, 'code': 40, 'errmsg': "Updating the path 'balance' would create a conflict at 'balance'"}
+2025-02-20 07:17:55,099 - ERROR - Error updating wallet balance for 2: Updating the path 'balance' would create a conflict at 'balance', full error: {'index': 0, 'code': 40, 'errmsg': "Updating the path 'balance' would create a conflict at 'balance'"}
+2025-02-20 07:17:55,100 - WARNING - Sell order failed: 2 does not own stock cba2ac02-d5d7-479d-8135-fa180b4c5b70 or insufficient balance.
+2025-02-20 07:17:55,101 - INFO - BUY MARKET TRADE: 2 bought 10 shares of cba2ac02-d5d7-479d-8135-fa180b4c5b70 @ 135
+2025-02-20 07:17:55,102 - INFO - 172.22.0.7 - - [20/Feb/2025 07:17:55] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:22:25,422 - INFO - MongoDB connection established successfully.
+2025-02-20 07:22:25,429 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-20 07:22:25,429 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 07:22:41,989 - INFO - Updated stock balance for 1: Sold -550 of stock 876f8773-b70d-4d08-a7c0-65a9e7a148a3
+2025-02-20 07:22:41,990 - INFO - SELL ORDER: 1 listed 550 shares of 876f8773-b70d-4d08-a7c0-65a9e7a148a3 at 135
+2025-02-20 07:22:41,990 - INFO - 172.22.0.7 - - [20/Feb/2025 07:22:41] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:22:42,513 - INFO - Updated stock balance for 1: Sold -350 of stock 8c3b043a-4e64-49fb-bda1-1b262ca8b8b9
+2025-02-20 07:22:42,513 - INFO - SELL ORDER: 1 listed 350 shares of 8c3b043a-4e64-49fb-bda1-1b262ca8b8b9 at 140
+2025-02-20 07:22:42,514 - INFO - 172.22.0.7 - - [20/Feb/2025 07:22:42] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 07:22:45,957 - INFO - 172.22.0.7 - - [20/Feb/2025 07:22:45] "[33mPOST /getPrices HTTP/1.1[0m" 404 -
+2025-02-20 07:22:47,496 - ERROR - Error updating wallet balance for 1: Updating the path 'balance' would create a conflict at 'balance', full error: {'index': 0, 'code': 40, 'errmsg': "Updating the path 'balance' would create a conflict at 'balance'"}
+2025-02-20 07:22:47,496 - ERROR - Error updating wallet balance for 2: Updating the path 'balance' would create a conflict at 'balance', full error: {'index': 0, 'code': 40, 'errmsg': "Updating the path 'balance' would create a conflict at 'balance'"}
+2025-02-20 07:22:47,497 - WARNING - Sell order failed: 2 does not own stock 876f8773-b70d-4d08-a7c0-65a9e7a148a3 or insufficient balance.
+2025-02-20 07:22:47,498 - INFO - BUY MARKET TRADE: 2 bought 10 shares of 876f8773-b70d-4d08-a7c0-65a9e7a148a3 @ 135
+2025-02-20 07:22:47,499 - INFO - 172.22.0.7 - - [20/Feb/2025 07:22:47] "POST /placeOrder HTTP/1.1" 200 -
