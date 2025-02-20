@@ -359,18 +359,52 @@ class OrderBook:
     #         logging.error(f"Error updating stock balance for {user_id}, {stock_id}: {e}")
     #         return False
     
+    # def update_user_stock_balance(self, user_id, stock_id, quantity):
+    #     """
+    #     This method works for both BUY (quantity>0) and SELL (quantity<0).
+    #     """
+    #     try:
+    #         result = portfolios_collection.update_one(
+    #             {"user_id": user_id, "data.stock_id": stock_id},
+    #             {"$inc": {"data.$.quantity_owned": quantity}}
+    #         )
+
+    #         if result.matched_count == 0:
+    #             # Fallback: if quantity > 0, user is buying a brand-new stock, so add it:
+    #             if quantity > 0:
+    #                 portfolios_collection.update_one(
+    #                     {"user_id": user_id},
+    #                     {"$push": {"data": {"stock_id": stock_id, "quantity_owned": quantity}}},
+    #                     upsert=True
+    #                 )
+    #                 logging.info(f"Created new stock {stock_id} with quantity={quantity} for user {user_id}")
+    #                 return True
+    #             else:
+    #                 # For SELL with matched_count=0, user truly doesn't own it
+    #                 logging.warning(f"Sell order failed: user {user_id} doesn't own stock {stock_id}")
+    #                 return False
+
+    #         logging.info(f"Updated stock balance for user {user_id}: {quantity} shares of {stock_id}")
+    #         return True
+
+    #     except Exception as e:
+    #         logging.error(f"Error updating stock balance for {user_id}, {stock_id}: {e}")
+    #         return False
+
     def update_user_stock_balance(self, user_id, stock_id, quantity):
         """
-        This method works for both BUY (quantity>0) and SELL (quantity<0).
+        Works for both BUY (quantity>0) and SELL (quantity<0).
+        Removes the stock from 'data' if new quantity is 0.
         """
         try:
+            # 1) Attempt to increment the existing stock entry
             result = portfolios_collection.update_one(
                 {"user_id": user_id, "data.stock_id": stock_id},
                 {"$inc": {"data.$.quantity_owned": quantity}}
             )
 
             if result.matched_count == 0:
-                # Fallback: if quantity > 0, user is buying a brand-new stock, so add it:
+                # 2) Fallback if it's a brand-new BUY
                 if quantity > 0:
                     portfolios_collection.update_one(
                         {"user_id": user_id},
@@ -380,9 +414,24 @@ class OrderBook:
                     logging.info(f"Created new stock {stock_id} with quantity={quantity} for user {user_id}")
                     return True
                 else:
-                    # For SELL with matched_count=0, user truly doesn't own it
+                    # It's a SELL, but user doesn't own it
                     logging.warning(f"Sell order failed: user {user_id} doesn't own stock {stock_id}")
                     return False
+
+            # 3) After the increment, check if the quantity is now 0
+            updated_doc = portfolios_collection.find_one(
+                {"user_id": user_id, "data.stock_id": stock_id},
+                {"data.$": 1}
+            )
+            if updated_doc and "data" in updated_doc:
+                new_qty = updated_doc["data"][0].get("quantity_owned", 0)
+                if new_qty <= 0:
+                    # Remove this stock from the 'data' array
+                    portfolios_collection.update_one(
+                        {"user_id": user_id},
+                        {"$pull": {"data": {"stock_id": stock_id}}}
+                    )
+                    logging.info(f"Removed stock {stock_id} from user {user_id}'s portfolio (qty=0).")
 
             logging.info(f"Updated stock balance for user {user_id}: {quantity} shares of {stock_id}")
             return True
@@ -390,7 +439,6 @@ class OrderBook:
         except Exception as e:
             logging.error(f"Error updating stock balance for {user_id}, {stock_id}: {e}")
             return False
-
 
 
     def add_sell_order(self, user_id, order_id, stock_id, price, quantity):
