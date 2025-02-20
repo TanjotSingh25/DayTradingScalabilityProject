@@ -23,13 +23,14 @@ export default {
     },
     methods: {
         async addStock() {
+            const token = localStorage.getItem("token");
             try {
                 const response = await axios.post('/addStockToUser', {
                     stock_id: this.stockId,
                     quantity: this.quantity
                 }, {
                     headers: {
-                        token: "jwt_token"
+                        token: token
                     }
                 });
                 this.message = "Stock added successfully.";
