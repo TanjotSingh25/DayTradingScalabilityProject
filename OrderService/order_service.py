@@ -245,7 +245,7 @@ def get_stock_prices():
 
     # Call the Matching Engine /cancelOrder endpoint
     try:
-        response = requests.post(MATCHING_ENGINE_STOCK_PRICES_URL, json={'user_id': user_id})
+        response = requests.get(MATCHING_ENGINE_STOCK_PRICES_URL, json={'user_id': user_id})
         if response.status_code == 200:
             matching_result = response.json()
             code = 200
