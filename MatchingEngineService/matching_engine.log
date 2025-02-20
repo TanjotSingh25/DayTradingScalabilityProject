@@ -224,3 +224,39 @@
 2025-02-20 20:53:01,673 - INFO - {'': [[2, None, 10, datetime.datetime(2025, 2, 20, 20, 52, 59, 103873), '3b88d75e-5253-4e33-b368-a359b4dc9dca']]}
 2025-02-20 20:53:01,674 - WARNING - Order with stock_tx_id=9096b550-cf68-4ce1-99e2-320f7ca53f3e not found for user_id=1.
 2025-02-20 20:53:01,674 - INFO - 172.22.0.7 - - [20/Feb/2025 20:53:01] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 22:52:55,629 - INFO - MongoDB connection established successfully.
+2025-02-20 22:52:55,642 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-20 22:52:55,642 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 22:53:29,676 - INFO - {}
+2025-02-20 22:53:29,676 - INFO - {}
+2025-02-20 22:53:29,677 - INFO - 172.22.0.7 - - [20/Feb/2025 22:53:29] "GET /getPrices HTTP/1.1" 200 -
+2025-02-20 22:53:42,808 - INFO - {}
+2025-02-20 22:53:42,808 - INFO - {}
+2025-02-20 22:53:42,809 - INFO - 172.22.0.7 - - [20/Feb/2025 22:53:42] "GET /getPrices HTTP/1.1" 200 -
+2025-02-20 22:58:18,837 - INFO - {}
+2025-02-20 22:58:18,838 - INFO - {}
+2025-02-20 22:58:18,838 - INFO - 172.22.0.7 - - [20/Feb/2025 22:58:18] "GET /getPrices HTTP/1.1" 200 -
+2025-02-20 22:58:39,437 - INFO - {}
+2025-02-20 22:58:39,437 - INFO - {}
+2025-02-20 22:58:39,437 - INFO - 172.22.0.7 - - [20/Feb/2025 22:58:39] "GET /getPrices HTTP/1.1" 200 -
+2025-02-20 22:58:45,120 - INFO - {}
+2025-02-20 22:58:45,120 - INFO - {}
+2025-02-20 22:58:45,121 - INFO - 172.22.0.7 - - [20/Feb/2025 22:58:45] "GET /getPrices HTTP/1.1" 200 -
+2025-02-20 23:00:19,946 - INFO - {}
+2025-02-20 23:00:19,947 - INFO - {}
+2025-02-20 23:00:19,947 - INFO - 172.22.0.7 - - [20/Feb/2025 23:00:19] "GET /getPrices HTTP/1.1" 200 -
+2025-02-20 23:01:57,117 - INFO - MongoDB connection established successfully.
+2025-02-20 23:01:57,126 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-20 23:01:57,126 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 23:14:04,935 - INFO - MongoDB connection established successfully.
+2025-02-20 23:14:04,944 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.4:5300
+2025-02-20 23:14:04,945 - INFO - [33mPress CTRL+C to quit[0m

@@ -107,7 +107,7 @@ class OrderBook:
             "stock_tx_id": parent_tx_id,  # Renamed from "tx_id" to match API response
             "parent_stock_tx_id": None,  # Explicitly setting parent_stock_tx_id as null for first transactions
             "stock_id": stock_id,
-            "wallet_tx_id": wallet_tx_id,  # Added missing wallet transaction reference
+            "wallet_tx_id": None,  # Added missing wallet transaction reference
             "user_id": user_id,
             "order_status": "IN_PROGRESS",  # Renamed from "status" to match API response
             "is_buy": True,  # Added missing is_buy field (since it's a market buy order)
@@ -139,6 +139,22 @@ class OrderBook:
             best_sell_order = self.sell_orders[stock_id][0]
             seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = best_sell_order
 
+            valid_sell_index = None
+            for idx, order in enumerate(self.sell_orders[stock_id]):
+                seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = order
+                if seller_id != user_id:
+                    valid_sell_index = idx
+                    break
+
+            # If none found, no valid sellers
+            if valid_sell_index is None:
+                logging.warning(f"No valid sellers for user {user_id} (self-trade skipped).")
+                break
+
+            # Now 'valid_sell_index' points to the first valid order
+            seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = \
+                self.sell_orders[stock_id][valid_sell_index]
+            
             # 2. How many shares can we buy from this particular seller?
             trade_qty = min(remaining_qty, sell_quantity)
             trade_value = trade_qty * sell_price
@@ -483,7 +499,7 @@ class OrderBook:
                 "stock_tx_id": st_tx_id,
                 "parent_stock_tx_id": None,
                 "stock_id": stock_id,
-                "wallet_tx_id": str(uuid4()),  # No wallet transaction for a limit order yet
+                "wallet_tx_id": None,  # No wallet transaction for a limit order yet
                 "user_id": user_id,
                 "order_status": "IN_PROGRESS",
                 "is_buy": False,
@@ -516,6 +532,23 @@ class OrderBook:
             while self.sell_orders.get(cur_stock) and self.buy_orders.get(cur_stock):
                 buyer_id, buy_price, buy_quantity, buy_time, buy_order_id = self.buy_orders[cur_stock][0]
                 seller_id, sell_price, sell_quantity, sell_time, sell_order_id = self.sell_orders[cur_stock][0]
+                
+                # 2) Find the first valid seller (skipping self-trade orders)
+                valid_sell_index = None
+                for idx, order in enumerate(self.sell_orders[cur_stock]):
+                    sid, sprice, squantity, stime, sorder_id = order
+                    if sid != buyer_id:  # Skip if the same user
+                        valid_sell_index = idx
+                        break
+
+                # If no valid seller found, break out
+                if valid_sell_index is None:
+                    logging.warning(f"No valid sellers for buyer {buyer_id} (self-trade skipped).")
+                    break
+
+                # Extract the valid sell order
+                seller_id, sell_price, sell_quantity, sell_time, sell_order_id = \
+                    self.sell_orders[cur_stock][valid_sell_index]
 
                 # MARKET ORDER: Buy at best available sell price
                 if buy_price is None:
@@ -562,16 +595,7 @@ class OrderBook:
                 })
                 
                 
-                # # Log transaction in `wallet_transactions_collection` for buyer (money deducted)
-                # wallet_transactions_collection.insert_one({
-                #     "wallet_tx_id": wallet_tx_id,  # Unique wallet transaction ID
-                #     "user_id": buyer_id,
-                #     "stock_tx_id": stock_tx_id,  # Reference to stock transaction
-                #     "is_debit": True,  # Buyer is paying money
-                #     "amount": trade_value,
-                #     "time_stamp": datetime.now().isoformat()
-                # })
-                
+        
                 wallet_transactions_collection.update_one(
                 {"user_id": buyer_id},
                 {
@@ -587,19 +611,7 @@ class OrderBook:
                 },
                 upsert=True
                )
-                
-                # # Generate a separate wallet transaction ID for seller (money credited)
-                # seller_wallet_tx_id = str(uuid4())
-                
-                #  # Log transaction in `wallet_transactions_collection` for seller (money credited)
-                # wallet_transactions_collection.insert_one({
-                #     "wallet_tx_id": seller_wallet_tx_id,  # New unique ID for seller's credit transaction
-                #     "user_id": seller_id,
-                #     "stock_tx_id": stock_tx_id,  # Reference to stock transaction
-                #     "is_debit": False,  # Seller is receiving money
-                #     "amount": trade_value,
-                #     "time_stamp": datetime.now().isoformat()
-                # })
+    
                 
                 # 2) Seller transaction (money credited)
                 seller_wallet_tx_id = str(uuid4())
