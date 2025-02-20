@@ -83,7 +83,7 @@ def cancel_order():
 def getPrices():
     # Calls orderbookInst to get current prices of each LIMIT SELL Ticker
     data = request.get_json()
-    result, stock_prices = orderBookInst.find_stock_prices(data['user_id'], data['stock_tx_id'])
+    result, stock_prices = orderBookInst.find_stock_prices()
 
     return {"success" : result, "data": stock_prices}, 200
 
@@ -107,10 +107,10 @@ if __name__ == '__main__':
 #     price = data.get("price")
 #     if not stock_id or not ticker or quantity is None or price is None:
 #         return jsonify({"success": False, "error": "Missing required fields"}), 400
-    
+
 #     stocks[stock_id] = {"ticker": ticker, "quantity": quantity, "price": price}
-    
+
 #     # Store stock in order book
 #     order_book.orderBookInst.add_sell_order(ticker, price, quantity)
-    
+
 #     return jsonify({"success": True, "message": f"Stock {ticker} registered and added to order book."})
