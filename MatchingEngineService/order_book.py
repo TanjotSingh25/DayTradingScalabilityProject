@@ -656,7 +656,7 @@ class OrderBook:
         for stock, orders in self.buy_orders.items():
             for order in orders:
                 # order = [user_id, quantity, timestamp, transaction_id]
-                if order[0] == user_id and order[3] == stock_tx_id:
+                if order[0] == user_id and order[4] == stock_tx_id:
                     found_item = order
                     order_type = "BUY"
                     stock_id = stock
