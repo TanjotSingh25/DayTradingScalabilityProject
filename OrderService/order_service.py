@@ -147,19 +147,18 @@ def get_stock_transactions():
     # Build the response data array
     user_transactions = []
     for doc in transactions_cursor:
-        if doc.get("order_status", "") in ["COMPLETED","CANCELLED"]:
-            user_transactions.append({
-                "stock_tx_id": str(doc.get("stock_tx_id")),  # Unique transaction ID
-                "parent_stock_tx_id": str(doc.get("parent_stock_tx_id")) if doc.get("parent_stock_tx_id") else None,
-                "stock_id": str(doc.get("stock_id")),  # Associated stock ID
-                "wallet_tx_id": str(doc.get("wallet_tx_id")) if doc.get("wallet_tx_id") else None,  # Wallet transaction reference
-                "quantity": doc.get("quantity", 0),
-                "order_status": doc.get("order_status", ""),  # Use correct field for status
-                "stock_price": doc.get("stock_price", 0),  # Ensuring price is retrieved correctly
-                "is_buy": doc.get("is_buy", False),
-                "order_type": doc.get("order_type", ""),  # Order type (MARKET, LIMIT, etc.)
-                "timestamp": doc.get("time_stamp") or doc.get("created_at") or ""
-            })
+        user_transactions.append({
+            "stock_tx_id": str(doc.get("stock_tx_id")),  # Unique transaction ID
+            "parent_stock_tx_id": str(doc.get("parent_stock_tx_id")) if doc.get("parent_stock_tx_id") else None,
+            "stock_id": str(doc.get("stock_id")),  # Associated stock ID
+            "wallet_tx_id": str(doc.get("wallet_tx_id")) if doc.get("wallet_tx_id") else None,  # Wallet transaction reference
+            "quantity": doc.get("quantity", 0),
+            "order_status": doc.get("order_status", ""),  # Use correct field for status
+            "stock_price": doc.get("stock_price", 0),  # Ensuring price is retrieved correctly
+            "is_buy": doc.get("is_buy", False),
+            "order_type": doc.get("order_type", ""),  # Order type (MARKET, LIMIT, etc.)
+            "timestamp": doc.get("time_stamp") or doc.get("created_at") or ""
+        })
 
     # Return JSON response
     return jsonify({
