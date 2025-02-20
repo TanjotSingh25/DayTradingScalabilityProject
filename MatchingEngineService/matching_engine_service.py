@@ -78,7 +78,7 @@ def cancel_order():
     if result:
         code = 200
 
-    return {"success" : result, "data": reason}, 200
+    return {"success" : result, "data": reason}, code
 
 def getPrices():
     # Calls orderbookInst to get current prices of each LIMIT SELL Ticker

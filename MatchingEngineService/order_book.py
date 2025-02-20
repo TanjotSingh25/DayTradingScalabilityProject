@@ -460,8 +460,6 @@ class OrderBook:
                 # Deduct money from buyer's wallet
                 self.update_wallet_balance(buyer_id, -trade_value)  
                 
-                
-                
                      # Add stock to buyer's portfolio
                 result = portfolios_collection.update_one(
                     {"user_id": buyer_id, "data.stock_id": cur_stock},
