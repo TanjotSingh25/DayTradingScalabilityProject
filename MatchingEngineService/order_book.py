@@ -241,7 +241,7 @@ class OrderBook:
             "$push": {
                 "transactions": {
                 "stock_tx_id": partial_tx_id,
-                "wallet_tx_id": seller_wallet_tx_id,
+                "wallet_tx_id": wallet_tx_id,
                 "is_debit": False,
                 "amount": trade_value,
                 "time_stamp": datetime.now().isoformat()
@@ -610,7 +610,7 @@ class OrderBook:
                     "$push": {
                         "transactions": {
                         "stock_tx_id": stock_tx_id,
-                        "wallet_tx_id": seller_wallet_tx_id,
+                        "wallet_tx_id": wallet_tx_id,
                         "is_debit": False,       # Seller is receiving money
                         "amount": trade_value,
                         "time_stamp": datetime.now().isoformat()
