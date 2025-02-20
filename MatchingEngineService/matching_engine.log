@@ -4,3 +4,9 @@
  * Running on http://127.0.0.1:5300
  * Running on http://172.18.0.6:5300
 2025-02-20 05:09:55,249 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 07:04:52,851 - INFO - MongoDB connection established successfully.
+2025-02-20 07:04:52,860 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.18.0.5:5300
+2025-02-20 07:04:52,861 - INFO - [33mPress CTRL+C to quit[0m

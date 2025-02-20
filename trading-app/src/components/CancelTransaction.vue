@@ -16,7 +16,6 @@
     data() {
       return {
         transaction: {
-          token: "jwt_token",
           stock_tx_id: "",
         },
         message: "",
@@ -24,6 +23,11 @@
     },
     methods: {
       async cancelTransaction() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          this.message = "Invalid token";
+          return;
+      }
         try {
           const response = await axios.post('/api/cancelStockTransaction', this.transaction);
           this.message = "Transaction canceled successfully!";
