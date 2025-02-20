@@ -404,11 +404,23 @@ class OrderBook:
             )
 
             if result.matched_count == 0:
-                # 2) Fallback if it's a brand-new BUY
+               # 2) Fallback if it's a brand-new BUY
                 if quantity > 0:
+                    # Fetch the stock name from stocks_collection
+                    stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
+                    stock_name = stock_doc["stock_name"] if stock_doc else "Unknown"
+
                     portfolios_collection.update_one(
                         {"user_id": user_id},
-                        {"$push": {"data": {"stock_id": stock_id, "quantity_owned": quantity}}},
+                        {
+                            "$push": {
+                                "data": {
+                                    "stock_id": stock_id,
+                                    "stock_name": stock_name,
+                                    "quantity_owned": quantity
+                                }
+                            }
+                        },
                         upsert=True
                     )
                     logging.info(f"Created new stock {stock_id} with quantity={quantity} for user {user_id}")
