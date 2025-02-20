@@ -22,7 +22,7 @@ export default {
         async createStock() {
             const token = localStorage.getItem("token");
             try {
-                const response = await axios.post('/createStock', {
+                const response = await axios.post('http://localhost/setup/createStock', {
                     stock_name: this.stockName,
                 }, {
                     headers: {

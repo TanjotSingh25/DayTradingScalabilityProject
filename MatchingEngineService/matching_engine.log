@@ -103,4 +103,9 @@
 2025-02-20 10:07:31,733 - INFO - 172.22.0.7 - - [20/Feb/2025 10:07:31] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
 2025-02-20 10:07:49,062 - INFO - {'8132541c-8ba1-4a08-8629-5d2a8e2f2432': [[1, 25, 50, datetime.datetime(2025, 2, 20, 10, 6, 47, 156141), 'a69bf8c1-a0d2-4e4f-9eff-2723eaf689f7']]}
 2025-02-20 10:07:49,063 - WARNING - Order with stock_tx_id=8132541c-8ba1-4a08-8629-5d2a8e2f2432 not found for user_id=1.
-2025-02-20 10:07:49,063 - INFO - 172.22.0.7 - - [20/Feb/2025 10:07:49] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 10:07:49,063 - INFO - 172.22.0.7 - - [20/Feb/2025 10:07:49] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -2025-02-20 10:52:01,548 - INFO - MongoDB connection established successfully.
+2025-02-20 10:52:01,558 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.18.0.5:5300
+2025-02-20 10:52:01,559 - INFO - [33mPress CTRL+C to quit[0m
