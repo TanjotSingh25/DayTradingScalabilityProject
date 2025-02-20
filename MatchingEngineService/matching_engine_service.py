@@ -80,6 +80,13 @@ def cancel_order():
 
     return {"success" : result, "data": reason}, 200
 
+def getPrices():
+    # Calls orderbookInst to get current prices of each LIMIT SELL Ticker
+    data = request.get_json()
+    result, stock_prices = orderBookInst.find_stock_prices(data['user_id'], data['stock_tx_id'])
+
+    return {"success" : result, "data": stock_prices}, 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5300)
     

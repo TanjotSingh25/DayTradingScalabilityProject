@@ -32,6 +32,7 @@ for attempt in range(max_retries):
         portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized
         stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
         wallet_transactions_collection = db["wallets_transaction"]
+        stocks_collection = db["stocks"]
         # Ensure necessary indexes for faster lookups
         stock_transactions_collection.create_index("stock_tx_id", unique=True)
         wallet_transactions_collection.create_index("user_id", unique = True)
@@ -610,6 +611,29 @@ class OrderBook:
                 logging.warning(f"Stock {stock_id} not found in user {user_id}'s portfolio. Unable to return quantity.")
 
         return True, "Cancellation successful"
+    
+    def find_stock_prices(self):
+        stock_prices = []
+        # Get stock name from stocks_collection
+        for ticker, orders in self.sell_orders.items():
+            # Compute the lowest price among all sell orders for this stock.
+            if orders:
+                lowest_price = orders[0][1]  # orders[0] first element in the main,
+                # and price is the second element in the list of the element: [user_id, price, quantity, timestamp, transaction_id]
+            else:
+                lowest_price = None
+
+            # Query MongoDB to get the stock name using the stock_id.
+            stock_doc = stocks_collection.find_one({"stock_id": ticker})
+            stock_name = stock_doc.get("stock_name", "Unknown") if stock_doc else "Unknown"
+
+            stock_prices.append({
+                "stock_id": ticker,
+                "stock_name": stock_name,
+                "current_price": lowest_price
+            })
+
+        return True, stock_prices
 
 # Instantiate a shared order book
 orderBookInst = OrderBook()

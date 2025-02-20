@@ -20,7 +20,7 @@ try:
     client = MongoClient(MONGO_URI)
     db = client["trading_system"]
     # MongoDB collections
-    wallet_transactions_collection = db["wallets"]
+    wallet_transactions_collection = db["wallets_transaction"]
     portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized
     stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
 
@@ -31,6 +31,7 @@ except errors.ConnectionFailure:
 # Endpoint of the Matching Engine Service for order matching
 MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
 MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
+MATCHING_ENGINE_STOCK_PRICES_URL = "http://matching_engine_service:5300/getPrices"
 
 #secret_key = os.environ.get("SECRET_KEY")
 #print("The Secret key is: ", secret_key, "In file Order_service")
@@ -224,7 +225,45 @@ def cancel_stock_transaction():
 
     return jsonify(matching_result), code
 
+@app.route('/getStockPrices', methods=['GET'])
+def get_stock_prices():
+    """
+    Endpoint: GET /getStockPrices
+    Description: Retrieves the prices for stocks.
 
+    Expected Request:
+    Headers: Token
+    """
+    # Extract token from Authorization header, expecting "Bearer <token>"
+    token_header = request.headers.get("token", "")
+    if not token_header:
+        return jsonify({"success": False, "error": "Missing token header"}), 401
+
+    # Validate and decrypt token using JWT_SECRET
+    token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
+    if not token_decoded.get("success", False):
+        error_msg = token_decoded.get("error", "Token validation failed")
+        return jsonify({"success": False, "error": error_msg}), 401
+
+    # Extract user details from token payload
+    user_id = token_decoded.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Missing user ID in token"}), 400
+
+    # Call the Matching Engine /cancelOrder endpoint
+    try:
+        response = requests.post(MATCHING_ENGINE_STOCK_PRICES_URL, json={'user_id': user_id})
+        if response.status_code == 200:
+            matching_result = response.json()
+            code = 200
+        else:
+            matching_result = {"success": False, "error": "Matching Engine error"}
+            code = response.status_code
+    except Exception as e:
+        matching_result = {"success": False, "error": str(e)}
+        code = 500
+
+    return jsonify(matching_result), code
 
 @app.route('/getWalletTransactions', methods=['POST'])
 def get_wallet_transactions():
@@ -246,9 +285,6 @@ def get_wallet_transactions():
         ]
     }
     """
-
-    # Get request JSON data
-    data = request.get_json()
     
     token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
