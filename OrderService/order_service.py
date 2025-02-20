@@ -48,7 +48,6 @@ def place_stock_order():
     # Grab the JSON body
     request_data = request.get_json()
     logger.info(request_data, "Printing Here-----------------------------------")
-    print(request_data, "Printing Here-----------------------------------")
     # ------ Sanity check ------
     # 1 - Decrypt & validate token
     token = request.headers.get("token")
@@ -191,9 +190,8 @@ def cancel_stock_transaction():
 
     # Validate and decrypt token using JWT_SECRET
     token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
-    if not token_decoded.get("success", False):
-        error_msg = token_decoded.get("error", "Token validation failed")
-        return jsonify({"success": False, "error": error_msg}), 401
+    if "error" in token_decoded:
+        return jsonify({"success: false", token_decoded})
 
     # Ensure stock transaction ID is provided in the JSON body
     stock_tx_id = data.get("stock_tx_id")
@@ -242,9 +240,8 @@ def get_stock_prices():
 
     # Validate and decrypt token using JWT_SECRET
     token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
-    if not token_decoded.get("success", False):
-        error_msg = token_decoded.get("error", "Token validation failed")
-        return jsonify({"success": False, "error": error_msg}), 401
+    if "error" in token_decoded:
+        return jsonify({"success: false", token_decoded})
 
     # Extract user details from token payload
     user_id = token_decoded.get("user_id")
