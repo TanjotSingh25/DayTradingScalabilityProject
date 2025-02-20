@@ -66,13 +66,16 @@ class OrderBook:
     def update_wallet_balance(self, user_id, amount):
         """Updates the user's wallet balance after a trade."""
         try:
+            # Ensure a wallet document exists with a default balance of 0.
             wallets_collection.update_one(
                 {"user_id": user_id},
-                {
-                    "$inc": {"balance": amount},
-                    "$setOnInsert": {"balance": 0}
-                },
+                {"$setOnInsert": {"balance": 0}},
                 upsert=True
+            )
+            # Now increment the balance.
+            wallets_collection.update_one(
+                {"user_id": user_id},
+                {"$inc": {"balance": amount}}
             )
             logging.info(f"Updated wallet balance for {user_id} by {amount}")
         except Exception as e:
@@ -222,8 +225,6 @@ class OrderBook:
                 },
                 upsert=True
             )
-            
-            
             #  # Log wallet transaction for seller (credit)
             # wallet_transactions_collection.insert_one({
             #     "wallet_tx_id": seller_wallet_tx_id,
