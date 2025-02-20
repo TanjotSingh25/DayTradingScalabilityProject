@@ -5,6 +5,11 @@ import HomePage from "@/components/HomePage.vue";
 import PlaceOrder from '../components/PlaceOrder.vue';
 import ViewTransactions from '../components/ViewTransactions.vue';
 import CancelTransaction from '../components/CancelTransaction.vue';
+import CreateStock from '@/components/CreateStock.vue';
+import AddMoneyToWallet from '@/components/AddMoneyToWallet.vue';
+import AddStockToUser from '@/components/AddStockToUser.vue';
+import GetWalletBalance from '@/components/GetWalletBalance.vue';
+import StockPortfolio from '@/components/StockPortfolio.vue';
 
 const routes = [
   { path: "/", component: LoginPage },
@@ -13,6 +18,11 @@ const routes = [
   { path: '/place-order', component: PlaceOrder },
   { path: '/view-transactions', component: ViewTransactions },
   { path: '/cancel-transaction', component: CancelTransaction },
+  { path: '/create-stock', component: CreateStock },
+  { path: '/add-money', component: AddMoneyToWallet},
+  { path: '/add-stock', component: AddStockToUser},
+  { path: '/wallet-balance', component: GetWalletBalance },
+  { path: '/portfolio', component: StockPortfolio}
 ];
 
 const router = createRouter({
