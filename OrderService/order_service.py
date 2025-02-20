@@ -120,7 +120,7 @@ def get_stock_transactions():
                 "wallet_tx_id": "uuid" or None,
                 "quantity": 50,
                 "order_status": "COMPLETED",
-                "price": 135,
+                "stock_price": 135,
                 "is_buy": true,
                 "order_type": "MARKET",
                 "timestamp": "2025-01-26T12:00:00Z"
@@ -154,7 +154,7 @@ def get_stock_transactions():
             "wallet_tx_id": str(doc.get("wallet_tx_id")) if doc.get("wallet_tx_id") else None,  # Wallet transaction reference
             "quantity": doc.get("quantity", 0),
             "order_status": doc.get("order_status", ""),  # Use correct field for status
-            "price": doc.get("stock_price", 0),  # Ensuring price is retrieved correctly
+            "stock_price": doc.get("stock_price", 0),  # Ensuring price is retrieved correctly
             "is_buy": doc.get("is_buy", False),
             "order_type": doc.get("order_type", ""),  # Order type (MARKET, LIMIT, etc.)
             "timestamp": doc.get("time_stamp") or doc.get("created_at") or ""
