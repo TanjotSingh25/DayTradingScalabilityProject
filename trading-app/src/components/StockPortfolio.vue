@@ -22,10 +22,11 @@ export default {
     },
     methods: {
         async fetchPortfolio() {
+            const token = localStorage.getItem("token");
             try {
-                const response = await axios.get('getStockPortfolio', {
+                const response = await axios.get('http://localhost/setup/getStockPortfolio', {
                     headers: {
-                        token: "jwt_token"
+                        token: token
                     }
                 });
                 this.portfolio = response.data.data;

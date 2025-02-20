@@ -21,12 +21,13 @@
     },
     methods: {
       async addMoney() {
+        const token = localStorage.getItem("token");
         try {
-          const response = await axios.post('/addMoneyToWallet', {
+          const response = await axios.post('http://localhost/setup/addMoneyToWallet', {
             amount: this.amount,
           }, {
             headers: {
-              token: "jwt_token",
+              token: token
             },
           });
           this.message = "Money added to wallet successfully!";

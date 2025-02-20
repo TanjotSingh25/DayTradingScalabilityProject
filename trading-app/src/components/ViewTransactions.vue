@@ -36,9 +36,14 @@ export default {
     },
     methods: {
         async fetchTransactions() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                this.message = "Invalid token."
+                return;
+            }
             try {
                 const response = await axios.get("/api/getStockTransactions", {
-                    params: { token: "jwt_token" },
+                    params: { token: token }
                 });
                 this.transactions = response.data.data;
             } catch (error) {
@@ -46,29 +51,7 @@ export default {
             } finally {
                 this.loading = false;
             }
-        },
-        async cancelTransaction(stockTxId) {
-            try {
-                const response = await axios.post(
-                    "api/cancelStockTransaction",
-                    {
-                        token: "jwt_token",
-                        stock_tx_id: stockTxId,
-                    }
-                );
-                if (response.data.success) {
-                    await this.fetchTransactions();
-                    console.log("Transaction cancelled:", stockTxId);
-                } else {
-                    console.error(
-                        "Failed to cancel transaction:",
-                        response.data.error
-                    );
-                }
-            } catch (error) {
-                console.error("Error canceling transaction:", error);
-            }
-        },
-    },
+        }
+    }
 };
 </script>
