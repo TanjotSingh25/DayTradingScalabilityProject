@@ -186,7 +186,7 @@ def cancel_stock_transaction():
     # Validate and decrypt token using JWT_SECRET
     token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
     if "error" in token_decoded:
-        return jsonify({"success: false", token_decoded})
+        return jsonify({"success: false", token_decoded}), 401
 
     # Ensure stock transaction ID is provided in the JSON body
     stock_tx_id = data.get("stock_tx_id")
@@ -229,14 +229,15 @@ def get_stock_prices():
     Headers: Token
     """
     # Extract token from Authorization header, expecting "Bearer <token>"
-    token_header = request.headers.get("token", "")
+    token_header = request.headers.get("token")
     if not token_header:
         return jsonify({"success": False, "error": "Missing token header"}), 401
 
     # Validate and decrypt token using JWT_SECRET
     token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
     if "error" in token_decoded:
-        return jsonify({"success: false", token_decoded})
+        error_msg = token_decoded.get("error")
+        return jsonify({"success": False, "error": error_msg}), 401
 
     # Extract user details from token payload
     user_id = token_decoded.get("user_id")
