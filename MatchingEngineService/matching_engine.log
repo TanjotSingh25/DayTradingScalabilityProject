@@ -4,3 +4,103 @@
  * Running on http://127.0.0.1:5300
  * Running on http://172.18.0.6:5300
 2025-02-20 05:09:55,249 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 09:16:15,421 - INFO - MongoDB connection established successfully.
+2025-02-20 09:16:15,434 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-20 09:16:15,435 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 09:18:33,041 - INFO - Updated stock balance for user 1: -50 shares of 08fd4c47-d825-4c9e-bbd7-a3928ed0e6cd
+2025-02-20 09:18:33,043 - INFO - SELL ORDER: 1 listed 50 shares of 08fd4c47-d825-4c9e-bbd7-a3928ed0e6cd at 25
+2025-02-20 09:18:33,044 - INFO - 172.22.0.7 - - [20/Feb/2025 09:18:33] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 09:19:16,062 - INFO - Queued leftover market buy for 1: 25 shares of d524459d-3043-491b-87f1-9d0b4d3b55eb
+2025-02-20 09:19:16,063 - WARNING - BUY MARKET ORDER: No sellers. Queued 25 shares for 1.
+2025-02-20 09:19:16,063 - INFO - 172.22.0.7 - - [20/Feb/2025 09:19:16] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 09:19:27,580 - INFO - {'08fd4c47-d825-4c9e-bbd7-a3928ed0e6cd': [[1, 25, 50, datetime.datetime(2025, 2, 20, 9, 18, 33, 43167), 'SELL3731-cd82-49fb-bd93-a1c9bfb2ae45']]}
+2025-02-20 09:19:27,585 - INFO - Updated stock balance for user 1: 25 shares of 08fd4c47-d825-4c9e-bbd7-a3928ed0e6cd
+2025-02-20 09:19:27,587 - INFO - Updated wallet balance for 1 by 625
+2025-02-20 09:19:27,588 - INFO - Updated wallet balance for 1 by -625
+2025-02-20 09:19:27,594 - INFO - BUY MARKET TRADE: 1 bought 25 shares of 08fd4c47-d825-4c9e-bbd7-a3928ed0e6cd @ 25
+2025-02-20 09:19:27,597 - INFO - 172.22.0.7 - - [20/Feb/2025 09:19:27] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 09:21:30,097 - INFO - {'08fd4c47-d825-4c9e-bbd7-a3928ed0e6cd': [[1, 25, 25, datetime.datetime(2025, 2, 20, 9, 18, 33, 43167), 'SELL3731-cd82-49fb-bd93-a1c9bfb2ae45']]}
+2025-02-20 09:21:30,097 - WARNING - Order with stock_tx_id=fb91af7e-fb6f-456f-85be-b582c8cc4dd8 not found for user_id=1.
+2025-02-20 09:21:30,098 - INFO - 172.22.0.7 - - [20/Feb/2025 09:21:30] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 09:21:43,203 - INFO - 172.22.0.7 - - [20/Feb/2025 09:21:43] "[33mPOST /getPrices HTTP/1.1[0m" 404 -
+2025-02-20 09:23:27,415 - INFO - 172.22.0.7 - - [20/Feb/2025 09:23:27] "[33mPOST /getPrices HTTP/1.1[0m" 404 -
+2025-02-20 09:23:50,912 - INFO - {'08fd4c47-d825-4c9e-bbd7-a3928ed0e6cd': [[1, 25, 25, datetime.datetime(2025, 2, 20, 9, 18, 33, 43167), 'SELL3731-cd82-49fb-bd93-a1c9bfb2ae45']]}
+2025-02-20 09:23:50,913 - WARNING - Order with stock_tx_id=fb91af7e-fb6f-456f-85be-b582c8cc4dd8 not found for user_id=1.
+2025-02-20 09:23:50,914 - INFO - 172.22.0.7 - - [20/Feb/2025 09:23:50] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 09:32:07,616 - INFO - MongoDB connection established successfully.
+2025-02-20 09:32:07,628 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-20 09:32:07,629 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 09:34:25,380 - INFO - Queued leftover market buy for 1: 25 shares of 53025ee2-f5a8-4c8a-ab48-fa36beb31809
+2025-02-20 09:34:25,380 - WARNING - BUY MARKET ORDER: No sellers. Queued 25 shares for 1.
+2025-02-20 09:34:25,382 - INFO - 172.22.0.7 - - [20/Feb/2025 09:34:25] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 09:34:50,931 - INFO - {}
+2025-02-20 09:34:50,935 - INFO - Updated stock balance for user 1: -50 shares of 53025ee2-f5a8-4c8a-ab48-fa36beb31809
+2025-02-20 09:34:50,937 - INFO - SELL ORDER: 1 listed 50 shares of 53025ee2-f5a8-4c8a-ab48-fa36beb31809 at 25
+2025-02-20 09:34:50,950 - INFO - Updated wallet balance for 1 by 625
+2025-02-20 09:34:50,952 - INFO - Updated wallet balance for 1 by -625
+2025-02-20 09:34:50,957 - INFO - MATCHED ORDER: 1 bought 25 shares of 53025ee2-f5a8-4c8a-ab48-fa36beb31809 from 1 at 25
+2025-02-20 09:34:50,958 - INFO - 172.22.0.7 - - [20/Feb/2025 09:34:50] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 09:36:44,237 - INFO - {'53025ee2-f5a8-4c8a-ab48-fa36beb31809': [[1, 25, 25, datetime.datetime(2025, 2, 20, 9, 34, 50, 936985), 'SELLad66-7093-47ea-8f33-d165dcf88345']]}
+2025-02-20 09:36:44,237 - WARNING - Order with stock_tx_id=e98f27f3-2eca-43db-b1bd-13a6b43a506c not found for user_id=1.
+2025-02-20 09:36:44,238 - INFO - 172.22.0.7 - - [20/Feb/2025 09:36:44] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 09:37:44,282 - INFO - 172.22.0.7 - - [20/Feb/2025 09:37:44] "[31m[1mPOST /getPrices HTTP/1.1[0m" 405 -
+2025-02-20 09:38:02,805 - INFO - 172.22.0.7 - - [20/Feb/2025 09:38:02] "[31m[1mPOST /getPrices HTTP/1.1[0m" 405 -
+2025-02-20 09:39:25,344 - INFO - {'53025ee2-f5a8-4c8a-ab48-fa36beb31809': [[1, 25, 25, datetime.datetime(2025, 2, 20, 9, 34, 50, 936985), 'SELLad66-7093-47ea-8f33-d165dcf88345']]}
+2025-02-20 09:39:25,347 - INFO - Updated stock balance for user 1: -50 shares of 53025ee2-f5a8-4c8a-ab48-fa36beb31809
+2025-02-20 09:39:25,349 - INFO - SELL ORDER: 1 listed 50 shares of 53025ee2-f5a8-4c8a-ab48-fa36beb31809 at 25
+2025-02-20 09:39:25,349 - INFO - 172.22.0.7 - - [20/Feb/2025 09:39:25] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 09:40:18,306 - INFO - {'53025ee2-f5a8-4c8a-ab48-fa36beb31809': [[1, 25, 25, datetime.datetime(2025, 2, 20, 9, 34, 50, 936985), 'SELLad66-7093-47ea-8f33-d165dcf88345'], [1, 25, 50, datetime.datetime(2025, 2, 20, 9, 39, 25, 349026), 'SELL4fc0-cbae-4367-863c-dc6f959833c5']]}
+2025-02-20 09:40:18,310 - INFO - Updated stock balance for user 1: -175 shares of 53025ee2-f5a8-4c8a-ab48-fa36beb31809
+2025-02-20 09:40:18,311 - INFO - SELL ORDER: 1 listed 175 shares of 53025ee2-f5a8-4c8a-ab48-fa36beb31809 at 25
+2025-02-20 09:40:18,312 - INFO - 172.22.0.7 - - [20/Feb/2025 09:40:18] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 09:41:01,091 - INFO - {'53025ee2-f5a8-4c8a-ab48-fa36beb31809': [[1, 25, 25, datetime.datetime(2025, 2, 20, 9, 34, 50, 936985), 'SELLad66-7093-47ea-8f33-d165dcf88345'], [1, 25, 50, datetime.datetime(2025, 2, 20, 9, 39, 25, 349026), 'SELL4fc0-cbae-4367-863c-dc6f959833c5'], [1, 25, 175, datetime.datetime(2025, 2, 20, 9, 40, 18, 311722), 'SELLcc5f-df84-4e63-a546-9ac83d3efa03']]}
+2025-02-20 09:41:01,093 - WARNING - Order with stock_tx_id=61109514-bfb4-4b09-8306-26e433504fb2 not found for user_id=1.
+2025-02-20 09:41:01,094 - INFO - 172.22.0.7 - - [20/Feb/2025 09:41:01] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 09:42:49,148 - INFO - {'53025ee2-f5a8-4c8a-ab48-fa36beb31809': [[1, 25, 25, datetime.datetime(2025, 2, 20, 9, 34, 50, 936985), 'SELLad66-7093-47ea-8f33-d165dcf88345'], [1, 25, 50, datetime.datetime(2025, 2, 20, 9, 39, 25, 349026), 'SELL4fc0-cbae-4367-863c-dc6f959833c5'], [1, 25, 175, datetime.datetime(2025, 2, 20, 9, 40, 18, 311722), 'SELLcc5f-df84-4e63-a546-9ac83d3efa03']]}
+2025-02-20 09:42:49,149 - WARNING - Order with stock_tx_id=53025ee2-f5a8-4c8a-ab48-fa36beb31809 not found for user_id=1.
+2025-02-20 09:42:49,150 - INFO - 172.22.0.7 - - [20/Feb/2025 09:42:49] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 09:43:26,692 - INFO - {'53025ee2-f5a8-4c8a-ab48-fa36beb31809': [[1, 25, 25, datetime.datetime(2025, 2, 20, 9, 34, 50, 936985), 'SELLad66-7093-47ea-8f33-d165dcf88345'], [1, 25, 50, datetime.datetime(2025, 2, 20, 9, 39, 25, 349026), 'SELL4fc0-cbae-4367-863c-dc6f959833c5'], [1, 25, 175, datetime.datetime(2025, 2, 20, 9, 40, 18, 311722), 'SELLcc5f-df84-4e63-a546-9ac83d3efa03']]}
+2025-02-20 09:43:26,694 - INFO - Cancelled SELL order for user_id=1, stock_id=53025ee2-f5a8-4c8a-ab48-fa36beb31809, stock_tx_id=SELLad66-7093-47ea-8f33-d165dcf88345
+2025-02-20 09:43:26,697 - INFO - 172.22.0.7 - - [20/Feb/2025 09:43:26] "POST /cancelOrder HTTP/1.1" 200 -
+2025-02-20 09:44:10,314 - INFO - {'53025ee2-f5a8-4c8a-ab48-fa36beb31809': [[1, 25, 50, datetime.datetime(2025, 2, 20, 9, 39, 25, 349026), 'SELL4fc0-cbae-4367-863c-dc6f959833c5'], [1, 25, 175, datetime.datetime(2025, 2, 20, 9, 40, 18, 311722), 'SELLcc5f-df84-4e63-a546-9ac83d3efa03']]}
+2025-02-20 09:44:10,314 - WARNING - Order with stock_tx_id=SELLad66-7093-47ea-8f33-d165dcf88345 not found for user_id=1.
+2025-02-20 09:44:10,315 - INFO - 172.22.0.7 - - [20/Feb/2025 09:44:10] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 09:57:44,374 - INFO - MongoDB connection established successfully.
+2025-02-20 09:57:44,387 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.5:5300
+2025-02-20 09:57:44,387 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-20 10:02:06,654 - INFO - Updated stock balance for user 1: -75 shares of 8132541c-8ba1-4a08-8629-5d2a8e2f2432
+2025-02-20 10:02:06,656 - INFO - SELL ORDER: 1 listed 75 shares of 8132541c-8ba1-4a08-8629-5d2a8e2f2432 at 25
+2025-02-20 10:02:06,657 - INFO - 172.22.0.7 - - [20/Feb/2025 10:02:06] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 10:02:43,690 - INFO - Cancelled SELL order for user_id=1, stock_id=8132541c-8ba1-4a08-8629-5d2a8e2f2432, stock_tx_id=c1ea6cc4-3a69-4062-90a4-2b9f0cf10b7a
+2025-02-20 10:02:43,693 - INFO - 172.22.0.7 - - [20/Feb/2025 10:02:43] "POST /cancelOrder HTTP/1.1" 200 -
+2025-02-20 10:03:47,438 - INFO - Queued leftover market buy for 1: 25 shares of 8132541c-8ba1-4a08-8629-5d2a8e2f2432
+2025-02-20 10:03:47,438 - WARNING - BUY MARKET ORDER: No sellers. Queued 25 shares for 1.
+2025-02-20 10:03:47,439 - INFO - 172.22.0.7 - - [20/Feb/2025 10:03:47] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 10:04:01,672 - INFO - {'8132541c-8ba1-4a08-8629-5d2a8e2f2432': []}
+2025-02-20 10:04:01,673 - WARNING - Order with stock_tx_id=636762b1-a8b4-4cdd-8ed1-c63606ac2579 not found for user_id=1.
+2025-02-20 10:04:01,673 - INFO - 172.22.0.7 - - [20/Feb/2025 10:04:01] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 10:06:47,147 - INFO - {'8132541c-8ba1-4a08-8629-5d2a8e2f2432': []}
+2025-02-20 10:06:47,154 - INFO - Updated stock balance for user 1: -75 shares of 8132541c-8ba1-4a08-8629-5d2a8e2f2432
+2025-02-20 10:06:47,156 - INFO - SELL ORDER: 1 listed 75 shares of 8132541c-8ba1-4a08-8629-5d2a8e2f2432 at 25
+2025-02-20 10:06:47,158 - INFO - Updated wallet balance for 1 by 625
+2025-02-20 10:06:47,160 - INFO - Updated wallet balance for 1 by -625
+2025-02-20 10:06:47,165 - INFO - MATCHED ORDER: 1 bought 25 shares of 8132541c-8ba1-4a08-8629-5d2a8e2f2432 from 1 at 25
+2025-02-20 10:06:47,167 - INFO - 172.22.0.7 - - [20/Feb/2025 10:06:47] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-20 10:07:02,399 - INFO - {'8132541c-8ba1-4a08-8629-5d2a8e2f2432': [[1, 25, 50, datetime.datetime(2025, 2, 20, 10, 6, 47, 156141), 'a69bf8c1-a0d2-4e4f-9eff-2723eaf689f7']]}
+2025-02-20 10:07:02,400 - WARNING - Order with stock_tx_id=edcddf5b-54fd-4351-89ae-711a0ae53dbf not found for user_id=1.
+2025-02-20 10:07:02,401 - INFO - 172.22.0.7 - - [20/Feb/2025 10:07:02] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 10:07:31,731 - INFO - {'8132541c-8ba1-4a08-8629-5d2a8e2f2432': [[1, 25, 50, datetime.datetime(2025, 2, 20, 10, 6, 47, 156141), 'a69bf8c1-a0d2-4e4f-9eff-2723eaf689f7']]}
+2025-02-20 10:07:31,732 - WARNING - Order with stock_tx_id=636762b1-a8b4-4cdd-8ed1-c63606ac2579 not found for user_id=1.
+2025-02-20 10:07:31,733 - INFO - 172.22.0.7 - - [20/Feb/2025 10:07:31] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -
+2025-02-20 10:07:49,062 - INFO - {'8132541c-8ba1-4a08-8629-5d2a8e2f2432': [[1, 25, 50, datetime.datetime(2025, 2, 20, 10, 6, 47, 156141), 'a69bf8c1-a0d2-4e4f-9eff-2723eaf689f7']]}
+2025-02-20 10:07:49,063 - WARNING - Order with stock_tx_id=8132541c-8ba1-4a08-8629-5d2a8e2f2432 not found for user_id=1.
+2025-02-20 10:07:49,063 - INFO - 172.22.0.7 - - [20/Feb/2025 10:07:49] "[31m[1mPOST /cancelOrder HTTP/1.1[0m" 400 -

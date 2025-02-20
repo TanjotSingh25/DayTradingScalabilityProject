@@ -80,11 +80,6 @@ def place_stock_order():
         "user_id": user_id
         }
 
-    # if buy then set first 4 bytes to BUYS, and if sell, set first 4 bytes to SELL
-    if request_data["is_buy"]:
-        order_payload["order_id"] = "BUYS" + order_payload["order_id"][4:]
-    else:
-        order_payload["order_id"] = "SELL" + order_payload["order_id"][4:]
     logger.warning(order_payload["order_id"])
 
     # Call the matching engine endpoint
