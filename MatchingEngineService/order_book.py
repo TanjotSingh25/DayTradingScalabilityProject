@@ -49,7 +49,7 @@ else:
 
 class OrderBook:
     def __init__(self):
-        self.buy_orders = {}  # { "ticker": [[user_id, quantity, timestamp, transaction_id], ...] }
+        self.buy_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp, transaction_id], ...] }
         self.sell_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp, transaction_id], ...] }
 
     def get_wallet_balance(self, user_id):
@@ -82,7 +82,7 @@ class OrderBook:
             logging.error(f"Error updating wallet balance for {user_id}: {e}")
             
 
-    def add_buy_order(self, user_id, order_id, stock_id, price, quantity):
+    def add_buy_order(self, user_id, stock_id, price, quantity):
         """
         Handles a MARKET BUY order in a loop, allowing partial fills.
         1. Continually purchases from the lowest-priced sell order until:
@@ -120,7 +120,7 @@ class OrderBook:
         if stock_id not in self.sell_orders or not self.sell_orders[stock_id]:
             # No sellers available at all -> queue the entire order as unfilled
             # Mark status as INCOMPLETE, and put this buy into a "market buy queue".
-            self._queue_market_buy(user_id, parent_tx_id, quantity, stock_id) 
+            self._queue_market_buy(user_id, None, parent_tx_id, quantity, stock_id) 
             logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for {user_id}.")
             return {
                 "success": True,
@@ -276,12 +276,12 @@ class OrderBook:
             # No shares actually bought
             order_status = "INCOMPLETE"
             # Optionally queue the entire order as a market buy
-            self._queue_market_buy(user_id, parent_tx_id, remaining_qty, stock_id)
+            self._queue_market_buy(user_id, None, parent_tx_id, remaining_qty, partial_tx_id)
         elif remaining_qty > 0:
             # Some portion was filled, but not all
             order_status = "PARTIALLY_COMPLETED"
             # The leftover can also be queued as a market buy if desired
-            self._queue_market_buy(user_id, parent_tx_id, remaining_qty, stock_id)
+            self._queue_market_buy(user_id, None, parent_tx_id, remaining_qty, partial_tx_id)
         else:
             # All shares filled
             order_status = "COMPLETED"
@@ -300,7 +300,7 @@ class OrderBook:
             "stock_tx_id": parent_tx_id
     }
 
-    def _queue_market_buy(self, user_id, order_id, quantity, stock_id):
+    def _queue_market_buy(self, user_id, price, order_id, quantity, stock_id):
         """
         Helper method to queue leftover market buys if desired.
         For example, you might store them in self.buy_orders[stock_id]
@@ -314,7 +314,7 @@ class OrderBook:
             self.buy_orders[stock_id] = []
 
         # store price as None to represent a market buy
-        self.buy_orders[stock_id].append([user_id, None, quantity, datetime.now(), order_id])
+        self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
 
         # We don't necessarily need to deduct funds here, because
         # no trade is happening yet. The user will pay once a seller appears.
@@ -441,7 +441,7 @@ class OrderBook:
             return False
 
 
-    def add_sell_order(self, user_id, order_id, stock_id, price, quantity):
+    def add_sell_order(self, user_id, stock_id, price, quantity):
         """ Adds a sell order only if the user has enough stock balance. """
 
         # Get the user's stock balance (returns an integer)
@@ -465,9 +465,10 @@ class OrderBook:
             return {"success": False, "error": "Portfolio update failed."}
 
         # Insert order into stock_transactions_collection
+        st_tx_id = str(uuid4())
         try:
             stock_transactions_collection.insert_one({
-                "stock_tx_id": str(uuid4()),
+                "stock_tx_id": st_tx_id,
                 "parent_stock_tx_id": None,
                 "stock_id": stock_id,
                 "wallet_tx_id": str(uuid4()),  # No wallet transaction for a limit order yet
@@ -480,14 +481,14 @@ class OrderBook:
                 "time_stamp": datetime.now().isoformat()
             })
         except errors.DuplicateKeyError:
-            logging.error(f"DUPLICATE KEY ERROR: stock_tx_id={order_id} already exists. Retrying...")
+            logging.error(f"DUPLICATE KEY ERROR: stock_tx_id={st_tx_id} already exists. Retrying...")
             return {"success": False, "error": "Duplicate stock transaction ID. Try again."}
 
         # Add the sell order to in-memory order book
         if stock_id not in self.sell_orders:
             self.sell_orders[stock_id] = []
 
-        self.sell_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
+        self.sell_orders[stock_id].append([user_id, price, quantity, datetime.now(), st_tx_id])
 
         # Ensure orders are sorted (Lowest price first, FIFO for equal prices)
         self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))
@@ -742,4 +743,4 @@ class OrderBook:
         return True, stock_prices
 
 # Instantiate a shared order book
-orderBookInst = OrderBook()
+#orderBookInst = OrderBook()
