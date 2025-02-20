@@ -21,7 +21,7 @@
       async fetchBalance() {
         const token = localStorage.getItem("token");
         try {
-          const response = await axios.get('/getWalletBalance', {
+          const response = await axios.get('http://localhost/setup/getWalletBalance', {
             headers: {
               token: token
             },
