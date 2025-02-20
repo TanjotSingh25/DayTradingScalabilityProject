@@ -22,7 +22,6 @@
     data() {
       return {
         order: {
-          token: "jwt_token",
           stock_id: "",
           is_buy: true,
           quantity: 0,
@@ -33,8 +32,13 @@
     },
     methods: {
       async placeOrder() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          this.message = "Invalid token.";
+          return;
+        }
+
         const orderPayload = {
-          token: this.order.token,
           stock_id: this.order.stock_id,
           is_buy: this.order.is_buy ? "MARKET" : "LIMIT",
           quantity: this.order.quantity,
