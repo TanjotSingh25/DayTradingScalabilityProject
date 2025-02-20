@@ -129,7 +129,7 @@ def get_stock_transactions():
     }
     """
     # Grab the JSON body
-    request_data = request.get_json()
+    # request_data = request.get_json()
 
     # Validate and decrypt token
     token = request.headers.get("token")
