@@ -200,7 +200,7 @@ class OrderBook:
             partial_tx_id = str(uuid4())
             stock_transactions_collection.insert_one({
                 "stock_tx_id": partial_tx_id,
-                "parent_stock_tx_id": parent_tx_id if remaining_qty > 0 else None,
+                "parent_stock_tx_id": parent_tx_id, #if remaining_qty > 0 else None,
                 "stock_id": stock_id,
                 "wallet_tx_id": wallet_tx_id,
                 "quantity": trade_qty,
@@ -250,7 +250,7 @@ class OrderBook:
             # 7. Record this partial execution
             executed_trades.append({
                 "stock_tx_id": partial_tx_id,
-                "parent_stock_tx_id": parent_tx_id if remaining_qty > 0 else None,
+                "parent_stock_tx_id": parent_tx_id, # if remaining_qty > 0 else None,
                 "stock_id": stock_id,
                 "wallet_tx_id": wallet_tx_id,
                 "quantity": trade_qty,
