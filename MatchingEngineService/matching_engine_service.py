@@ -14,8 +14,8 @@ def set_wallet():
     Sets or updates a user's wallet balance.
     JSON expected: { "user_id": "uuid", "balance": 5000 }
     """
-    logging.info(orderBookInst.sell_orders)
-    logging.info(orderBookInst.buy_orders)
+    #logging.info(orderBookInst.sell_orders)
+    #logging.info(orderBookInst.buy_orders)
     data = request.get_json()
     user_id = data.get("user_id")
     balance = data.get("balance")
@@ -45,8 +45,8 @@ def place_order():
 
     stock_id = data.get("stock_id", "")
 
-    logging.info(orderBookInst.sell_orders)
-    logging.info(orderBookInst.buy_orders)
+    #logging.info(orderBookInst.sell_orders)
+    #logging.info(orderBookInst.buy_orders)
     try:
         if order_type == "MARKET":
             result = orderBookInst.add_buy_order(user_id, stock_id, price, quantity)
@@ -65,16 +65,16 @@ def place_order():
 @app.route('/matchOrders', methods=['POST'])
 def match_orders():
     """ Matches and executes orders from the order book. """
-    logging.info(orderBookInst.sell_orders)
-    logging.info(orderBookInst.buy_orders)
+    #logging.info(orderBookInst.sell_orders)
+    #logging.info(orderBookInst.buy_orders)
     executed_trades = orderBookInst.match_orders()
     
     return jsonify({"success": True, "executed_trades": executed_trades})
 
 @app.route('/cancelOrder', methods=['POST'])
 def cancel_order():
-    logging.info(orderBookInst.sell_orders)
-    logging.info(orderBookInst.buy_orders)
+    #logging.info(orderBookInst.sell_orders)
+    #logging.info(orderBookInst.buy_orders)
     # False = Trade already executed/Trade does no exist
     # True = Trade cancelled
     data = request.get_json()
@@ -91,8 +91,8 @@ def cancel_order():
 @app.route('/getPrices', methods=['GET'])
 def getPrices():
     # this calls orderbookInst to get current prices of each limit sell ticker
-    logging.info(orderBookInst.sell_orders)
-    logging.info(orderBookInst.buy_orders)
+    #logging.info(orderBookInst.sell_orders)
+    #logging.info(orderBookInst.buy_orders)
     data = request.get_json()
     result, stock_prices = orderBookInst.find_stock_prices()
 
