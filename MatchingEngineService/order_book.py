@@ -211,7 +211,7 @@ class OrderBook:
                 "seller_id": seller_id,
                 "time_stamp": datetime.now().isoformat()
             })
-            
+
             # Generate a unique wallet transaction ID for seller credit
             seller_wallet_tx_id = str(uuid4())
             
