@@ -20,6 +20,10 @@
     methods: {
       async fetchBalance() {
         const token = localStorage.getItem("token");
+        if (!token) {
+                this.message = "Invalid token.";
+                return;
+            }
         try {
           const response = await axios.get('http://localhost/setup/getWalletBalance', {
             headers: {

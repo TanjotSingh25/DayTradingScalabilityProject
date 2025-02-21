@@ -306,3 +306,18 @@
  * Running on http://127.0.0.1:5300
  * Running on http://172.22.0.6:5300
 2025-02-21 00:27:05,759 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-21 05:58:07,511 - INFO - MongoDB connection established successfully.
+2025-02-21 05:58:07,530 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.18.0.5:5300
+2025-02-21 05:58:07,530 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-21 06:03:05,331 - INFO - {}
+2025-02-21 06:03:05,331 - INFO - {}
+2025-02-21 06:03:05,334 - INFO - Queued leftover market buy for 1: 100 shares of a68343ad-938d-4372-ace9-50b7d0dfff5e
+2025-02-21 06:03:05,334 - WARNING - BUY MARKET ORDER: No sellers. Queued 100 shares for 1.
+2025-02-21 06:03:05,337 - INFO - 172.18.0.7 - - [21/Feb/2025 06:03:05] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-21 06:05:58,476 - INFO - {}
+2025-02-21 06:05:58,477 - INFO - {'a68343ad-938d-4372-ace9-50b7d0dfff5e': [[1, None, 100, datetime.datetime(2025, 2, 21, 6, 3, 5, 334388), '08885957-7855-4a7f-80f5-c4b2a7bef940']]}
+2025-02-21 06:05:58,478 - INFO - Cancelled MARKET order for user_id=1, stock_id=a68343ad-938d-4372-ace9-50b7d0dfff5e, stock_tx_id=08885957-7855-4a7f-80f5-c4b2a7bef940
+2025-02-21 06:05:58,482 - INFO - 172.18.0.7 - - [21/Feb/2025 06:05:58] "POST /cancelOrder HTTP/1.1" 200 -

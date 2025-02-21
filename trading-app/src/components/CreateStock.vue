@@ -21,6 +21,10 @@ export default {
     methods: {
         async createStock() {
             const token = localStorage.getItem("token");
+            if (!token) {
+                this.message = "Invalid token.";
+                return;
+            }
             try {
                 const response = await axios.post(
                     "http://localhost/setup/createStock",

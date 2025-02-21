@@ -57,6 +57,10 @@ export default {
             // Get the stockId corresponding to the selected stockName
             const stockId = this.stocks[this.selectedStock];
             const token = localStorage.getItem("token");
+            if (!token) {
+                this.message = "Invalid token.";
+                return;
+            }
 
             try {
                 const response = await axios.post(
