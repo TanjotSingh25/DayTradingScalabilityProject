@@ -215,16 +215,6 @@ class OrderBook:
             # Generate a unique wallet transaction ID for seller credit
             seller_wallet_tx_id = str(uuid4())
             
-            #    # Log wallet transaction for buyer (debit)
-            # wallet_transactions_collection.insert_one({
-            #     "wallet_tx_id": wallet_tx_id,
-            #     "user_id": user_id,
-            #     "stock_tx_id": partial_tx_id,
-            #     "is_debit": True,  # Money deducted from buyer
-            #     "amount": trade_value,
-            #     "time_stamp": datetime.now().isoformat()
-            # })
-            
             # Log wallet transaction for buyer (debit)
             wallet_transactions_collection.update_one(
                 {"user_id": user_id},
@@ -241,15 +231,7 @@ class OrderBook:
                 },
                 upsert=True
             )
-            #  # Log wallet transaction for seller (credit)
-            # wallet_transactions_collection.insert_one({
-            #     "wallet_tx_id": seller_wallet_tx_id,
-            #     "user_id": seller_id,
-            #     "stock_tx_id": partial_tx_id,
-            #     "is_debit": False,  # Money credited to seller
-            #     "amount": trade_value,
-            #     "time_stamp": datetime.now().isoformat()
-            # })
+            
             
             wallet_transactions_collection.update_one(
             {"user_id": seller_id},
@@ -292,20 +274,45 @@ class OrderBook:
             order_status = "INCOMPLETE"
             # Optionally queue the entire order as a market buy
             self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
-        elif remaining_qty > 0:
-            # Some portion was filled, but not all
-            order_status = "PARTIALLY_COMPLETED"
-            # The leftover can also be queued as a market buy if desired
-            self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
-        else:
-            # All shares filled
-            order_status = "COMPLETED"
             
-        # Update parent transaction record with final status and remaining quantity
-        stock_transactions_collection.update_one(
-            {"stock_tx_id": parent_tx_id},
-            {"$set": {"remaining_quantity": remaining_qty, "order_status": order_status}}
-        )
+              # Update parent transaction (no fill, keep price=None)
+            stock_transactions_collection.update_one(
+                {"stock_tx_id": parent_tx_id},
+                {"$set": {
+                    "remaining_quantity": remaining_qty,
+                    "order_status": order_status
+                }}
+            )
+            
+        else:
+            if remaining_qty > 0:
+                # Some portion was filled, but not all
+                order_status = "PARTIALLY_COMPLETED"
+                # The leftover can also be queued as a market buy if desired
+                self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
+            else:
+                # All shares filled
+                order_status = "COMPLETED"
+                # CHANGED: Calculate a numeric price for the parent doc
+                # Example: Weighted average of all fills
+                total_cost = 0
+                total_shares = 0
+                for trade in executed_trades:
+                    total_cost += trade["quantity"] * trade["stock_price"]
+                    total_shares += trade["quantity"]
+                avg_fill_price = total_cost / total_shares if total_shares else 0
+                # Update parent transaction record with final status and remaining quantity
+                
+        
+                # Update parent transaction with final status + average fill price
+                stock_transactions_collection.update_one(
+                    {"stock_tx_id": parent_tx_id},
+                    {"$set": {
+                        "remaining_quantity": remaining_qty,
+                        "order_status": order_status,
+                        "stock_price": avg_fill_price  # <--- Now numeric, NOT None
+                    }}
+                )
 
         return {
             "success": True,
@@ -679,14 +686,39 @@ class OrderBook:
         )
 
         # 6) If it's a SELL order, return the stock quantity to the user's portfolio
-        if order_type == "MARKET":
+        if order_type == "LIMIT":
+            # 1) Attempt to increment the existing stock entry
             result = portfolios_collection.update_one(
                 {"user_id": user_id, "data.stock_id": stock_id},
                 {"$inc": {"data.$.quantity_owned": quantity}}
             )
 
             if result.matched_count == 0:
-                logging.warning(f"Stock {stock_id} not found in user {user_id}'s portfolio. Unable to return quantity.")
+               # 2) Fallback if it's a brand-new BUY
+                if quantity > 0:
+                    # Fetch the stock name from stocks_collection
+                    stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
+                    stock_name = stock_doc["stock_name"] if stock_doc else "Unknown"
+
+                    portfolios_collection.update_one(
+                        {"user_id": user_id},
+                        {
+                            "$push": {
+                                "data": {
+                                    "stock_id": stock_id,
+                                    "stock_name": stock_name,
+                                    "quantity_owned": quantity
+                                }
+                            }
+                        },
+                        upsert=True
+                    )
+                    logging.info(f"Created new stock {stock_id} with quantity={quantity} for user {user_id}")
+                    return True
+                else:
+                    # It's a SELL, but user doesn't own it
+                    logging.warning(f"Sell order failed: user {user_id} doesn't own stock {stock_id}")
+                    return False
 
         return True, "Cancellation successful"
     
