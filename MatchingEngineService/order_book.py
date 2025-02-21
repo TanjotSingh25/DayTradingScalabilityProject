@@ -301,6 +301,7 @@ class OrderBook:
                     total_cost += trade["quantity"] * trade["stock_price"]
                     total_shares += trade["quantity"]
                 avg_fill_price = total_cost / total_shares if total_shares else 0
+                avg_fill_price_int = int(avg_fill_price)
                 # Update parent transaction record with final status and remaining quantity
                 
         
@@ -310,7 +311,7 @@ class OrderBook:
                     {"$set": {
                         "remaining_quantity": remaining_qty,
                         "order_status": order_status,
-                        "stock_price": avg_fill_price  # <--- Now numeric, NOT None
+                        "stock_price": avg_fill_price_int  # <--- Now numeric, NOT None
                     }}
                 )
 
