@@ -231,8 +231,6 @@ class OrderBook:
                 },
                 upsert=True
             )
-            
-            
             wallet_transactions_collection.update_one(
             {"user_id": seller_id},
             {
@@ -634,7 +632,7 @@ class OrderBook:
         #    (where transaction_id is at index 3)
         for stock, orders in self.buy_orders.items():
             for order in orders:
-                # order = [user_id, quantity, timestamp, transaction_id]
+                # order = [user_id, price, quantity, timestamp, transaction_id]
                 if order[0] == user_id and order[4] == stock_tx_id:
                     found_item = order
                     order_type = "MARKET"
@@ -721,7 +719,7 @@ class OrderBook:
                     logging.warning(f"Sell order failed: user {user_id} doesn't own stock {stock_id}")
                     return False
 
-        return True, "Cancellation successful"
+        return True
     
     def find_stock_prices(self):
         stock_prices = []

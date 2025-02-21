@@ -41,8 +41,8 @@ def place_order():
     user_id = data.get("user_id")
     order_type = data.get("order_type")
     quantity = data.get("quantity")
-    price = data.get("price", None)
-    
+    price = data.get("price")
+
     # Ensure stock_id is safely extracted
     stock_id = data.get("stock_id", "")
 
@@ -82,13 +82,15 @@ def cancel_order():
     # False = Trade already executed/Trade does no exist
     # True = Trade cancelled
     data = request.get_json()
-    result, reason = orderBookInst.cancel_user_order(data['user_id'], data['stock_tx_id'])
+    result = orderBookInst.cancel_user_order(data['user_id'], data['stock_tx_id'])
     
     code = 400
+    return_message = "Order does not Exist"
     if result:
         code = 200
+        return_message = None
 
-    return {"success" : result, "data": reason}, code
+    return {"success" : result, "data": return_message}, code
 
 @app.route('/getPrices', methods=['GET'])
 def getPrices():
