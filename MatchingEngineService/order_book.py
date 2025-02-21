@@ -267,7 +267,6 @@ class OrderBook:
             upsert=True
         )
 
-
             # 7. Record this partial execution
             executed_trades.append({
                 "stock_tx_id": partial_tx_id,
@@ -305,7 +304,7 @@ class OrderBook:
         # Update parent transaction record with final status and remaining quantity
         stock_transactions_collection.update_one(
             {"stock_tx_id": parent_tx_id},
-            {"$set": {"remaining_quantity": remaining_qty, "status": order_status}}
+            {"$set": {"remaining_quantity": remaining_qty, "order_status": order_status}}
         )
 
         return {
