@@ -103,25 +103,3 @@ def getPrices():
 if __name__ == '__main__':
     
     app.run(host='0.0.0.0', port=5300)
-
-# @app.route('/registerStock', methods=['POST'])
-# def instantiate_stock():
-#     """
-#     Handles stock registration from User Profile Service.
-#     Accepts JSON input:
-#     { "stock_id": "uuid", "ticker": "AAPL", "quantity": 1000, "price": 150 }
-#     """
-#     data = request.get_json()
-#     stock_id = data.get("stock_id")
-#     ticker = data.get("ticker")
-#     quantity = data.get("quantity")
-#     price = data.get("price")
-#     if not stock_id or not ticker or quantity is None or price is None:
-#         return jsonify({"success": False, "error": "Missing required fields"}), 400
-
-#     stocks[stock_id] = {"ticker": ticker, "quantity": quantity, "price": price}
-
-#     # Store stock in order book
-#     order_book.orderBookInst.add_sell_order(ticker, price, quantity)
-
-#     return jsonify({"success": True, "message": f"Stock {ticker} registered and added to order book."})

@@ -355,58 +355,6 @@ class OrderBook:
             logging.error(f"Error fetching stock balance for {user_id}, {stock_id}: {e}")
             return 0
 
-    # def update_user_stock_balance(self, user_id, stock_id, quantity):
-    #     """Subtracts stock quantity from the user's holdings after placing a sell order."""
-    #     try:
-    #         result = portfolios_collection.update_one(
-    #             {"user_id": user_id, "data.stock_id": stock_id},
-    #             {"$inc": {"data.$.quantity_owned": quantity}}  # Decrease stock quantity
-    #         )
-
-    #         if result.matched_count == 0:
-                
-    #             logging.warning(f"Sell order failed: {user_id} does not own stock {stock_id} or insufficient balance.")
-    #             return False  # Stock not found in portfolio
-
-    #         logging.info(f"Updated stock balance for {user_id}: Sold {quantity} of stock {stock_id}")
-    #         return True
-
-    #     except Exception as e:
-    #         logging.error(f"Error updating stock balance for {user_id}, {stock_id}: {e}")
-    #         return False
-    
-    # def update_user_stock_balance(self, user_id, stock_id, quantity):
-    #     """
-    #     This method works for both BUY (quantity>0) and SELL (quantity<0).
-    #     """
-    #     try:
-    #         result = portfolios_collection.update_one(
-    #             {"user_id": user_id, "data.stock_id": stock_id},
-    #             {"$inc": {"data.$.quantity_owned": quantity}}
-    #         )
-
-    #         if result.matched_count == 0:
-    #             # Fallback: if quantity > 0, user is buying a brand-new stock, so add it:
-    #             if quantity > 0:
-    #                 portfolios_collection.update_one(
-    #                     {"user_id": user_id},
-    #                     {"$push": {"data": {"stock_id": stock_id, "quantity_owned": quantity}}},
-    #                     upsert=True
-    #                 )
-    #                 logging.info(f"Created new stock {stock_id} with quantity={quantity} for user {user_id}")
-    #                 return True
-    #             else:
-    #                 # For SELL with matched_count=0, user truly doesn't own it
-    #                 logging.warning(f"Sell order failed: user {user_id} doesn't own stock {stock_id}")
-    #                 return False
-
-    #         logging.info(f"Updated stock balance for user {user_id}: {quantity} shares of {stock_id}")
-    #         return True
-
-    #     except Exception as e:
-    #         logging.error(f"Error updating stock balance for {user_id}, {stock_id}: {e}")
-    #         return False
-
     def update_user_stock_balance(self, user_id, stock_id, quantity):
         """
         Works for both BUY (quantity>0) and SELL (quantity<0).
