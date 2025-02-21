@@ -6,12 +6,10 @@
                 <p>Transaction ID: {{ tx.stock_tx_id }}</p>
                 <p>Stock ID: {{ tx.stock_id }}</p>
                 <p>Quantity: {{ tx.quantity }}</p>
-                <p>Price: {{ tx.price }}</p>
+                <p>Price: {{ tx.stock_price }}</p>
                 <p>Status: {{ tx.order_status }}</p>
                 <p>Timestamp: {{ tx.timestamp }}</p>
-                <button @click="CancelTransaction(tx.stock_tx_id)">
-                    Cancel
-                </button>
+                <br />
             </li>
         </ul>
         <p v-if="loading">Loading</p>
@@ -38,20 +36,27 @@ export default {
         async fetchTransactions() {
             const token = localStorage.getItem("token");
             if (!token) {
-                this.message = "Invalid token."
+                this.error = "Invalid token.";
+                this.loading = false;
                 return;
             }
             try {
-                const response = await axios.get("/api/getStockTransactions", {
-                    params: { token: token }
-                });
+                const response = await axios.get(
+                    "http://localhost/transaction/getStockTransactions",
+                    {
+                        headers: {
+                            token: token,
+                        },
+                    }
+                );
                 this.transactions = response.data.data;
             } catch (error) {
                 console.error("Failed to fetch transactions:", error);
+                this.error = "Failed to fetch transactions.";
             } finally {
                 this.loading = false;
             }
-        }
-    }
+        },
+    },
 };
 </script>
