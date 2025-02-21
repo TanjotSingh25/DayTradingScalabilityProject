@@ -101,7 +101,7 @@ class OrderBook:
         
     # Generate unique transaction IDs
         parent_tx_id = str(uuid4())  # Use order_id as the main stock transaction ID
-        wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
+        #wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
 
         stock_transactions_collection.insert_one({
             "stock_tx_id": parent_tx_id,  # Renamed from "tx_id" to match API response
@@ -136,6 +136,7 @@ class OrderBook:
 
         while remaining_qty > 0 and self.sell_orders.get(stock_id):
             # 1. Get best available (lowest price) sell order
+            wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
             best_sell_order = self.sell_orders[stock_id][0]
             seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = best_sell_order
 
