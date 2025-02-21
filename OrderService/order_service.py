@@ -58,7 +58,7 @@ def place_stock_order():
     is_valid, validation_response = helpers.order_service_sanity_check(request_data)
     if not is_valid:
         # 412 Precondition Failed
-        return jsonify(validation_response), 412
+        return jsonify(validation_response), 401
 
     # 3 -  verify that the user_name exists via postgreSQL
     user_id = token_decoded.get("user_id")

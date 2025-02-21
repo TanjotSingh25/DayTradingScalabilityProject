@@ -6,7 +6,6 @@ import os
 from dotenv import load_dotenv
 from uuid import uuid4
 
-
 # Load environment variables
 load_dotenv()
 
@@ -17,7 +16,7 @@ logging.basicConfig(filename='matching_engine.log', level=logging.INFO,
 
 # MongoDB connection with retry mechanism
 max_retries = 5
-retry_delay = 3  # seconds between retries
+retry_delay = 3
 
 MONGO_URI = os.getenv("MONGO_URI")
 
@@ -27,10 +26,12 @@ if not MONGO_URI:
 for attempt in range(max_retries):
     try:
         client = MongoClient(MONGO_URI)
+        # Initialize to mongodb client, and to the collections
         db = client["trading_system"]
         wallets_collection = db["wallets"]
-        portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized
-        stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
+        portfolios_collection = db["portfolios"]
+        # New collection for transactions
+        stock_transactions_collection = db["stock_transactions"]
         wallet_transactions_collection = db["wallets_transaction"]
         stocks_collection = db["stocks"]
         # Ensure necessary indexes for faster lookups
@@ -38,7 +39,7 @@ for attempt in range(max_retries):
         wallet_transactions_collection.create_index("user_id", unique = True)
 
         logging.info("MongoDB connection established successfully.")
-        break  # Exit the loop if connection is successful
+        break
 
     except errors.ConnectionFailure:
         logging.warning(f"MongoDB connection attempt {attempt + 1} failed. Retrying in {retry_delay} seconds...")
@@ -49,11 +50,13 @@ else:
 
 class OrderBook:
     def __init__(self):
-        self.buy_orders = {}  # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
-        self.sell_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp, transaction_id], ...] }
+        # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
+        self.buy_orders = {}
+        # { "ticker": [[user_id, price, quantity, timestamp (datetime.now()), transaction_id], ...] }
+        self.sell_orders = {}  
 
     def get_wallet_balance(self, user_id):
-        """Fetches wallet balance from MongoDB for the user."""
+        #Fetch wallet balance from MongoDB for the user_id.
         try:
             wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
             if wallet and "balance" in wallet:
@@ -64,7 +67,7 @@ class OrderBook:
             return 0
 
     def update_wallet_balance(self, user_id, amount):
-        """Updates the user's wallet balance after a trade."""
+        # Updates the user's wallet balance after a trade.
         try:
             # Ensure a wallet document exists with a default balance of 0.
             wallets_collection.update_one(
@@ -85,41 +88,27 @@ class OrderBook:
     def add_buy_order(self, user_id, stock_id, price, quantity):
         """
         Handles a MARKET BUY order in a loop, allowing partial fills.
-        1. Continually purchases from the lowest-priced sell order until:
-        - The buy quantity is filled, or
-        - No more sell orders left, or
-        - Buyer runs out of funds.
-        2. Logs partial fills vs. completed orders.
-        3. Queues leftover (unfilled) quantity if no sellers remain.
-        """
-
-        # Make sure it's a market order (price == None).
-        # If you *only* allow MARKET buys, you could reject any non-None price.
-        # if price is not None:
-        #     logging.warning(f"BUY ORDER REJECTED: Limit buy not allowed for {user_id}")
-        #     return {"success": False, "error": "Only market buy orders are allowed"}
-        
-    # Generate unique transaction IDs
-        parent_tx_id = str(uuid4())  # Use order_id as the main stock transaction ID
-        #wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
+        Go until buy quantity is filled, no more sell order left (queue), or buyer runs out of funds
+        """        
+        # unique transaction IDs for parent_tx_id which the child transactions will point to.
+        parent_tx_id = str(uuid4())
 
         stock_transactions_collection.insert_one({
-            "stock_tx_id": parent_tx_id,  # Renamed from "tx_id" to match API response
-            "parent_stock_tx_id": None,  # Explicitly setting parent_stock_tx_id as null for first transactions
+            "stock_tx_id": parent_tx_id,
+            "parent_stock_tx_id": None,  # Explicitly setting parent_stock_tx_id as null, only child transactions set this.
             "stock_id": stock_id,
-            "wallet_tx_id": None,  # Added missing wallet transaction reference
+            "wallet_tx_id": None,  # Only set after order_status is completed
             "user_id": user_id,
-            "order_status": "IN_PROGRESS",  # Renamed from "status" to match API response
-            "is_buy": True,  # Added missing is_buy field (since it's a market buy order)
-            "order_type": "MARKET",  # Ensuring order type is consistent
-            "stock_price": price,  # Ensuring stock price is stored
-            "quantity": quantity,  # Ensuring quantity is stored
-            "time_stamp": datetime.now().isoformat()  # Renamed from "created_at" to match API response
+            "order_status": "IN_PROGRESS",
+            "is_buy": True,  # Market BUY = is_buy = True
+            "order_type": "MARKET",
+            "stock_price": price,
+            "quantity": quantity,
+            "time_stamp": datetime.now().isoformat()
         })
 
+        # No sellers available at all (Mark status as INCOMPLETE) -> queue the entire order as unfilled
         if stock_id not in self.sell_orders or not self.sell_orders[stock_id]:
-            # No sellers available at all -> queue the entire order as unfilled
-            # Mark status as INCOMPLETE, and put this buy into a "market buy queue".
             self._queue_market_buy(user_id, None, quantity, parent_tx_id, stock_id) 
             logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for {user_id}.")
             return {
@@ -134,15 +123,17 @@ class OrderBook:
         executed_trades = []
         order_status = "INCOMPLETE"  # Will update as we fill
 
+        # 1. Get best available (lowest price) sell order
         while remaining_qty > 0 and self.sell_orders.get(stock_id):
-            # 1. Get best available (lowest price) sell order
-            wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
+            wallet_tx_id = str(uuid4())
             best_sell_order = self.sell_orders[stock_id][0]
+            # Extract all values from sell_orders dictionary
             seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = best_sell_order
 
             valid_sell_index = None
             for idx, order in enumerate(self.sell_orders[stock_id]):
                 seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = order
+                # Buyer cannot be the same as the seller
                 if seller_id != user_id:
                     valid_sell_index = idx
                     break
@@ -152,23 +143,21 @@ class OrderBook:
                 logging.warning(f"No valid sellers for user {user_id} (self-trade skipped).")
                 break
 
-            # Now 'valid_sell_index' points to the first valid order
             seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = \
                 self.sell_orders[stock_id][valid_sell_index]
             
-            # 2. How many shares can we buy from this particular seller?
+            # Max amount of stocks that can be purchased in this transaction.
             trade_qty = min(remaining_qty, sell_quantity)
             trade_value = trade_qty * sell_price
 
-            # 3. Check buyer wallet
-            buyer_wallet_balance = self.get_wallet_balance(user_id) #queries mongodb for wallet balance
+            # 3. Check buyer wallet by querying wallet db
+            buyer_wallet_balance = self.get_wallet_balance(user_id)
             if buyer_wallet_balance < trade_value:
                 max_shares_can_buy = buyer_wallet_balance // sell_price
                 if max_shares_can_buy == 0:
                     logging.warning(f"User {user_id} out of funds. Partially filled so far.")
                     order_status = "PARTIALLY_COMPLETED" if executed_trades else "INCOMPLETE"
                     break
-                
                 else:
                     # We can partially buy some shares from this sell order
                     trade_qty = max_shares_can_buy
@@ -184,14 +173,12 @@ class OrderBook:
             self.update_wallet_balance(seller_id, trade_value)   # Seller receives money
             self.update_wallet_balance(user_id, -trade_value)    # Buyer pays money
 
-            # 5. Update order books
-            # Reduce the sell order by 'trade_qty'
+            # 5. Update order books by adding stock quantity and removing order from sell_orders
             if sell_quantity > trade_qty:
                 self.sell_orders[stock_id][0][2] -= trade_qty
             else:
                 # If fully filled, remove it
                 self.sell_orders[stock_id].pop(0)
-
             # 6. Update buyer's remaining quantity
             remaining_qty -= trade_qty
             
@@ -211,9 +198,6 @@ class OrderBook:
                 "time_stamp": datetime.now().isoformat()
             })
 
-            # Generate a unique wallet transaction ID for seller credit
-            seller_wallet_tx_id = str(uuid4())
-            
             # Log wallet transaction for buyer (debit)
             wallet_transactions_collection.update_one(
                 {"user_id": user_id},
@@ -230,6 +214,7 @@ class OrderBook:
                 },
                 upsert=True
             )
+            # Credit the seller
             wallet_transactions_collection.update_one(
                 {"user_id": seller_id},
                 {
@@ -258,20 +243,15 @@ class OrderBook:
                 "seller_id": seller_id,
                 "time_stamp": datetime.now().isoformat()
             })
-
             logging.info(f"BUY MARKET TRADE: {user_id} bought {trade_qty} shares of {stock_id} @ {sell_price}")
 
-            # If we've run out of sellers, the loop will break automatically since self.sell_orders[ticker] might be empty
-
-        # End of the while loop
-        # Determine the final order status
+        # End of the while loop - Determine the final order status
         filled = quantity - remaining_qty
         if filled == 0:
             # No shares actually bought
             order_status = "INCOMPLETE"
-            # Optionally queue the entire order as a market buy
+            # Thus queue market buy order
             self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
-            
             # Update parent transaction (no fill, keep price=None)
             stock_transactions_collection.update_one(
                 {"stock_tx_id": parent_tx_id},
@@ -280,7 +260,6 @@ class OrderBook:
                     "order_status": order_status
                 }}
             )
-            
         else:
             if remaining_qty > 0:
                 # Some portion was filled, but not all
@@ -290,9 +269,6 @@ class OrderBook:
             else:
                 # All shares filled
                 order_status = "COMPLETED"
-                # CHANGED: Calculate a numeric price for the parent doc
-                # Example: Weighted average of all fills
-                final_wallet_tx_id = str(uuid4())
                 total_cost = 0
                 total_shares = 0
                 for trade in executed_trades:
@@ -300,10 +276,8 @@ class OrderBook:
                     total_shares += trade["quantity"]
                 avg_fill_price = total_cost / total_shares if total_shares else 0
                 avg_fill_price_int = int(avg_fill_price)
+
                 # Update parent transaction record with final status and remaining quantity
-                
-        
-                # Update parent transaction with final status + average fill price
                 stock_transactions_collection.update_one(
                     {"stock_tx_id": parent_tx_id},
                     {"$set": {
@@ -323,11 +297,7 @@ class OrderBook:
     }
 
     def _queue_market_buy(self, user_id, price, quantity, order_id, stock_id):
-        """
-        Helper method to queue leftover market buys if desired.
-        For example, you might store them in self.buy_orders[stock_id]
-        with price=None.
-        """
+        # Helper method to queue leftover market buy orders
         if quantity <= 0:
             return
 
@@ -338,25 +308,24 @@ class OrderBook:
         # store price as None to represent a market buy
         self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
 
-        # We don't necessarily need to deduct funds here, because
-        # no trade is happening yet. The user will pay once a seller appears.
-
+        # No deduction of funds, because no order has been completed
         logging.info(f"Queued leftover market buy for {user_id}: {quantity} shares of {stock_id}")
 
     # gets the stock info from the portflio collectoion in the db mongo
     def get_user_stock_balance(self, user_id, stock_id):
-        """Fetches the user's stock balance for a given stock_id from MongoDB portfolios collection."""
+        # Fetches the user's stock balance for a given stock_id from MongoDB portfolios collection
         try:
             user_portfolio = portfolios_collection.find_one(
                 {"user_id": user_id, "data.stock_id": stock_id},
-                {"data.$": 1}  # Use positional operator to get the specific stock entry
+                # Postional operator
+                {"data.$": 1}
             )
 
+            # # Extract stock quantity
             if user_portfolio and "data" in user_portfolio and len(user_portfolio["data"]) > 0:
-                return user_portfolio["data"][0]["quantity_owned"]  # Extract stock quantity
-            
-            return 0  # User does not own this stock
-
+                return user_portfolio["data"][0]["quantity_owned"]  
+            # User does not own this stock
+            return 0  
         except Exception as e:
             logging.error(f"Error fetching stock balance for {user_id}, {stock_id}: {e}")
             return 0
@@ -396,7 +365,7 @@ class OrderBook:
                     logging.info(f"Created new stock {stock_id} with quantity={quantity} for user {user_id}")
                     return True
                 else:
-                    # It's a SELL, but user doesn't own it
+                    # User doesn't own stock
                     logging.warning(f"Sell order failed: user {user_id} doesn't own stock {stock_id}")
                     return False
 
@@ -408,7 +377,7 @@ class OrderBook:
             if updated_doc and "data" in updated_doc:
                 new_qty = updated_doc["data"][0].get("quantity_owned", 0)
                 if new_qty <= 0:
-                    # Remove this stock from the 'data' array
+                    # Remove stock from data array
                     portfolios_collection.update_one(
                         {"user_id": user_id},
                         {"$pull": {"data": {"stock_id": stock_id}}}
@@ -422,9 +391,8 @@ class OrderBook:
             logging.error(f"Error updating stock balance for {user_id}, {stock_id}: {e}")
             return False
 
-
     def add_sell_order(self, user_id, stock_id, price, quantity):
-        """ Adds a sell order only if the user has enough stock balance. """
+        # Add sell order only if have enough quantity
 
         # Get the user's stock balance (returns an integer)
         stock_balance = self.get_user_stock_balance(user_id, stock_id)
@@ -442,7 +410,7 @@ class OrderBook:
         # Deduct stock from user's portfolio
         result = self.update_user_stock_balance(user_id, stock_id, -quantity)
 
-        if result == False:  # Ensure the update succeeded
+        if result == False:
             logging.error(f"SELL ORDER ERROR: Failed to update portfolio for {user_id}.")
             return {"success": False, "error": "Portfolio update failed."}
 
@@ -453,7 +421,7 @@ class OrderBook:
                 "stock_tx_id": st_tx_id,
                 "parent_stock_tx_id": None,
                 "stock_id": stock_id,
-                "wallet_tx_id": None,  # No wallet transaction for a limit order yet
+                "wallet_tx_id": None,
                 "user_id": user_id,
                 "order_status": "IN_PROGRESS",
                 "is_buy": False,
@@ -469,7 +437,6 @@ class OrderBook:
         # Add the sell order to in-memory order book
         if stock_id not in self.sell_orders:
             self.sell_orders[stock_id] = []
-
         self.sell_orders[stock_id].append([user_id, price, quantity, datetime.now(), st_tx_id])
 
         # Ensure orders are sorted (Lowest price first, FIFO for equal prices)
@@ -479,10 +446,10 @@ class OrderBook:
         return {"success": True, "message": "Sell order placed successfully"}
 
     def match_orders(self):
-        """ Matches buy and sell orders using FIFO logic. Market orders execute immediately. """
+        # Matches buy and sell orders using FIFO logic. Market orders execute immediately
         executed_trades = []
-
-        for cur_stock in list(self.sell_orders.keys()):  # Start with sell orders
+        # For loop to go through sell orders until all market buys are executed
+        for cur_stock in list(self.sell_orders.keys()):
             while self.sell_orders.get(cur_stock) and self.buy_orders.get(cur_stock):
                 buyer_id, buy_price, buy_quantity, buy_time, buy_order_id = self.buy_orders[cur_stock][0]
                 seller_id, sell_price, sell_quantity, sell_time, sell_order_id = self.sell_orders[cur_stock][0]
@@ -506,25 +473,24 @@ class OrderBook:
 
                 # MARKET ORDER: Buy at best available sell price
                 if buy_price is None:
-                    buy_price = sell_price  # Execute at best available sell price
+                    buy_price = sell_price
 
                 traded_quantity = min(buy_quantity, sell_quantity)
                 trade_value = traded_quantity * sell_price  # Trade happens at sell price
                 wallet_tx_id = str(uuid4()) #unique wallet transaction id
-                
+
                 # Update seller's wallet balance (add money)
                 self.update_wallet_balance(seller_id, trade_value)  
-
                 # Deduct money from buyer's wallet
                 self.update_wallet_balance(buyer_id, -trade_value)  
-                
+
                 # Add stock to buyer's portfolio
                 result = portfolios_collection.update_one(
                     {"user_id": buyer_id, "data.stock_id": cur_stock},
                     {"$inc": {"data.$.quantity_owned": traded_quantity}},
                     upsert=False
                     )
-                
+
                 if result.matched_count == 0:
                     portfolios_collection.update_one(
                         {"user_id": buyer_id},
@@ -540,16 +506,14 @@ class OrderBook:
                     "stock_id": cur_stock,
                     "wallet_tx_id": wallet_tx_id, 
                     "quantity": traded_quantity,
-                    "stock_price": sell_price,  # Aligning with API response field name
-                    "order_status": "COMPLETED",  # Using API terminology
-                    "is_buy": True,  # Flagging if it's a buy transaction
+                    "stock_price": sell_price,
+                    "order_status": "COMPLETED",  
+                    "is_buy": True,  
                     "buyer_id": buyer_id,
                     "seller_id": seller_id,
                     "time_stamp": datetime.now().isoformat()
                 })
-                
-                
-        
+
                 wallet_transactions_collection.update_one(
                 {"user_id": buyer_id},
                 {
@@ -565,8 +529,7 @@ class OrderBook:
                 },
                 upsert=True
                 )
-    
-                
+
                 # 2) Seller transaction (money credited)
                 seller_wallet_tx_id = str(uuid4())
 
@@ -602,10 +565,6 @@ class OrderBook:
                 })
                 logging.info(f"MATCHED ORDER: {buyer_id} bought {traded_quantity} shares of {cur_stock} from {seller_id} at {sell_price}")
 
-                # # Update wallet balances
-                # self.update_wallet_balance(seller_id, trade_value)  # Seller receives money
-                # self.update_wallet_balance(buyer_id, -trade_value)  # Buyer is charged
-
                 # Adjust remaining quantities
                 if buy_quantity > traded_quantity:
                     self.buy_orders[cur_stock][0][2] -= traded_quantity
@@ -622,15 +581,12 @@ class OrderBook:
     def cancel_user_order(self, user_id, stock_tx_id):
         """
         Cancels an order (either BUY or SELL) for the given user and transaction ID.
-        If it's found in the buy orders: [user_id, quantity, timestamp, transaction_id]
-        If it's found in the sell orders: [user_id, price, quantity, timestamp, transaction_id]
         """
         found_item = None
         order_type = None
         stock_id = None
 
-        # 1) Search for the order in BUY orders
-        #    (where transaction_id is at index 3)
+        # 1) Search for the order in BUY orders --  tx_id at index 4
         for stock, orders in self.buy_orders.items():
             for order in orders:
                 # order = [user_id, price, quantity, timestamp, transaction_id]
@@ -643,7 +599,6 @@ class OrderBook:
                 break
 
         # 2) Search for the order in SELL orders, if not found in BUY
-        #    (where transaction_id is at index 4)
         if not found_item:
             for stock, orders in self.sell_orders.items():
                 for order in orders:
@@ -694,7 +649,6 @@ class OrderBook:
             )
 
             if result.matched_count == 0:
-                # 2) Fallback if it's a brand-new BUY
                 if quantity > 0:
                     # Fetch the stock name from stocks_collection
                     stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
@@ -744,6 +698,3 @@ class OrderBook:
             })
 
         return True, stock_prices
-
-# Instantiate a shared order book
-#orderBookInst = OrderBook()
