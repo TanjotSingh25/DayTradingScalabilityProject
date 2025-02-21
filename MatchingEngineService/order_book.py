@@ -49,7 +49,7 @@ else:
 
 class OrderBook:
     def __init__(self):
-        self.buy_orders = {}  # _queue_market_buy(self, user_id, price, order_id, quantity, stock_id)
+        self.buy_orders = {}  # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
         self.sell_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp, transaction_id], ...] }
 
     def get_wallet_balance(self, user_id):
@@ -709,8 +709,8 @@ class OrderBook:
 
         # Extract relevant info from found_item
         if order_type == "MARKET":
-            # found_item = [user_id, price, quantity, timestamp, transaction_id]
-            quantity = found_item[3]
+            # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
+            quantity = found_item[2]
             # price is typically None for buy order, but we can set it if needed
         else:  # SELL
             # found_item = [user_id, price, quantity, timestamp, transaction_id]
