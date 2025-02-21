@@ -58,7 +58,7 @@ def place_order():
             result = orderBookInst.add_sell_order(user_id, stock_id, price, quantity)
             executed_trades = orderBookInst.match_orders()
             executed_trades.append(f"Sell order placed for {stock_id}.")
-            return jsonify({"success": True, "message": executed_trades })
+            return jsonify({"success": True, "message": executed_trades }), (200 if result["success"] else 400)
     except Exception as e:
         # Log the detailed error so you can debug it
         logging.exception("Error processing order:")
