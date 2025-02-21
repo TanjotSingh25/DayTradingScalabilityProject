@@ -149,9 +149,7 @@ def get_stock_transactions():
     # Build the response data array
     user_transactions = []
     for doc in transactions_cursor:
-        status = doc.get("order_status", "")
-        if status not in ["COMPLETED", "CANCELLED"]:
-            continue
+        #status = doc.get("order_status", "")
 
         user_transactions.append({
             "stock_tx_id": str(doc.get("stock_tx_id")),
@@ -159,7 +157,7 @@ def get_stock_transactions():
             "stock_id": str(doc.get("stock_id")),
             "wallet_tx_id": str(doc.get("wallet_tx_id")) if doc.get("wallet_tx_id") else None,
             "quantity": doc.get("quantity", 0),
-            "order_status": status,
+            "order_status": doc.get("order_status", ""),
             "stock_price": doc.get("stock_price", 0),
             "is_buy": doc.get("is_buy", False),
             "order_type": doc.get("order_type", ""),

@@ -49,7 +49,7 @@ else:
 
 class OrderBook:
     def __init__(self):
-        self.buy_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp, transaction_id], ...] }
+        self.buy_orders = {}  # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
         self.sell_orders = {}  # { "ticker": [[user_id, price, quantity, timestamp, transaction_id], ...] }
 
     def get_wallet_balance(self, user_id):
@@ -211,7 +211,7 @@ class OrderBook:
                 "seller_id": seller_id,
                 "time_stamp": datetime.now().isoformat()
             })
-            
+
             # Generate a unique wallet transaction ID for seller credit
             seller_wallet_tx_id = str(uuid4())
             
@@ -682,7 +682,7 @@ class OrderBook:
                 # order = [user_id, quantity, timestamp, transaction_id]
                 if order[0] == user_id and order[4] == stock_tx_id:
                     found_item = order
-                    order_type = "BUY"
+                    order_type = "MARKET"
                     stock_id = stock
                     break
             if found_item:
@@ -696,7 +696,7 @@ class OrderBook:
                     # order = [user_id, price, quantity, timestamp, transaction_id]
                     if order[0] == user_id and order[4] == stock_tx_id:
                         found_item = order
-                        order_type = "SELL"
+                        order_type = "LIMIT"
                         stock_id = stock
                         break
                 if found_item:
@@ -708,9 +708,9 @@ class OrderBook:
             return False, "Order not found."
 
         # Extract relevant info from found_item
-        if order_type == "BUY":
-            # found_item = [user_id, quantity, timestamp, transaction_id]
-            quantity = found_item[1]
+        if order_type == "MARKET":
+            # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
+            quantity = found_item[2]
             # price is typically None for buy order, but we can set it if needed
         else:  # SELL
             # found_item = [user_id, price, quantity, timestamp, transaction_id]
@@ -718,9 +718,9 @@ class OrderBook:
             quantity = found_item[2]
 
         # 4) Remove the order from in-memory order book
-        if order_type == "BUY" and stock_id in self.buy_orders and found_item in self.buy_orders[stock_id]:
+        if order_type == "MARKET" and stock_id in self.buy_orders and found_item in self.buy_orders[stock_id]:
             self.buy_orders[stock_id].remove(found_item)
-        elif order_type == "SELL" and stock_id in self.sell_orders and found_item in self.sell_orders[stock_id]:
+        elif order_type == "LIMIT" and stock_id in self.sell_orders and found_item in self.sell_orders[stock_id]:
             self.sell_orders[stock_id].remove(found_item)
 
         logging.info(f"Cancelled {order_type} order for user_id={user_id}, stock_id={stock_id}, stock_tx_id={stock_tx_id}")
@@ -732,7 +732,7 @@ class OrderBook:
         )
 
         # 6) If it's a SELL order, return the stock quantity to the user's portfolio
-        if order_type == "SELL":
+        if order_type == "MARKET":
             result = portfolios_collection.update_one(
                 {"user_id": user_id, "data.stock_id": stock_id},
                 {"$inc": {"data.$.quantity_owned": quantity}}
