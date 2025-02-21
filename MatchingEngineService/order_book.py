@@ -174,16 +174,14 @@ class OrderBook:
                     trade_value = trade_qty * sell_price
                     logging.info(f"User {user_id} can only buy {trade_qty} shares due to insufficient funds.")
                     
-              # Update user portfolio (buyer gets stocks)
+            # Update user portfolio (buyer gets stocks)
             r = self.update_user_stock_balance(user_id, stock_id, trade_qty)
             if r == False:
-                 return {"success": False, "error": "updateStockBalance,Returned false"}
+                return {"success": False, "error": "updateStockBalance,Returned false"}
 
             # 4. Execute trade, update balance in mongodb wallets collection
             self.update_wallet_balance(seller_id, trade_value)   # Seller receives money
             self.update_wallet_balance(user_id, -trade_value)    # Buyer pays money
-            
-           
 
             # 5. Update order books
             # Reduce the sell order by 'trade_qty'
@@ -273,7 +271,7 @@ class OrderBook:
             # Optionally queue the entire order as a market buy
             self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
             
-              # Update parent transaction (no fill, keep price=None)
+            # Update parent transaction (no fill, keep price=None)
             stock_transactions_collection.update_one(
                 {"stock_tx_id": parent_tx_id},
                 {"$set": {
@@ -373,7 +371,7 @@ class OrderBook:
             )
 
             if result.matched_count == 0:
-               # 2) Fallback if it's a brand-new BUY
+                # 2) Fallback if it's a brand-new BUY
                 if quantity > 0:
                     # Fetch the stock name from stocks_collection
                     stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
@@ -511,25 +509,25 @@ class OrderBook:
                 trade_value = traded_quantity * sell_price  # Trade happens at sell price
                 wallet_tx_id = str(uuid4()) #unique wallet transaction id
                 
-                  # Update seller's wallet balance (add money)
+                # Update seller's wallet balance (add money)
                 self.update_wallet_balance(seller_id, trade_value)  
 
                 # Deduct money from buyer's wallet
                 self.update_wallet_balance(buyer_id, -trade_value)  
                 
-                     # Add stock to buyer's portfolio
+                # Add stock to buyer's portfolio
                 result = portfolios_collection.update_one(
                     {"user_id": buyer_id, "data.stock_id": cur_stock},
-                     {"$inc": {"data.$.quantity_owned": traded_quantity}},
-                     upsert=False
-                 )
+                    {"$inc": {"data.$.quantity_owned": traded_quantity}},
+                    upsert=False
+                    )
                 
                 if result.matched_count == 0:
-                     portfolios_collection.update_one(
-                         {"user_id": buyer_id},
-                         {"$push": {"data": {"stock_id": cur_stock, "quantity_owned": traded_quantity}}},
-                         upsert=True
-                     )
+                    portfolios_collection.update_one(
+                        {"user_id": buyer_id},
+                        {"$push": {"data": {"stock_id": cur_stock, "quantity_owned": traded_quantity}}},
+                        upsert=True
+                    )
                     
                 # Log transaction in `stock_transactions_collection`
                 stock_tx_id = str(uuid4())  # Unique transaction ID
@@ -563,7 +561,7 @@ class OrderBook:
                 }
                 },
                 upsert=True
-               )
+                )
     
                 
                 # 2) Seller transaction (money credited)
@@ -693,7 +691,7 @@ class OrderBook:
             )
 
             if result.matched_count == 0:
-               # 2) Fallback if it's a brand-new BUY
+                # 2) Fallback if it's a brand-new BUY
                 if quantity > 0:
                     # Fetch the stock name from stocks_collection
                     stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
