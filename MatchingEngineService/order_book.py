@@ -85,43 +85,35 @@ class OrderBook:
     def add_buy_order(self, user_id, stock_id, price, quantity):
         """
         Handles a MARKET BUY order in a loop, allowing partial fills.
-        1. Continually purchases from the lowest-priced sell order until:
-        - The buy quantity is filled, or
-        - No more sell orders left, or
-        - Buyer runs out of funds.
-        2. Logs partial fills vs. completed orders.
-        3. Queues leftover (unfilled) quantity if no sellers remain.
+        1. Creates a parent transaction with wallet_tx_id=None.
+        2. Executes partial trades, each with its own wallet_tx_id.
+        3. If the entire order completes, sets a final wallet_tx_id and average fill price on the parent.
         """
 
-        # Make sure it's a market order (price == None).
-        # If you *only* allow MARKET buys, you could reject any non-None price.
-        # if price is not None:
-        #     logging.warning(f"BUY ORDER REJECTED: Limit buy not allowed for {user_id}")
-        #     return {"success": False, "error": "Only market buy orders are allowed"}
-        
-    # Generate unique transaction IDs
-        parent_tx_id = str(uuid4())  # Use order_id as the main stock transaction ID
-        #wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
+        parent_tx_id = str(uuid4())
 
+        # 1) Insert parent transaction with wallet_tx_id=None
         stock_transactions_collection.insert_one({
-            "stock_tx_id": parent_tx_id,  # Renamed from "tx_id" to match API response
-            "parent_stock_tx_id": None,  # Explicitly setting parent_stock_tx_id as null for first transactions
+            "stock_tx_id": parent_tx_id,
+            "parent_stock_tx_id": None,
             "stock_id": stock_id,
-            "wallet_tx_id": None,  # Added missing wallet transaction reference
+            "wallet_tx_id": None,           # Initially null
             "user_id": user_id,
-            "order_status": "IN_PROGRESS",  # Renamed from "status" to match API response
-            "is_buy": True,  # Added missing is_buy field (since it's a market buy order)
-            "order_type": "MARKET",  # Ensuring order type is consistent
-            "stock_price": price,  # Ensuring stock price is stored
-            "quantity": quantity,  # Ensuring quantity is stored
-            "time_stamp": datetime.now().isoformat()  # Renamed from "created_at" to match API response
+            "order_status": "IN_PROGRESS",
+            "is_buy": True,
+            "order_type": "MARKET",
+            "stock_price": price,
+            "quantity": quantity,
+            "time_stamp": datetime.now().isoformat()
         })
 
+        # 2) If no sell orders, queue entire order as unfilled
         if stock_id not in self.sell_orders or not self.sell_orders[stock_id]:
-            # No sellers available at all -> queue the entire order as unfilled
-            # Mark status as INCOMPLETE, and put this buy into a "market buy queue".
-            self._queue_market_buy(user_id, None, quantity, parent_tx_id, stock_id) 
-            logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for {user_id}.")
+            self._queue_market_buy(user_id, None, quantity, parent_tx_id, stock_id)
+            stock_transactions_collection.update_one(
+                {"stock_tx_id": parent_tx_id},
+                {"$set": {"order_status": "INCOMPLETE"}}
+            )
             return {
                 "success": True,
                 "message": "No sellers available. Order queued as market buy.",
@@ -132,74 +124,64 @@ class OrderBook:
 
         remaining_qty = quantity
         executed_trades = []
-        order_status = "INCOMPLETE"  # Will update as we fill
+        order_status = "INCOMPLETE"
 
+        # 3) Partial fill loop
         while remaining_qty > 0 and self.sell_orders.get(stock_id):
-            # 1. Get best available (lowest price) sell order
-            wallet_tx_id = str(uuid4())  # Generate a unique wallet transaction ID
-            best_sell_order = self.sell_orders[stock_id][0]
-            seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = best_sell_order
+            # Generate a wallet_tx_id for this partial fill
+            wallet_tx_id = str(uuid4())
 
+            # Find first valid seller (skip self-trade)
             valid_sell_index = None
             for idx, order in enumerate(self.sell_orders[stock_id]):
-                seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = order
-                if seller_id != user_id:
+                s_id, s_price, s_qty, s_time, s_tx_id = order
+                if s_id != user_id:
                     valid_sell_index = idx
                     break
 
-            # If none found, no valid sellers
             if valid_sell_index is None:
-                logging.warning(f"No valid sellers for user {user_id} (self-trade skipped).")
+                # No valid seller found
                 break
 
-            # Now 'valid_sell_index' points to the first valid order
             seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = \
                 self.sell_orders[stock_id][valid_sell_index]
-            
-            # 2. How many shares can we buy from this particular seller?
+
+            # Determine trade_qty
             trade_qty = min(remaining_qty, sell_quantity)
             trade_value = trade_qty * sell_price
 
-            # 3. Check buyer wallet
-            buyer_wallet_balance = self.get_wallet_balance(user_id) #queries mongodb for wallet balance
-            if buyer_wallet_balance < trade_value:
-                max_shares_can_buy = buyer_wallet_balance // sell_price
-                if max_shares_can_buy == 0:
-                    logging.warning(f"User {user_id} out of funds. Partially filled so far.")
+            # Check buyer wallet
+            buyer_balance = self.get_wallet_balance(user_id)
+            if buyer_balance < trade_value:
+                max_can_buy = buyer_balance // sell_price
+                if max_can_buy == 0:
+                    # Can't afford any shares from this seller
                     order_status = "PARTIALLY_COMPLETED" if executed_trades else "INCOMPLETE"
                     break
-                
                 else:
-                    # We can partially buy some shares from this sell order
-                    trade_qty = max_shares_can_buy
+                    trade_qty = max_can_buy
                     trade_value = trade_qty * sell_price
-                    logging.info(f"User {user_id} can only buy {trade_qty} shares due to insufficient funds.")
-                    
-            # Update user portfolio (buyer gets stocks)
-            r = self.update_user_stock_balance(user_id, stock_id, trade_qty)
-            if r == False:
-                return {"success": False, "error": "updateStockBalance,Returned false"}
 
-            # 4. Execute trade, update balance in mongodb wallets collection
-            self.update_wallet_balance(seller_id, trade_value)   # Seller receives money
-            self.update_wallet_balance(user_id, -trade_value)    # Buyer pays money
+            # 4) Execute trade: update wallet balances
+            self.update_wallet_balance(seller_id, trade_value)
+            self.update_wallet_balance(user_id, -trade_value)
 
-            # 5. Update order books
-            # Reduce the sell order by 'trade_qty'
+            # Update portfolio
+            self.update_user_stock_balance(user_id, stock_id, trade_qty)
+
+            # Reduce or remove sell order
             if sell_quantity > trade_qty:
-                self.sell_orders[stock_id][0][2] -= trade_qty
+                self.sell_orders[stock_id][valid_sell_index][2] -= trade_qty
             else:
-                # If fully filled, remove it
-                self.sell_orders[stock_id].pop(0)
+                self.sell_orders[stock_id].pop(valid_sell_index)
 
-            # 6. Update buyer's remaining quantity
             remaining_qty -= trade_qty
-            
-            # Log partial fill with a new transaction record
+
+            # 5) Insert partial fill transaction
             partial_tx_id = str(uuid4())
             stock_transactions_collection.insert_one({
                 "stock_tx_id": partial_tx_id,
-                "parent_stock_tx_id": parent_tx_id, #if remaining_qty > 0 else None,
+                "parent_stock_tx_id": parent_tx_id,
                 "stock_id": stock_id,
                 "wallet_tx_id": wallet_tx_id,
                 "quantity": trade_qty,
@@ -211,45 +193,36 @@ class OrderBook:
                 "time_stamp": datetime.now().isoformat()
             })
 
-            # Generate a unique wallet transaction ID for seller credit
-            seller_wallet_tx_id = str(uuid4())
-            
-            # Log wallet transaction for buyer (debit)
+            # Log buyer & seller wallet transactions
             wallet_transactions_collection.update_one(
                 {"user_id": user_id},
-                {
-                "$push": {
+                {"$push": {
                     "transactions": {
-                    "stock_tx_id": parent_tx_id,
-                    "wallet_tx_id": wallet_tx_id,
-                    "is_debit": True,
-                    "amount": trade_value,
-                    "time_stamp": datetime.now().isoformat()
-                    }
-                }
-                },
+                        "stock_tx_id": parent_tx_id,
+                        "wallet_tx_id": wallet_tx_id,
+                        "is_debit": True,
+                        "amount": trade_value,
+                        "time_stamp": datetime.now().isoformat()
+                    }}},
                 upsert=True
             )
             wallet_transactions_collection.update_one(
                 {"user_id": seller_id},
-                {
-                "$push": {
+                {"$push": {
                     "transactions": {
-                    "stock_tx_id": parent_tx_id,
-                    "wallet_tx_id": wallet_tx_id,
-                    "is_debit": False,
-                    "amount": trade_value,
-                    "time_stamp": datetime.now().isoformat()
-                    }
-                }
-                },
-            upsert=True
-        )
+                        "stock_tx_id": parent_tx_id,
+                        "wallet_tx_id": wallet_tx_id,
+                        "is_debit": False,
+                        "amount": trade_value,
+                        "time_stamp": datetime.now().isoformat()
+                    }}},
+                upsert=True
+            )
 
-            # 7. Record this partial execution
+            # Track this partial fill
             executed_trades.append({
                 "stock_tx_id": partial_tx_id,
-                "parent_stock_tx_id": parent_tx_id, # if remaining_qty > 0 else None,
+                "parent_stock_tx_id": parent_tx_id,
                 "stock_id": stock_id,
                 "wallet_tx_id": wallet_tx_id,
                 "quantity": trade_qty,
@@ -259,58 +232,46 @@ class OrderBook:
                 "time_stamp": datetime.now().isoformat()
             })
 
-            logging.info(f"BUY MARKET TRADE: {user_id} bought {trade_qty} shares of {stock_id} @ {sell_price}")
-
-            # If we've run out of sellers, the loop will break automatically since self.sell_orders[ticker] might be empty
-
-        # End of the while loop
-        # Determine the final order status
+        # 6) Determine final state and update the parent transaction
         filled = quantity - remaining_qty
         if filled == 0:
-            # No shares actually bought
             order_status = "INCOMPLETE"
-            # Optionally queue the entire order as a market buy
+            stock_transactions_collection.update_one(
+                {"stock_tx_id": parent_tx_id},
+                {"$set": {"order_status": order_status}}
+            )
+            # Optional: re-queue leftover
             self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
-            
-            # Update parent transaction (no fill, keep price=None)
+
+        elif remaining_qty > 0:
+            order_status = "PARTIALLY_COMPLETED"
+            stock_transactions_collection.update_one(
+                {"stock_tx_id": parent_tx_id},
+                {"$set": {"order_status": order_status}}
+            )
+            # Optionally queue leftover
+            self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
+
+        else:
+            # All shares filled -> COMPLETED
+            order_status = "COMPLETED"
+            # Compute average fill price
+            total_cost = sum(t["quantity"] * t["stock_price"] for t in executed_trades)
+            total_shares = sum(t["quantity"] for t in executed_trades)
+            avg_fill_price = int(total_cost / total_shares) if total_shares else 0
+
+            # Generate final wallet_tx_id for the entire completed order
+            final_wallet_tx_id = str(uuid4())
+
             stock_transactions_collection.update_one(
                 {"stock_tx_id": parent_tx_id},
                 {"$set": {
-                    "remaining_quantity": remaining_qty,
-                    "order_status": order_status
+                    "order_status": order_status,
+                    "remaining_quantity": 0,
+                    "stock_price": avg_fill_price,
+                    "wallet_tx_id": final_wallet_tx_id
                 }}
             )
-            
-        else:
-            if remaining_qty > 0:
-                # Some portion was filled, but not all
-                order_status = "PARTIALLY_COMPLETED"
-                # The leftover can also be queued as a market buy if desired
-                self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
-            else:
-                # All shares filled
-                order_status = "COMPLETED"
-                # CHANGED: Calculate a numeric price for the parent doc
-                # Example: Weighted average of all fills
-                total_cost = 0
-                total_shares = 0
-                for trade in executed_trades:
-                    total_cost += trade["quantity"] * trade["stock_price"]
-                    total_shares += trade["quantity"]
-                avg_fill_price = total_cost / total_shares if total_shares else 0
-                avg_fill_price_int = int(avg_fill_price)
-                # Update parent transaction record with final status and remaining quantity
-                
-        
-                # Update parent transaction with final status + average fill price
-                stock_transactions_collection.update_one(
-                    {"stock_tx_id": parent_tx_id},
-                    {"$set": {
-                        "remaining_quantity": remaining_qty,
-                        "order_status": order_status,
-                        "stock_price": avg_fill_price_int  # <--- Now numeric, NOT None
-                    }}
-                )
 
         return {
             "success": True,
@@ -318,7 +279,8 @@ class OrderBook:
             "order_status": order_status,
             "trade_details": executed_trades,
             "stock_tx_id": parent_tx_id
-    }
+        }
+
 
     def _queue_market_buy(self, user_id, price, quantity, order_id, stock_id):
         """
@@ -476,146 +438,121 @@ class OrderBook:
         logging.info(f"SELL ORDER: {user_id} listed {quantity} shares of {stock_id} at {price}")
         return {"success": True, "message": "Sell order placed successfully"}
 
-    def match_orders(self):
-        """ Matches buy and sell orders using FIFO logic. Market orders execute immediately. """
+    def match_order(self, parent_tx_id, user_id, stock_id, desired_quantity, sell_orders):
+        """
+        Example match_order method that:
+        1. Retrieves a parent transaction with wallet_tx_id=None.
+        2. Processes partial fills against provided sell_orders.
+        3. Only assigns wallet_tx_id when the order is fully completed.
+        :param parent_tx_id: The parent transaction ID for the buy order.
+        :param user_id: The ID of the buyer.
+        :param stock_id: Which stock is being bought.
+        :param desired_quantity: How many shares the buyer wants.
+        :param sell_orders: A list of [seller_id, price, quantity, timestamp, sell_tx_id].
+        """
         executed_trades = []
+        remaining_qty = desired_quantity
 
-        for cur_stock in list(self.sell_orders.keys()):  # Start with sell orders
-            while self.sell_orders.get(cur_stock) and self.buy_orders.get(cur_stock):
-                buyer_id, buy_price, buy_quantity, buy_time, buy_order_id = self.buy_orders[cur_stock][0]
-                seller_id, sell_price, sell_quantity, sell_time, sell_order_id = self.sell_orders[cur_stock][0]
-                
-                # 2) Find the first valid seller (skipping self-trade orders)
-                valid_sell_index = None
-                for idx, order in enumerate(self.sell_orders[cur_stock]):
-                    sid, sprice, squantity, stime, sorder_id = order
-                    if sid != buyer_id:  # Skip if the same user
-                        valid_sell_index = idx
-                        break
+        # 1) Query your DB for the parent transaction (just for completeness; you might already have it).
+        parent_record = stock_transactions_collection.find_one({"stock_tx_id": parent_tx_id})
+        if not parent_record:
+            return {"success": False, "error": f"No parent transaction found for {parent_tx_id}"}
 
-                # If no valid seller found, break out
-                if valid_sell_index is None:
-                    logging.warning(f"No valid sellers for buyer {buyer_id} (self-trade skipped).")
+        # 2) Iterate over sell orders until we've filled the entire quantity or run out.
+        for idx, sell_order in enumerate(sell_orders):
+            if remaining_qty <= 0:
+                break
+
+            seller_id, sell_price, sell_quantity, sell_time, seller_tx_id = sell_order
+            if seller_id == user_id:
+                # Skip self-trade (if that’s your logic)
+                continue
+
+            # Determine how many shares we can fill
+            trade_qty = min(remaining_qty, sell_quantity)
+            trade_value = trade_qty * sell_price
+
+            # (A) Check buyer’s wallet (stubbed out here)
+            buyer_balance = self.get_wallet_balance(user_id)
+            if buyer_balance < trade_value:
+                # Buyer cannot afford the entire trade_qty => partial or none
+                possible_qty = buyer_balance // sell_price
+                if possible_qty == 0:
+                    # Can’t buy any shares; break or continue depending on your logic
                     break
-
-                # Extract the valid sell order
-                seller_id, sell_price, sell_quantity, sell_time, sell_order_id = \
-                    self.sell_orders[cur_stock][valid_sell_index]
-
-                # MARKET ORDER: Buy at best available sell price
-                if buy_price is None:
-                    buy_price = sell_price  # Execute at best available sell price
-
-                traded_quantity = min(buy_quantity, sell_quantity)
-                trade_value = traded_quantity * sell_price  # Trade happens at sell price
-                wallet_tx_id = str(uuid4()) #unique wallet transaction id
-                
-                # Update seller's wallet balance (add money)
-                self.update_wallet_balance(seller_id, trade_value)  
-
-                # Deduct money from buyer's wallet
-                self.update_wallet_balance(buyer_id, -trade_value)  
-                
-                # Add stock to buyer's portfolio
-                result = portfolios_collection.update_one(
-                    {"user_id": buyer_id, "data.stock_id": cur_stock},
-                    {"$inc": {"data.$.quantity_owned": traded_quantity}},
-                    upsert=False
-                    )
-                
-                if result.matched_count == 0:
-                    portfolios_collection.update_one(
-                        {"user_id": buyer_id},
-                        {"$push": {"data": {"stock_id": cur_stock, "quantity_owned": traded_quantity}}},
-                        upsert=True
-                    )
-                    
-                # Log transaction in `stock_transactions_collection`
-                stock_tx_id = str(uuid4())  # Unique transaction ID
-                stock_transactions_collection.insert_one({
-                    "stock_tx_id": stock_tx_id,
-                    "parent_stock_tx_id": None,  # If this is a partial order, update later
-                    "stock_id": cur_stock,
-                    "wallet_tx_id": wallet_tx_id, 
-                    "quantity": traded_quantity,
-                    "stock_price": sell_price,  # Aligning with API response field name
-                    "order_status": "COMPLETED",  # Using API terminology
-                    "is_buy": True,  # Flagging if it's a buy transaction
-                    "buyer_id": buyer_id,
-                    "seller_id": seller_id,
-                    "time_stamp": datetime.now().isoformat()
-                })
-                
-                
-        
-                wallet_transactions_collection.update_one(
-                {"user_id": buyer_id},
-                {
-                "$push": {
-                    "transactions": {
-                    "stock_tx_id": stock_tx_id,       # The "stock" transaction ID
-                    "wallet_tx_id": wallet_tx_id,     # The buyer’s unique wallet transaction ID
-                    "is_debit": True,           # Buyer is paying money
-                    "amount": trade_value,
-                    "time_stamp": datetime.now().isoformat()
-                    }
-                }
-                },
-                upsert=True
-                )
-    
-                
-                # 2) Seller transaction (money credited)
-                seller_wallet_tx_id = str(uuid4())
-
-                wallet_transactions_collection.update_one(
-                    {"user_id": seller_id},
-                    {
-                    "$push": {
-                        "transactions": {
-                        "stock_tx_id": stock_tx_id,
-                        "wallet_tx_id": wallet_tx_id,
-                        "is_debit": False,       # Seller is receiving money
-                        "amount": trade_value,
-                        "time_stamp": datetime.now().isoformat()
-                        }
-                    }
-                    },
-                    upsert=True
-                )
-
-                # Append transaction to executed_trades (for return output)
-                executed_trades.append({
-                    "stock_tx_id": stock_tx_id,
-                    "parent_stock_tx_id": None,  # Parent transaction reference (if applicable)
-                    "stock_id": cur_stock,
-                    "wallet_tx_id": wallet_tx_id,  # Matching wallet transaction
-                    "quantity": traded_quantity,
-                    "stock_price": sell_price,
-                    "order_status": "COMPLETED",
-                    "is_buy": True,
-                    "buyer_id": buyer_id,
-                    "seller_id": seller_id,
-                    "time_stamp": datetime.now().isoformat()
-                })
-                logging.info(f"MATCHED ORDER: {buyer_id} bought {traded_quantity} shares of {cur_stock} from {seller_id} at {sell_price}")
-
-                # # Update wallet balances
-                # self.update_wallet_balance(seller_id, trade_value)  # Seller receives money
-                # self.update_wallet_balance(buyer_id, -trade_value)  # Buyer is charged
-
-                # Adjust remaining quantities
-                if buy_quantity > traded_quantity:
-                    self.buy_orders[cur_stock][0][2] -= traded_quantity
                 else:
-                    self.buy_orders[cur_stock].pop(0)  # Remove fully matched buy order
+                    trade_qty = possible_qty
+                    trade_value = trade_qty * sell_price
 
-                if sell_quantity > traded_quantity:
-                    self.sell_orders[cur_stock][0][2] -= traded_quantity
-                else:
-                    self.sell_orders[cur_stock].pop(0)  # Remove fully matched sell order
+            # (B) Update buyer/seller wallets
+            self.update_wallet_balance(seller_id, trade_value)
+            self.update_wallet_balance(user_id, -trade_value)
 
-        return executed_trades
+            # (C) Adjust the sell order’s available quantity
+            sell_orders[idx][2] -= trade_qty  # reduce the seller’s quantity
+            remaining_qty -= trade_qty
+
+            # (D) Log a partial (child) transaction (with its own wallet_tx_id)
+            child_stock_tx_id = str(uuid4())
+            partial_wallet_tx_id = str(uuid4())
+            stock_transactions_collection.insert_one({
+                "stock_tx_id": child_stock_tx_id,
+                "parent_stock_tx_id": parent_tx_id,
+                "stock_id": stock_id,
+                "wallet_tx_id": partial_wallet_tx_id,
+                "quantity": trade_qty,
+                "stock_price": sell_price,
+                "order_status": "COMPLETED",
+                "is_buy": True,
+                "buyer_id": user_id,
+                "seller_id": seller_id,
+                "time_stamp": datetime.now().isoformat()
+            })
+
+            # (E) Keep track of executed trades
+            executed_trades.append({
+                "stock_tx_id": child_stock_tx_id,
+                "wallet_tx_id": partial_wallet_tx_id,
+                "quantity": trade_qty,
+                "stock_price": sell_price,
+                "buyer_id": user_id,
+                "seller_id": seller_id
+            })
+
+        # 3) After iterating, decide if the order is COMPLETED or PARTIALLY_COMPLETED/INCOMPLETE
+        filled_qty = desired_quantity - remaining_qty
+        if filled_qty == 0:
+            # No shares were filled
+            final_status = "INCOMPLETE"
+        elif remaining_qty > 0:
+            # Some shares filled
+            final_status = "PARTIALLY_COMPLETED"
+        else:
+            # Everything filled
+            final_status = "COMPLETED"
+
+        # 4) If the entire order is COMPLETED, generate a final wallet_tx_id and update the parent
+        update_fields = {
+            "order_status": final_status,
+            "remaining_quantity": remaining_qty
+        }
+
+        if final_status == "COMPLETED":
+            # Only now do we generate a wallet_tx_id for the *parent* transaction
+            final_wallet_tx_id = str(uuid4())
+            update_fields["wallet_tx_id"] = final_wallet_tx_id
+
+        stock_transactions_collection.update_one(
+            {"stock_tx_id": parent_tx_id},
+            {"$set": update_fields}
+        )
+
+        return {
+            "success": True,
+            "order_status": final_status,
+            "trade_details": executed_trades,
+            "stock_tx_id": parent_tx_id
+        }
     
     def cancel_user_order(self, user_id, stock_tx_id):
         """
