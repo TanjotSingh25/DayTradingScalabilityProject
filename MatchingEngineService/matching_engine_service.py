@@ -43,11 +43,8 @@ def place_order():
     quantity = data.get("quantity")
     price = data.get("price")
 
-    # Ensure stock_id is safely extracted
     stock_id = data.get("stock_id", "")
 
-    # if not user_id or not order_type or not ticker or quantity is None or price is None:
-    #     return jsonify({"success": False, "error": "Missing required fields"}), 400
     logging.info(orderBookInst.sell_orders)
     logging.info(orderBookInst.buy_orders)
     try:
@@ -60,7 +57,6 @@ def place_order():
             executed_trades.append(f"Sell order placed for {stock_id}.")
             return jsonify({"success": True, "message": executed_trades }), (200 if result["success"] else 400)
     except Exception as e:
-        # Log the detailed error so you can debug it
         logging.exception("Error processing order:")
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -94,7 +90,7 @@ def cancel_order():
 
 @app.route('/getPrices', methods=['GET'])
 def getPrices():
-    # Calls orderbookInst to get current prices of each LIMIT SELL Ticker
+    # this calls orderbookInst to get current prices of each limit sell ticker
     logging.info(orderBookInst.sell_orders)
     logging.info(orderBookInst.buy_orders)
     data = request.get_json()
