@@ -1,4 +1,4 @@
-Please run these steps before running a jmeter script
+**Please run these steps before running a jmeter script**
 
 (Within main directory with all the service folders)
 
@@ -19,10 +19,10 @@ npm run serve
 
 Click on frontend link
 
-Passed Jmeter Tests Screenshot:
+**Passed Jmeter Tests Screenshot:**
 ![image](https://github.com/user-attachments/assets/b6254300-bfe0-41dc-bfc4-2fc263f06633)
 
-Running Docker Containers:
+**Running Docker Containers:**
 <img width="1512" alt="image" src="https://github.com/user-attachments/assets/b7982143-e7de-42b8-99a9-b535a6d2878a" />
 
 
