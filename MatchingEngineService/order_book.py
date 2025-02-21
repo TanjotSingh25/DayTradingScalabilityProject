@@ -220,7 +220,7 @@ class OrderBook:
                 {
                 "$push": {
                     "transactions": {
-                    "stock_tx_id": partial_tx_id,
+                    "stock_tx_id": parent_tx_id,
                     "wallet_tx_id": wallet_tx_id,
                     "is_debit": True,
                     "amount": trade_value,
