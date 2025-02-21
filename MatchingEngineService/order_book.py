@@ -231,18 +231,18 @@ class OrderBook:
                 upsert=True
             )
             wallet_transactions_collection.update_one(
-            {"user_id": seller_id},
-            {
-            "$push": {
-                "transactions": {
-                "stock_tx_id": partial_tx_id,
-                "wallet_tx_id": wallet_tx_id,
-                "is_debit": False,
-                "amount": trade_value,
-                "time_stamp": datetime.now().isoformat()
+                {"user_id": seller_id},
+                {
+                "$push": {
+                    "transactions": {
+                    "stock_tx_id": parent_tx_id,
+                    "wallet_tx_id": wallet_tx_id,
+                    "is_debit": False,
+                    "amount": trade_value,
+                    "time_stamp": datetime.now().isoformat()
+                    }
                 }
-            }
-            },
+                },
             upsert=True
         )
 
