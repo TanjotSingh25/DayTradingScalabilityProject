@@ -1,6 +1,10 @@
+Group 1
+Team Members: Sunpreet Singh, Ayush Mattoo, Tanjot Singh, Ngan Nguyen, Omar Madhani
+
 **Please run these steps before running a jmeter script**
 
 (Within main directory with all the service folders)
+(Please make sure you're in the main branch)
 
 Step 1: docker-compose down -v
 
