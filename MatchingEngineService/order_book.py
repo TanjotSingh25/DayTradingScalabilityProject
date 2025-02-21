@@ -292,6 +292,7 @@ class OrderBook:
                 order_status = "COMPLETED"
                 # CHANGED: Calculate a numeric price for the parent doc
                 # Example: Weighted average of all fills
+                final_wallet_tx_id = str(uuid4())
                 total_cost = 0
                 total_shares = 0
                 for trade in executed_trades:
@@ -308,7 +309,8 @@ class OrderBook:
                     {"$set": {
                         "remaining_quantity": remaining_qty,
                         "order_status": order_status,
-                        "stock_price": avg_fill_price_int  # <--- Now numeric, NOT None
+                        "stock_price": avg_fill_price_int,  # <--- Now numeric, NOT None
+                        "wallet_tx_id": final_wallet_tx_id
                     }}
                 )
 
