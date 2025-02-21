@@ -32,6 +32,8 @@ except errors.ConnectionFailure:
     raise
 
 # Endpoint of the Matching Engine Service for order matching
+# Do not need to create more endpoints, since i can call wallets_transaction, portfolios, and stock_transactions
+# Matching engine only handles: BUY, SELL, CANCEL, GETPRICES (getprices connects to redis, and can query without needing matching engine)
 MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
 MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
 MATCHING_ENGINE_STOCK_PRICES_URL = "http://matching_engine_service:5300/getPrices"
@@ -49,17 +51,19 @@ def place_stock_order():
     logger.info(request_data, "Printing Here-----------------------------------")
     
     # 1 - Decrypt & validate token
-    token = request.headers.get("token")
+    token = request.headers.get("token", "")
+    if not token:
+        return jsonify({"success": False, "error": "Missing token header"}), 401
+
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
-        return jsonify({"success: false", token_decoded})
+        return jsonify({"success": False, "error": "Invalid token"}), 401
     
     # 2 - Validate the order request
     is_valid, validation_response = helpers.order_service_sanity_check(request_data)
     if not is_valid:
         # 412 Precondition Failed
         return jsonify(validation_response), 401
-
     # 3 -  verify that the user_name exists via postgreSQL
     user_id = token_decoded.get("user_id")
     if not user_id:
@@ -131,7 +135,7 @@ def get_stock_transactions():
     token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
-        return jsonify({"success: false", token_decoded})
+        return jsonify({"success": False, "error": "Invalid token"}), 401
 
     user_id = token_decoded.get("user_id")
     if not user_id:
@@ -181,7 +185,7 @@ def cancel_stock_transaction():
     # Validate and decrypt token using JWT_SECRET
     token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
     if "error" in token_decoded:
-        return jsonify({"success: false", token_decoded}), 401
+        return jsonify({"success": False, "error": "Invalid token"}), 401
 
     stock_tx_id = data.get("stock_tx_id")
     if not stock_tx_id:
