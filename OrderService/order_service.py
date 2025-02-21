@@ -24,8 +24,8 @@ try:
     db = client["trading_system"]
     # MongoDB collections
     wallet_transactions_collection = db["wallets_transaction"]
-    portfolios_collection = db["portfolios"]  # Ensure portfolios collection is initialized
-    stock_transactions_collection = db["stock_transactions"]  # New collection for transactions
+    portfolios_collection = db["portfolios"]  # this ensures portfolios collection is initialized
+    stock_transactions_collection = db["stock_transactions"]  # instantiating new collection for transactions
 
 except errors.ConnectionFailure:
     print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
@@ -36,21 +36,18 @@ MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
 MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
 MATCHING_ENGINE_STOCK_PRICES_URL = "http://matching_engine_service:5300/getPrices"
 
-#secret_key = os.environ.get("SECRET_KEY")
-#print("The Secret key is: ", secret_key, "In file Order_service")
-
 # Place new order -- Market Buy, Limit Sell
-# TODO: Process order details, communicate with matching engine, store in Orders table, etc.
+# Process order details, communicate with matching engine, store in Orders table, etc.
 @app.route('/placeStockOrder', methods=['POST'])
 def place_stock_order():
     """
     Accepts JSON input:
     { "token": "jwt_token", "stock_id": "uuid", "is_buy": true, "order_type": "MARKET", "quantity": 50 }
     """
-    # Grab the JSON body
+    # Grabs the JSON body
     request_data = request.get_json()
     logger.info(request_data, "Printing Here-----------------------------------")
-    # ------ Sanity check ------
+    
     # 1 - Decrypt & validate token
     token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
@@ -60,19 +57,19 @@ def place_stock_order():
     # 2 - Validate the order request
     is_valid, validation_response = helpers.order_service_sanity_check(request_data)
     if not is_valid:
-        # 412 Precondition Failed -- Erronouse field(s)
+        # 412 Precondition Failed
         return jsonify(validation_response), 412
 
-    # 3 -  verify user_name exists via postgreSQL
+    # 3 -  verify that the user_name exists via postgreSQL
     user_id = token_decoded.get("user_id")
     if not user_id:
         return jsonify({"success": False, "error": "No user_id in token"}), 400
 
     order_payload = {
-        # Generate Order_ID -- str makes uuid mutable
+        # generates Order_ID
         "order_id": str(uuid.uuid4()),
         
-        # Set information to pass to Matching Engine
+        # set the information to pass to Matching Engine
         "stock_id": request_data["stock_id"],
         "order_type": request_data["order_type"],
         "quantity": request_data["quantity"],
@@ -88,7 +85,7 @@ def place_stock_order():
     try:
         response = requests.post(MATCHING_ENGINE_URL, json=order_payload)
 
-        # Check if response is successful (status code 200)
+        # Check if the response is successful (status code 200)
         if response.status_code == 200:
             matching_result = response.json()
             return matching_result, 200
@@ -98,7 +95,6 @@ def place_stock_order():
     except Exception as e:
         matching_result = {"error": f"Request failed: {str(e)}"}
 
-    # Return the response from matching engine
     return jsonify(matching_result), 200
 
 @app.route('/getStockTransactions', methods=['GET'])
@@ -130,10 +126,8 @@ def get_stock_transactions():
         ]
     }
     """
-    # Grab the JSON body
-    # request_data = request.get_json()
 
-    # Validate and decrypt token
+    # Validate and decrypt the token
     token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
@@ -143,14 +137,12 @@ def get_stock_transactions():
     if not user_id:
         return jsonify({"success": False, "data": None, "message": "No User ID in token"}), 400
 
-    # Query MongoDB for user's transactions (from `stock_transactions_collection`)
+    # Query MongoDB for user's transactions from the stock_transactions_collection
     transactions_cursor = stock_transactions_collection.find({"user_id": user_id})
 
     # Build the response data array
     user_transactions = []
     for doc in transactions_cursor:
-        #status = doc.get("order_status", "")
-
         user_transactions.append({
             "stock_tx_id": str(doc.get("stock_tx_id")),
             "parent_stock_tx_id": str(doc.get("parent_stock_tx_id")) if doc.get("parent_stock_tx_id") else None,
@@ -164,7 +156,6 @@ def get_stock_transactions():
             "timestamp": doc.get("time_stamp") or doc.get("created_at") or ""
         })
 
-    # Return JSON response
     return jsonify({
         "success": True,
         "data": user_transactions
@@ -182,7 +173,7 @@ def cancel_stock_transaction():
     # Parse JSON body
     data = request.get_json() or {}
 
-    # Extract token from Authorization header, expecting "Bearer <token>"
+    # Extract token from Authorization header
     token_header = request.headers.get("token", "")
     if not token_header:
         return jsonify({"success": False, "error": "Missing token header"}), 401
@@ -192,17 +183,16 @@ def cancel_stock_transaction():
     if "error" in token_decoded:
         return jsonify({"success: false", token_decoded}), 401
 
-    # Ensure stock transaction ID is provided in the JSON body
     stock_tx_id = data.get("stock_tx_id")
     if not stock_tx_id:
         return jsonify({"success": False, "error": "Missing stock transaction ID"}), 400
 
-    # Extract user details from token payload
+    # Extracts the user details from token payload
     user_id = token_decoded.get("user_id")
     if not user_id:
         return jsonify({"success": False, "error": "Missing user ID in token"}), 400
 
-    # Prepare cancellation payload for the Matching Engine
+    # Prepares the cancellation payload for the Matching Engine
     cancellation_payload = {
         "user_id": user_id,
         "stock_tx_id": stock_tx_id
@@ -232,7 +222,6 @@ def get_stock_prices():
     Expected Request:
     Headers: Token
     """
-    # Extract token from Authorization header, expecting "Bearer <token>"
     token_header = request.headers.get("token")
     if not token_header:
         return jsonify({"success": False, "error": "Missing token header"}), 401
@@ -243,7 +232,7 @@ def get_stock_prices():
         error_msg = token_decoded.get("error")
         return jsonify({"success": False, "error": error_msg}), 401
 
-    # Extract user details from token payload
+    # Extracts the user details from token payload
     user_id = token_decoded.get("user_id")
     if not user_id:
         return jsonify({"success": False, "error": "Missing user ID in token"}), 400
@@ -284,7 +273,7 @@ def get_wallet_transactions():
     }
     """
 
-    # 1) Validate token
+    # Validate token
     token = request.headers.get("token")
     token_decoded = helpers.decrypt_and_validate_token(token, JWT_SECRET)
     if "error" in token_decoded:
@@ -294,14 +283,14 @@ def get_wallet_transactions():
     if not user_id:
         return jsonify({"success": False, "data": None, "message": "No User ID in token"}), 400
 
-    # 2) Fetch the user's single wallet document
+    # Fetch the user's single wallet document
     doc = wallet_transactions_collection.find_one({"user_id": user_id})
 
     # If no doc for this user, return empty array
     if not doc:
         return jsonify({"success": True, "data": []}), 200
 
-    # 3) Build response data from the "transactions" array
+    #    Builds response data from the "transactions" array
     #    Each transaction object in doc["transactions"] has keys like
     #      "tx_id", " tx_id2", "is_debit", "amount", "time_stamp"
     wallet_transactions = []
