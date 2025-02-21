@@ -3,6 +3,7 @@
 from flask import Flask, request, jsonify
 from flask_restful import Api, Resource
 from pymongo import MongoClient, errors
+from flask_cors import CORS
 import os
 import uuid
 import jwt
@@ -10,6 +11,7 @@ import json
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)
 api = Api(app)
 
 MONGO_URI = os.getenv("MONGO_URI")

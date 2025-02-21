@@ -2,8 +2,11 @@ from flask import Flask, request, jsonify
 #from order_book import orderBookInst  # Correct import
 import order_book
 import logging
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
+
 orderBookInst = order_book.OrderBook()
 @app.route('/setWallet', methods=['POST'])
 def set_wallet():

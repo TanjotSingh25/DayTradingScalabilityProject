@@ -260,3 +260,49 @@
  * Running on http://127.0.0.1:5300
  * Running on http://172.22.0.4:5300
 2025-02-20 23:14:04,945 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-21 00:02:27,754 - INFO - MongoDB connection established successfully.
+2025-02-21 00:02:27,761 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-21 00:02:27,761 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-21 00:03:57,153 - INFO - {}
+2025-02-21 00:03:57,154 - INFO - {}
+2025-02-21 00:03:57,158 - INFO - Removed stock 16d4fce3-4055-40f8-bc2a-d2a88eef9394 from user 1's portfolio (qty=0).
+2025-02-21 00:03:57,159 - INFO - Updated stock balance for user 1: -550 shares of 16d4fce3-4055-40f8-bc2a-d2a88eef9394
+2025-02-21 00:03:57,159 - INFO - SELL ORDER: 1 listed 550 shares of 16d4fce3-4055-40f8-bc2a-d2a88eef9394 at 135
+2025-02-21 00:03:57,160 - INFO - 172.22.0.7 - - [21/Feb/2025 00:03:57] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-21 00:03:57,677 - INFO - {'16d4fce3-4055-40f8-bc2a-d2a88eef9394': [[1, 135, 550, datetime.datetime(2025, 2, 21, 0, 3, 57, 159882), '0a81e813-6691-4845-8159-ddcd8fbed6f2']]}
+2025-02-21 00:03:57,678 - INFO - {}
+2025-02-21 00:03:57,681 - INFO - Removed stock 80b31b22-52ce-46f7-a6d9-b43738ec0f8e from user 1's portfolio (qty=0).
+2025-02-21 00:03:57,682 - INFO - Updated stock balance for user 1: -350 shares of 80b31b22-52ce-46f7-a6d9-b43738ec0f8e
+2025-02-21 00:03:57,682 - INFO - SELL ORDER: 1 listed 350 shares of 80b31b22-52ce-46f7-a6d9-b43738ec0f8e at 140
+2025-02-21 00:03:57,683 - INFO - 172.22.0.7 - - [21/Feb/2025 00:03:57] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-21 00:04:01,241 - INFO - {'16d4fce3-4055-40f8-bc2a-d2a88eef9394': [[1, 135, 550, datetime.datetime(2025, 2, 21, 0, 3, 57, 159882), '0a81e813-6691-4845-8159-ddcd8fbed6f2']], '80b31b22-52ce-46f7-a6d9-b43738ec0f8e': [[1, 140, 350, datetime.datetime(2025, 2, 21, 0, 3, 57, 682974), '53ebdf9d-c66f-4f4c-98d3-9bd4cf949571']]}
+2025-02-21 00:04:01,242 - INFO - {}
+2025-02-21 00:04:01,243 - INFO - 172.22.0.7 - - [21/Feb/2025 00:04:01] "GET /getPrices HTTP/1.1" 200 -
+2025-02-21 00:04:02,785 - INFO - {'16d4fce3-4055-40f8-bc2a-d2a88eef9394': [[1, 135, 550, datetime.datetime(2025, 2, 21, 0, 3, 57, 159882), '0a81e813-6691-4845-8159-ddcd8fbed6f2']], '80b31b22-52ce-46f7-a6d9-b43738ec0f8e': [[1, 140, 350, datetime.datetime(2025, 2, 21, 0, 3, 57, 682974), '53ebdf9d-c66f-4f4c-98d3-9bd4cf949571']]}
+2025-02-21 00:04:02,786 - INFO - {}
+2025-02-21 00:04:02,788 - INFO - Created new stock 16d4fce3-4055-40f8-bc2a-d2a88eef9394 with quantity=10 for user 2
+2025-02-21 00:04:02,789 - INFO - Updated wallet balance for 1 by 1350
+2025-02-21 00:04:02,790 - INFO - Updated wallet balance for 2 by -1350
+2025-02-21 00:04:02,792 - INFO - BUY MARKET TRADE: 2 bought 10 shares of 16d4fce3-4055-40f8-bc2a-d2a88eef9394 @ 135
+2025-02-21 00:04:02,793 - INFO - 172.22.0.7 - - [21/Feb/2025 00:04:02] "POST /placeOrder HTTP/1.1" 200 -
+2025-02-21 00:14:26,579 - INFO - MongoDB connection established successfully.
+2025-02-21 00:14:26,587 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-21 00:14:26,588 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-21 00:23:45,652 - INFO - MongoDB connection established successfully.
+2025-02-21 00:23:45,660 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-21 00:23:45,660 - INFO - [33mPress CTRL+C to quit[0m
+2025-02-21 00:27:05,748 - INFO - MongoDB connection established successfully.
+2025-02-21 00:27:05,758 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.22.0.6:5300
+2025-02-21 00:27:05,759 - INFO - [33mPress CTRL+C to quit[0m

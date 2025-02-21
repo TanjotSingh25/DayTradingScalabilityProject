@@ -2,12 +2,14 @@ from flask import Flask, request, jsonify
 import helpers
 import os
 from pymongo import MongoClient, errors
+from flask_cors import CORS
 import logging as logger
 import requests
 import uuid
 import datetime
 
 app = Flask(__name__)
+CORS(app)
 
 MONGO_URI = os.getenv("MONGO_URI")
 
