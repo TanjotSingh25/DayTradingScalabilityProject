@@ -120,7 +120,7 @@ class OrderBook:
         if stock_id not in self.sell_orders or not self.sell_orders[stock_id]:
             # No sellers available at all -> queue the entire order as unfilled
             # Mark status as INCOMPLETE, and put this buy into a "market buy queue".
-            self._queue_market_buy(user_id, None, parent_tx_id, quantity, stock_id) 
+            self._queue_market_buy(user_id, None, quantity, parent_tx_id, stock_id) 
             logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for {user_id}.")
             return {
                 "success": True,
@@ -291,12 +291,12 @@ class OrderBook:
             # No shares actually bought
             order_status = "INCOMPLETE"
             # Optionally queue the entire order as a market buy
-            self._queue_market_buy(user_id, None, parent_tx_id, remaining_qty, partial_tx_id)
+            self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
         elif remaining_qty > 0:
             # Some portion was filled, but not all
             order_status = "PARTIALLY_COMPLETED"
             # The leftover can also be queued as a market buy if desired
-            self._queue_market_buy(user_id, None, parent_tx_id, remaining_qty, partial_tx_id)
+            self._queue_market_buy(user_id, None, remaining_qty, parent_tx_id, stock_id)
         else:
             # All shares filled
             order_status = "COMPLETED"
@@ -315,7 +315,7 @@ class OrderBook:
             "stock_tx_id": parent_tx_id
     }
 
-    def _queue_market_buy(self, user_id, price, order_id, quantity, stock_id):
+    def _queue_market_buy(self, user_id, price, quantity, order_id, stock_id):
         """
         Helper method to queue leftover market buys if desired.
         For example, you might store them in self.buy_orders[stock_id]
