@@ -697,8 +697,8 @@ class OrderBook:
 
         # Extract relevant info from found_item
         if order_type == "BUY":
-            # found_item = [user_id, quantity, timestamp, transaction_id]
-            quantity = found_item[1]
+            # found_item = [user_id, price, quantity, timestamp, transaction_id]
+            quantity = found_item[2]
             # price is typically None for buy order, but we can set it if needed
         else:  # SELL
             # found_item = [user_id, price, quantity, timestamp, transaction_id]
