@@ -310,7 +310,7 @@ class OrderBook:
                         "remaining_quantity": remaining_qty,
                         "order_status": order_status,
                         "stock_price": avg_fill_price_int,  # <--- Now numeric, NOT None
-                        "wallet_tx_id": final_wallet_tx_id
+                        "wallet_tx_id": wallet_tx_id
                     }}
                 )
 
