@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Index, exists
 from sqlalchemy.orm import scoped_session, sessionmaker
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token
@@ -8,6 +8,8 @@ import os
 from dotenv import load_dotenv
 from flask_cors import CORS
 from datetime import timedelta
+import redis
+import json
 
 load_dotenv()
 
@@ -27,10 +29,10 @@ db = SQLAlchemy(app)
 # Configure connection pooling separately
 engine = create_engine(
     app.config['SQLALCHEMY_DATABASE_URI'],
-    pool_size=20,      # Increase default pool size from 5 to 20
-    max_overflow=40,   # Allow up to 40 extra connections
-    pool_timeout=30,   # Wait 30 sec before raising timeout
-    pool_recycle=1800  # Recycle connections after 30 minutes
+    pool_size=500,      
+    max_overflow=1000,   
+    pool_timeout=60,   
+    pool_recycle=900  
 )
 
 # Set up scoped session
@@ -39,11 +41,19 @@ SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bi
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
+# Connect to Redis
+# REDIS_HOST = os.getenv("REDIS_HOST", "redis")  # Use "redis" inside Docker
+# REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+
+# redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_name = db.Column(db.String(150), unique=True, nullable=False)
+    user_name = db.Column(db.String(150), unique=True, nullable=False, index=True)
     password = db.Column(db.String(256), nullable=False)
     name = db.Column(db.String(150), nullable=False)
+
+Index("idx_users_user_name", Users.user_name, postgresql_using="hash")
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -52,7 +62,7 @@ def register():
     password = data.get('password')
     name = data.get('name')
 
-    if Users.query.filter_by(user_name=user_name).first():
+    if db.session.query(exists().where(Users.user_name == user_name)).scalar():
         return jsonify({"success": False, "data": {"error": "Username already exists"}}), 400
     
     try:
@@ -70,7 +80,7 @@ def login():
     user_name = data.get('user_name')
     password = data.get('password')
     
-    user = Users.query.filter_by(user_name=user_name).first()
+    user = Users.query.with_entities(Users.id, Users.password, Users.user_name).filter_by(user_name=user_name).first()
     if user and bcrypt.check_password_hash(user.password, password):
         access_token = create_access_token(identity=str(user.id), additional_claims={
             "token_type": "access",
@@ -81,20 +91,8 @@ def login():
     
     return jsonify({"success": False, "data": {"error": "Invalid credentials"}}), 400
 
-@app.route('/delete/<string:user_name>', methods=['DELETE'])
-def delete(user_name):
-    try:
-        user = Users.query.filter_by(user_name=user_name).first()
-        if not user:
-            return jsonify({"success": False, "data": {"error": "User not found"}}), 404
-        
-        db.session.delete(user)
-        db.session.commit()
-        return jsonify({"success": True, "data": None}), 200
-    except Exception as e:
-        return jsonify({"success": False, "data": {"error": str(e)}}), 500
-
+with app.app_context():
+    db.create_all()
+    
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(host='0.0.0.0', port=8000)

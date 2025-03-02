@@ -12,10 +12,10 @@ RUN apt-get update && apt-get install -y \
 COPY . /app
 
 # Install Python dependencies
-RUN pip install --no-cache-dir flask flask-cors flask-jwt-extended flask-bcrypt flask-sqlalchemy python-dotenv psycopg2-binary
+RUN pip install --no-cache-dir flask gunicorn flask-cors flask-jwt-extended flask-bcrypt flask-sqlalchemy python-dotenv psycopg2-binary redis flask-caching
 
 # Expose the application port
 EXPOSE 8000
 
 # Run the Flask application
-CMD ["python", "AuthenticationService.py"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "AuthenticationService:app"]
