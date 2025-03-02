@@ -41,6 +41,24 @@ services:
                 "work_mem=32MB",
             ]
 
+    pgbouncer:
+        image: edoburu/pgbouncer
+        container_name: pgbouncer
+        restart: always
+        depends_on:
+            db:
+                condition: service_healthy
+        volumes:
+            - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+        environment:
+            - DB_HOST=db
+            - DATABASES=authdb=host=db port=5432 user=admin password=adminpassword pool_size=100
+        ports:
+            - "6432:6432" # Expose PgBouncer on port 6432
+        networks:
+            - backend
+
     auth_service:
         build:
             context: .

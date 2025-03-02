@@ -1,23 +1,41 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token
 import os
 from dotenv import load_dotenv
 from flask_cors import CORS
 from datetime import timedelta
-import json
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+# Load JWT Secret and Expiry
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=30)
 
+# Database URI from .env
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+
+# Initialize SQLAlchemy
 db = SQLAlchemy(app)
+
+# Configure connection pooling separately
+engine = create_engine(
+    app.config['SQLALCHEMY_DATABASE_URI'],
+    pool_size=20,      # Increase default pool size from 5 to 20
+    max_overflow=40,   # Allow up to 40 extra connections
+    pool_timeout=30,   # Wait 30 sec before raising timeout
+    pool_recycle=1800  # Recycle connections after 30 minutes
+)
+
+# Set up scoped session
+SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
