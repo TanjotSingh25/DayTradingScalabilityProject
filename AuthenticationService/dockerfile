@@ -1,28 +1,21 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Set the working directory
+WORKDIR /app
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
-
-# Install system dependencies for psycopg2 and other Python packages
+# Install system dependencies required for PostgreSQL
 RUN apt-get update && apt-get install -y \
-    libpq-dev gcc python3-dev postgresql-client && \
+    libpq-dev gcc python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements.txt first to leverage Docker cache
-COPY AuthenticationService/requirements.txt /usr/src/app/
+# Copy project files
+COPY . /app
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir flask flask-cors flask-jwt-extended flask-bcrypt flask-sqlalchemy python-dotenv psycopg2-binary
 
-# Copy the rest of the Django project files
-COPY AuthenticationService /usr/src/app/
-
-# Expose the port that the app will run on
+# Expose the application port
 EXPOSE 8000
 
-# Command to run the application using Django's development server
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Run the Flask application
+CMD ["python", "AuthenticationService.py"]
