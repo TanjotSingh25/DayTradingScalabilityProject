@@ -1,0 +1,1 @@
+"admin" "md5$(echo -n "adminpasswordadmin" | md5sum | awk '{print $1}')"
