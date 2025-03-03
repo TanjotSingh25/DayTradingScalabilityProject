@@ -42,10 +42,9 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 # Connect to Redis
-# REDIS_HOST = os.getenv("REDIS_HOST", "redis")  # Use "redis" inside Docker
-# REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-
-# redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")  # Use "redis" inside Docker
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -53,7 +52,9 @@ class Users(db.Model):
     password = db.Column(db.String(256), nullable=False)
     name = db.Column(db.String(150), nullable=False)
 
-Index("idx_users_user_name", Users.user_name, postgresql_using="hash")
+    __table_args__ = (
+        Index("idx_users_user_name", "user_name", postgresql_using="hash"),
+    )
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -70,7 +71,16 @@ def register():
         user = Users(user_name=user_name, password=hashed_password, name=name)
         db.session.add(user)
         db.session.commit()
-        return jsonify({"success": True, "data": None}), 201
+
+        # Generate and store token in Redis (Write-Through Caching)
+        access_token = create_access_token(identity=str(user.id), additional_claims={
+            "token_type": "access",
+            "user_id": user.id,
+            "user_name": user.user_name
+        })
+        redis_client.setex(f"user_token:{user.id}", timedelta(minutes=30), access_token)
+
+        return jsonify({"success": True, "data": {"token": access_token}}), 201
     except Exception as e:
         return jsonify({"success": False, "data": {"error": str(e)}}), 500
 
@@ -81,18 +91,30 @@ def login():
     password = data.get('password')
     
     user = Users.query.with_entities(Users.id, Users.password, Users.user_name).filter_by(user_name=user_name).first()
-    if user and bcrypt.check_password_hash(user.password, password):
-        access_token = create_access_token(identity=str(user.id), additional_claims={
-            "token_type": "access",
-            "user_id": user.id,
-            "user_name": user.user_name
-        })
-        return jsonify({"success": True, "data": {"token": access_token}})
     
-    return jsonify({"success": False, "data": {"error": "Invalid credentials"}}), 400
+    if not user or not bcrypt.check_password_hash(user.password, password):
+        return jsonify({"success": False, "data": {"error": "Invalid credentials"}}), 400
+
+    # Check Redis first
+    cached_token = redis_client.get(f"user_token:{user.id}")
+    if cached_token:
+        redis_client.delete(f"user_token:{user.id}")  # Delete token from cache after reading
+        return jsonify({"success": True, "data": {"token": cached_token}})
+
+    # If not in cache, generate a new token
+    access_token = create_access_token(identity=str(user.id), additional_claims={
+        "token_type": "access",
+        "user_id": user.id,
+        "user_name": user.user_name
+    })
+    
+    # Store in Redis
+    redis_client.setex(f"user_token:{user.id}", timedelta(minutes=30), access_token)
+
+    return jsonify({"success": True, "data": {"token": access_token}})
 
 with app.app_context():
     db.create_all()
-    
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
