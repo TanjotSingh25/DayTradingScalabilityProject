@@ -17,6 +17,7 @@ services:
     redis:
         image: redis:latest
         container_name: redis_cache
+        command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru
         restart: always
         ports:
             - "6379:6379"
@@ -46,13 +47,13 @@ services:
             [
                 "postgres",
                 "-c",
-                "max_connections=2000", # Increase connections for high concurrency
+                "max_connections=1000", # Increase connections for high concurrency
                 "-c",
-                "shared_buffers=512MB", # Use more memory for caching
+                "shared_buffers=3GB", # Use more memory for caching
                 "-c",
-                "work_mem=64MB", # Allocate more memory per operation
+                "work_mem=16MB", # Allocate more memory per operation
                 "-c",
-                "effective_cache_size=1GB", # More cache for better query performance
+                "effective_cache_size=8GB", # More cache for better query performance
                 "-c",
                 "synchronous_commit=off", # Improves performance (only for testing!)
                 "-c",

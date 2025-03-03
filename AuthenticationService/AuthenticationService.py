@@ -29,7 +29,7 @@ db = SQLAlchemy(app)
 # Configure connection pooling separately
 engine = create_engine(
     app.config['SQLALCHEMY_DATABASE_URI'],
-    pool_size=500,      
+    pool_size=1000,      
     max_overflow=1000,   
     pool_timeout=60,   
     pool_recycle=900  
@@ -78,7 +78,7 @@ def register():
             "user_id": user.id,
             "user_name": user.user_name
         })
-        redis_client.setex(f"user_token:{user.id}", timedelta(minutes=30), access_token)
+        redis_client.setex(f"user_token:{user.user_name}", timedelta(minutes=30), access_token)
 
         return jsonify({"success": True, "data": {"token": access_token}}), 201
     except Exception as e:
@@ -90,16 +90,15 @@ def login():
     user_name = data.get('user_name')
     password = data.get('password')
     
+    cached_token = redis_client.get(f"user_token:{user_name}")
+    if cached_token:
+        # redis_client.delete(f"user_token:{user.id}")  # Delete token from cache after reading
+        return jsonify({"success": True, "data": {"token": cached_token}})
+    
     user = Users.query.with_entities(Users.id, Users.password, Users.user_name).filter_by(user_name=user_name).first()
     
     if not user or not bcrypt.check_password_hash(user.password, password):
         return jsonify({"success": False, "data": {"error": "Invalid credentials"}}), 400
-
-    # Check Redis first
-    cached_token = redis_client.get(f"user_token:{user.id}")
-    if cached_token:
-        redis_client.delete(f"user_token:{user.id}")  # Delete token from cache after reading
-        return jsonify({"success": True, "data": {"token": cached_token}})
 
     # If not in cache, generate a new token
     access_token = create_access_token(identity=str(user.id), additional_claims={
