@@ -8,6 +8,7 @@ import os
 import uuid
 import jwt
 import json
+import redis
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -15,6 +16,8 @@ CORS(app)
 api = Api(app)
 
 MONGO_URI = os.getenv("MONGO_URI")
+REDIS_HOST = os.getenv("REDIS_HOST", "redis_wallet_cache")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI is not set. Make sure it's defined in docker-compose.yml.")
@@ -24,16 +27,21 @@ try:
     db = client["trading_system"]
     stocks_collection = db["stocks"]
     portfolios_collection = db["portfolios"]
-    wallets_collection = db["wallets"]
 
     # Ensure necessary indexes for faster lookups
     stocks_collection.create_index("stock_id", unique=True)
     stocks_collection.create_index("stock_name", unique=True)  # Prevent duplicate stock names
     portfolios_collection.create_index("user_id", unique=True)
-    wallets_collection.create_index("user_id", unique=True)
 
 except errors.ConnectionFailure:
     print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
+    raise
+
+# Initialize Redis connection
+try:
+    redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+except Exception as e:
+    print(f"Error connecting to Redis: {e}")
     raise
 
 # -----------------------
@@ -87,12 +95,6 @@ def initialize_user_if_not_exists(user_id):
     portfolios_collection.update_one(
         {"user_id": user_id},
         {"$setOnInsert": {"user_id": user_id, "data": []}},
-        upsert=True
-    )
-
-    wallets_collection.update_one(
-        {"user_id": user_id},
-        {"$setOnInsert": {"user_id": user_id, "balance": 0, "transactions": []}},
         upsert=True
     )
 
@@ -196,19 +198,14 @@ class AddMoneyToWallet(Resource):
                 return {"success": False, "data": {"error": user_data["error"]}}, 401
 
             user_id = user_data["user_id"]
-            initialize_user_if_not_exists(user_id)
-
             data = get_request_data()
             amount = data.get("amount")
 
-            if amount is None or amount <= 0:
-                return {"success": False, "data": {"error": "Amount must be greater than zero"}}, 400
+            if not isinstance(amount, (int, float)) or amount <= 0:
+                return {"success": False, "data": {"error": "Amount must be a valid number greater than zero"}}, 400
 
-            wallets_collection.update_one(
-                {"user_id": user_id},
-                {"$inc": {"balance": amount}},
-                upsert=True
-            )
+            # Update balance in Redis
+            redis_client.incrbyfloat(f"wallet_balance:{user_id}", amount)
 
             return {"success": True, "data": None}, 200
 
@@ -223,11 +220,11 @@ class GetWalletBalance(Resource):
                 return {"success": False, "data": {"error": user_data["error"]}}, 401
 
             user_id = user_data["user_id"]
-            initialize_user_if_not_exists(user_id)
-
-            wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
-            balance = wallet.get("balance", 0) if wallet else 0
-
+            
+            # Fetch balance from Redis
+            balance = redis_client.get(f"wallet_balance:{user_id}")
+            balance = int(float(balance)) if balance else 0
+            
             return {"success": True, "data": {"balance": balance}}, 200
 
         except Exception as e:

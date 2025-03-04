@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
     nginx:
         image: nginx:latest
@@ -24,6 +26,16 @@ services:
         networks:
             - backend
 
+    redis_wallet_cache:
+        image: redis:latest
+        container_name: redis_wallet_cache
+        command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru
+        restart: always
+        ports:
+            - "6380:6379"
+        networks:
+            - backend
+
     db:
         image: postgres:13
         container_name: postgres_db
@@ -43,21 +55,15 @@ services:
             interval: 5s
             timeout: 5s
             retries: 10
-        command: #Might change it, just for load testing
+        command:
             [
                 "postgres",
-                "-c",
-                "max_connections=1000", # Increase connections for high concurrency
-                "-c",
-                "shared_buffers=3GB", # Use more memory for caching
-                "-c",
-                "work_mem=16MB", # Allocate more memory per operation
-                "-c",
-                "effective_cache_size=8GB", # More cache for better query performance
-                "-c",
-                "synchronous_commit=off", # Improves performance (only for testing!)
-                "-c",
-                "fsync=off", # Disables disk sync (unsafe, but boosts speed)
+                "-c", "max_connections=1000",
+                "-c", "shared_buffers=3GB",
+                "-c", "work_mem=16MB",
+                "-c", "effective_cache_size=8GB",
+                "-c", "synchronous_commit=off",
+                "-c", "fsync=off"
             ]
 
     pgbouncer:
@@ -74,7 +80,7 @@ services:
             - DB_HOST=db
             - DATABASES=authdb=host=db port=5432 user=admin password=adminpassword pool_size=100
         ports:
-            - "6432:6432" # Expose PgBouncer on port 6432
+            - "6432:6432"
         networks:
             - backend
 
@@ -90,7 +96,7 @@ services:
             db:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
             - DB_HOST=db
             - DB_PORT=5432
             - DB_NAME=authdb
@@ -111,7 +117,7 @@ services:
             db:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
             - DB_HOST=db
             - DB_PORT=5432
             - DB_NAME=authdb
@@ -132,7 +138,7 @@ services:
             db:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
             - DB_HOST=db
             - DB_PORT=5432
             - DB_NAME=authdb
@@ -148,7 +154,7 @@ services:
         volumes:
             - ./OrderService:/app
         ports:
-            - "5200:5200" # Expose Order Service on port 5200
+            - "5200:5200"
         depends_on:
             matching_engine_service:
                 condition: service_started
@@ -158,7 +164,6 @@ services:
             - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
             - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-
         networks:
             - backend
 
@@ -169,7 +174,7 @@ services:
         volumes:
             - ./MatchingEngineService:/app
         ports:
-            - "5300:5300" # Expose Matching Engine on port 5300
+            - "5300:5300"
         depends_on:
             mongo:
                 condition: service_healthy
@@ -178,7 +183,6 @@ services:
         networks:
             - backend
 
-    # New MongoDB service to be used by PortfolioStockService and other microservices
     mongo:
         image: mongo:6.0
         container_name: mongo_db
@@ -201,6 +205,7 @@ services:
     portfolio_stock_service:
         build:
             context: ./PortfolioStockService
+            dockerfile: Dockerfile
         volumes:
             - ./PortfolioStockService:/app
         ports:
@@ -210,6 +215,8 @@ services:
                 condition: service_healthy
         environment:
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+            - REDIS_HOST=redis_wallet_cache
+            - REDIS_PORT=6379
         networks:
             - backend
 
