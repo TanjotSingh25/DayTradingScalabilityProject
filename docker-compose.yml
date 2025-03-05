@@ -11,6 +11,8 @@ services:
             - auth_service2
             - auth_service3
             - order_service
+            - matching_engine_service
+            - portfolio_stock_service
         networks:
             - backend
 
@@ -24,27 +26,25 @@ services:
         networks:
             - backend
 
-    db:
+    db1:
         image: postgres:13
-        container_name: postgres_db
+        container_name: postgres_db1
         environment:
-            POSTGRES_DB: authdb
+            POSTGRES_DB: authdb1
             POSTGRES_USER: admin
             POSTGRES_PASSWORD: adminpassword
-            POSTGRESQL_NUM_SYNCHRONOUS_REPLICAS: 4
         ports:
-            - "5432:5432"
+            - "5433:5432"
         volumes:
-            - pgdata:/var/lib/postgresql/data
+            - pgdata1:/var/lib/postgresql/data
         networks:
             - backend
         healthcheck:
-            test: ["CMD", "pg_isready", "-U", "admin", "-d", "authdb"]
+            test: ["CMD", "pg_isready", "-U", "admin", "-d", "authdb1"]
             interval: 5s
             timeout: 5s
             retries: 10
-        command: #Might change it, just for load testing
-            [
+        command: [
                 "postgres",
                 "-c",
                 "max_connections=1000", # Increase connections for high concurrency
@@ -60,21 +60,72 @@ services:
                 "fsync=off", # Disables disk sync (unsafe, but boosts speed)
             ]
 
-    pgbouncer:
-        image: edoburu/pgbouncer
-        container_name: pgbouncer
-        restart: always
-        depends_on:
-            db:
-                condition: service_healthy
-        volumes:
-            - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
-            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    db2:
+        image: postgres:13
+        container_name: postgres_db2
         environment:
-            - DB_HOST=db
-            - DATABASES=authdb=host=db port=5432 user=admin password=adminpassword pool_size=100
+            POSTGRES_DB: authdb2
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: adminpassword
         ports:
-            - "6432:6432" # Expose PgBouncer on port 6432
+            - "5434:5432"
+        volumes:
+            - pgdata2:/var/lib/postgresql/data
+        networks:
+            - backend
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "admin", "-d", "authdb2"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    db3:
+        image: postgres:13
+        container_name: postgres_db3
+        environment:
+            POSTGRES_DB: authdb3
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: adminpassword
+        ports:
+            - "5435:5432"
+        volumes:
+            - pgdata3:/var/lib/postgresql/data
+        networks:
+            - backend
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "admin", "-d", "authdb3"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    # pgbouncer:
+    #     image: edoburu/pgbouncer
+    #     container_name: pgbouncer
+    #     restart: always
+    #     depends_on:
+    #         db:
+    #             condition: service_healthy
+    #     volumes:
+    #         - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+    #         - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    #     environment:
+    #         - DB_HOST=db
+    #         - DATABASES=authdb=host=db port=5432 user=admin password=adminpassword pool_size=100
+    #     ports:
+    #         - "6432:6432" # Expose PgBouncer on port 6432
+    #     networks:
+    #         - backend
+
+    auth_load_balancer:
+        build:
+            context: .
+            dockerfile: auth_load_balancer/Dockerfile
+        depends_on:
+            - auth_service1
+            - auth_service2
+            - auth_service3
+        ports:
+            - "5001:5001"
         networks:
             - backend
 
@@ -87,13 +138,13 @@ services:
         ports:
             - "8001:8000"
         depends_on:
-            db:
+            db1:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=db
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=db1
             - DB_PORT=5432
-            - DB_NAME=authdb
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -108,13 +159,13 @@ services:
         ports:
             - "8002:8000"
         depends_on:
-            db:
+            db2:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=db
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=db2
             - DB_PORT=5432
-            - DB_NAME=authdb
+            - DB_NAME=authdb2
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -129,13 +180,13 @@ services:
         ports:
             - "8003:8000"
         depends_on:
-            db:
+            db3:
                 condition: service_healthy
         environment:
             - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=db
+            - DB_HOST=db3
             - DB_PORT=5432
-            - DB_NAME=authdb
+            - DB_NAME=authdb3
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -217,6 +268,8 @@ networks:
     backend:
 
 volumes:
-    pgdata:
+    pgdata1:
+    pgdata2:
+    pgdata3:
     mongodb_data:
     mongodbdata:
