@@ -80,7 +80,7 @@ def register():
         })
         redis_client.setex(f"user_token:{user.user_name}", timedelta(minutes=30), access_token)
 
-        return jsonify({"success": True, "data": {"token": access_token}}), 201
+        return jsonify({"success": True, "data": None}), 201
     except Exception as e:
         return jsonify({"success": False, "data": {"error": str(e)}}), 500
 
