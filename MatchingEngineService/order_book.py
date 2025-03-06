@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 import logging
-from pymongo import MongoClient, errors
+from pymongo import MongoClient, errors, UpdateOne
 import os
 from dotenv import load_dotenv
 from uuid import uuid4
@@ -88,6 +88,32 @@ class OrderBook:
         except Exception as e:
             logging.error(f"Error fetching wallet balance for {user_id}: {e}")
             return 0
+
+    def update_wallet_balance(self, buyer_id, seller_id, trade_value):
+        """
+        Updates both the buyer's and seller's wallet balances in Redis atomically.
+        The seller's balance is incremented by trade_value while the buyer's is decremented by trade_value.
+        Ensures that if the wallet key does not exist, it is first initialized to 0.
+        """
+        try:
+            pipe = redis_client.pipeline()
+            buyer_key = f"wallet_balance:{buyer_id}"
+            seller_key = f"wallet_balance:{seller_id}"
+            
+            # Ensure wallet keys exist by setting them to 0 if not already present
+            if redis_client.get(buyer_key) is None:
+                pipe.set(buyer_key, 0)
+            if redis_client.get(seller_key) is None:
+                pipe.set(seller_key, 0)
+                
+            # Perform both balance updates in one atomic pipeline call
+            pipe.incrbyfloat(seller_key, trade_value)
+            pipe.incrbyfloat(buyer_key, -trade_value)
+            pipe.execute()
+            
+            logging.info(f"Updated wallet balances: buyer {buyer_id} by {-trade_value}, seller {seller_id} by {trade_value}")
+        except Exception as err:
+            logging.error(f"Error updating wallet balances for buyer {buyer_id} and seller {seller_id}: {err}")
 
     def update_wallet_balance(self, user_id, amount):
         """
@@ -204,6 +230,7 @@ class OrderBook:
             
             # Log partial fill with a new transaction record
             partial_tx_id = str(uuid4())
+            date_time = datetime.now().isoformat()
             stock_transactions_collection.insert_one({
                 "stock_tx_id": partial_tx_id,
                 "parent_stock_tx_id": parent_tx_id, #if remaining_qty > 0 else None,
@@ -215,41 +242,45 @@ class OrderBook:
                 "is_buy": True,
                 "user_id": user_id,
                 "seller_id": seller_id,
-                "time_stamp": datetime.now().isoformat()
+                "time_stamp": date_time
             })
 
-            # Log wallet transaction for buyer (debit)
-            wallet_transactions_collection.update_one(
-                {"user_id": user_id},
-                {
-                "$push": {
-                    "transactions": {
-                    "stock_tx_id": parent_tx_id,
-                    "wallet_tx_id": wallet_tx_id,
-                    "is_debit": True,
-                    "amount": trade_value,
-                    "time_stamp": datetime.now().isoformat()
-                    }
-                }
-                },
-                upsert=True
-            )
-            # Credit the seller
-            wallet_transactions_collection.update_one(
-                {"user_id": seller_id},
-                {
-                "$push": {
-                    "transactions": {
-                    "stock_tx_id": parent_tx_id,
-                    "wallet_tx_id": wallet_tx_id,
-                    "is_debit": False,
-                    "amount": trade_value,
-                    "time_stamp": datetime.now().isoformat()
-                    }
-                }
-                },
-            upsert=True
-        )
+            # Initialize transactions of wallet transactions in list
+            transactions = [
+                UpdateOne(
+                    {"user_id": user_id},
+                    {
+                        "$push": {
+                            "transactions": {
+                                "stock_tx_id": parent_tx_id,
+                                "wallet_tx_id": wallet_tx_id,
+                                "is_debit": True,
+                                "amount": trade_value,
+                                "time_stamp": date_time
+                            }
+                        }
+                    },
+                    upsert=True
+                ),
+                UpdateOne(
+                    {"user_id": seller_id},
+                    {
+                        "$push": {
+                            "transactions": {
+                                "stock_tx_id": parent_tx_id,
+                                "wallet_tx_id": wallet_tx_id,
+                                "is_debit": False,
+                                "amount": trade_value,
+                                "time_stamp": date_time
+                            }
+                        }
+                    },
+                    upsert=True
+                )
+            ]
+
+            # Execute bulk operation
+            wallet_transactions_collection.bulk_write(transactions)
 
             # 7. Record this partial execution
             executed_trades.append({
@@ -261,7 +292,7 @@ class OrderBook:
                 "stock_price": sell_price,
                 "buyer_id": user_id,
                 "seller_id": seller_id,
-                "time_stamp": datetime.now().isoformat()
+                "time_stamp": datetime
             })
             logging.info(f"BUY MARKET TRADE: {user_id} bought {trade_qty} shares of {stock_id} @ {sell_price}")
 
@@ -320,14 +351,12 @@ class OrderBook:
         # Helper method to queue leftover market buy orders
         if quantity <= 0:
             return
-
         # If you want to store leftover as a 'market' entry in the buy book:
         if stock_id not in self.buy_orders:
             self.buy_orders[stock_id] = []
 
         # store price as None to represent a market buy
         self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
-
         # No deduction of funds, because no order has been completed
         logging.info(f"Queued leftover market buy for {user_id}: {quantity} shares of {stock_id}")
 
@@ -520,6 +549,7 @@ class OrderBook:
                     
                 # Log transaction in `stock_transactions_collection`
                 stock_tx_id = str(uuid4())  # Unique transaction ID
+                cur_date_time = datetime.now().isoformat()
                 stock_transactions_collection.insert_one({
                     "stock_tx_id": stock_tx_id,
                     "parent_stock_tx_id": None,  # If this is a partial order, update later
@@ -531,43 +561,43 @@ class OrderBook:
                     "is_buy": True,  
                     "buyer_id": buyer_id,
                     "seller_id": seller_id,
-                    "time_stamp": datetime.now().isoformat()
+                    "time_stamp": cur_date_time
                 })
-
-                wallet_transactions_collection.update_one(
-                {"user_id": buyer_id},
-                {
-                "$push": {
-                    "transactions": {
-                    "stock_tx_id": stock_tx_id,       # The "stock" transaction ID
-                    "wallet_tx_id": wallet_tx_id,     # The buyer’s unique wallet transaction ID
-                    "is_debit": True,           # Buyer is paying money
-                    "amount": trade_value,
-                    "time_stamp": datetime.now().isoformat()
-                    }
-                }
-                },
-                upsert=True
-                )
-
-                # 2) Seller transaction (money credited)
-                seller_wallet_tx_id = str(uuid4())
-
-                wallet_transactions_collection.update_one(
-                    {"user_id": seller_id},
-                    {
-                    "$push": {
-                        "transactions": {
-                        "stock_tx_id": stock_tx_id,
-                        "wallet_tx_id": wallet_tx_id,
-                        "is_debit": False,       # Seller is receiving money
-                        "amount": trade_value,
-                        "time_stamp": datetime.now().isoformat()
-                        }
-                    }
-                    },
-                    upsert=True
-                )
+                # Initialize transactions of wallet transactions in list
+                transactions = [
+                    UpdateOne(
+                        {"user_id": buyer_id},
+                        {
+                            "$push": {
+                                "transactions": {
+                                    "stock_tx_id": stock_tx_id,
+                                    "wallet_tx_id": wallet_tx_id,
+                                    "is_debit": True,
+                                    "amount": trade_value,
+                                    "time_stamp": cur_date_time
+                                }
+                            }
+                        },
+                        upsert=True
+                    ),
+                    UpdateOne(
+                        {"user_id": seller_id},
+                        {
+                            "$push": {
+                                "transactions": {
+                                    "stock_tx_id": stock_tx_id,
+                                    "wallet_tx_id": wallet_tx_id,
+                                    "is_debit": False,
+                                    "amount": trade_value,
+                                    "time_stamp": cur_date_time
+                                }
+                            }
+                        },
+                        upsert=True
+                    )
+                ]
+                # Execute bulk operation
+                wallet_transactions_collection.bulk_write(transactions)
 
                 # Append transaction to executed_trades (for return output)
                 executed_trades.append({
@@ -581,7 +611,7 @@ class OrderBook:
                     "is_buy": True,
                     "buyer_id": buyer_id,
                     "seller_id": seller_id,
-                    "time_stamp": datetime.now().isoformat()
+                    "time_stamp": cur_date_time
                 })
                 logging.info(f"MATCHED ORDER: {buyer_id} bought {traded_quantity} shares of {cur_stock} from {seller_id} at {sell_price}")
 
@@ -634,7 +664,7 @@ class OrderBook:
         # 3) If no order found, return failure
         if not found_item:
             logging.warning(f"Order with stock_tx_id={stock_tx_id} not found for user_id={user_id}.")
-            return False, "Order not found."
+            return False, 400
 
         # Extract relevant info from found_item
         if order_type == "MARKET":
@@ -688,13 +718,13 @@ class OrderBook:
                         upsert=True
                     )
                     logging.info(f"Created new stock {stock_id} with quantity={quantity} for user {user_id}")
-                    return True
+                    return True, 200
                 else:
                     # It's a SELL, but user doesn't own it
                     logging.warning(f"Sell order failed: user {user_id} doesn't own stock {stock_id}")
-                    return False
+                    return False, 400
 
-        return True
+        return True, 200
     
     def find_stock_prices(self):
         stock_prices = []

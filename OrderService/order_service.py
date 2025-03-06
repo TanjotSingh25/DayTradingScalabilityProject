@@ -218,10 +218,9 @@ def cancel_stock_transaction():
         response = requests.post(MATCHING_ENGINE_CANCELLATION_URL, json=cancellation_payload)
         if response.status_code == 200:
             matching_result = response.json()
-            code = 200
         else:
             matching_result = {"success": False, "error": "Matching Engine error"}
-            code = response.status_code
+        code = response.status_code
     except Exception as e:
         matching_result = {"success": False, "error": str(e)}
         code = 500
