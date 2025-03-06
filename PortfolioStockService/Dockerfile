@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt flask-cors
+RUN pip install --no-cache-dir -r requirements.txt flask-cors redis
 
 # Copy the rest of the application files into /app/
 COPY . .
