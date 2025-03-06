@@ -7,29 +7,40 @@ import logging as logger
 import requests
 import uuid
 import datetime
+import time
 
 app = Flask(__name__)
 CORS(app)
 
-MONGO_URI = os.getenv("MONGO_URI")
-
+# JWT Token Variables
 JWT_SECRET = "django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#"
 JWT_ALGORITHM = "HS256"
 
+# --- Database Connections ---
+
+# Attempt to connect to Mongo
+MONGO_URI = os.getenv("MONGO_URI")
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI is not set. Make sure it's defined in docker-compose.yml.")
 
-try:
-    client = MongoClient(MONGO_URI)
-    db = client["trading_system"]
-    # MongoDB collections
-    wallet_transactions_collection = db["wallets_transaction"]
-    portfolios_collection = db["portfolios"]  # this ensures portfolios collection is initialized
-    stock_transactions_collection = db["stock_transactions"]  # instantiating new collection for transactions
+for attempt in range(5):
+    try:
+        client = MongoClient(MONGO_URI)
+        db = client["trading_system"]
+        # MongoDB collections
+        wallet_transactions_collection = db["wallets_transaction"]
+        portfolios_collection = db["portfolios"]  # this ensures portfolios collection is initialized
+        stock_transactions_collection = db["stock_transactions"]  # instantiating new collection for transactions
+        logger.info("MongoDB Conn established on Order Service")
+        break
+    except errors.ConnectionFailure:
+        print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
+        time.sleep(3)
+        raise
+else:
+    logger.error("Failed to connect to MongoDB after multiple attempts. Exiting...")
+    raise RuntimeError("MongoDB connection failed after 5 retries.")
 
-except errors.ConnectionFailure:
-    print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
-    raise
 
 # Endpoint of the Matching Engine Service for order matching
 # Do not need to create more endpoints, since i can call wallets_transaction, portfolios, and stock_transactions

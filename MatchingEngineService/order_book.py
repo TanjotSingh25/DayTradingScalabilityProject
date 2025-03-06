@@ -5,6 +5,7 @@ from pymongo import MongoClient, errors
 import os
 from dotenv import load_dotenv
 from uuid import uuid4
+import redis
 
 # Load environment variables
 load_dotenv()
@@ -28,7 +29,6 @@ for attempt in range(max_retries):
         client = MongoClient(MONGO_URI)
         # Initialize to mongodb client, and to the collections
         db = client["trading_system"]
-        wallets_collection = db["wallets"]
         portfolios_collection = db["portfolios"]
         # New collection for transactions
         stock_transactions_collection = db["stock_transactions"]
@@ -48,6 +48,28 @@ else:
     logging.error("Failed to connect to MongoDB after multiple attempts. Exiting...")
     raise RuntimeError("MongoDB connection failed after 5 retries.")
 
+# Attempt to connect to Redis
+REDIS_HOST = os.getenv("REDIS_HOST", "redis_wallet_cache")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+
+if not REDIS_HOST:
+    raise RuntimeError("REDIS_HOST is not set. Make sure it's defined in docker-compose.yml.")
+if not REDIS_PORT:
+    raise RuntimeError("REDIS_PORT is not set. Make sure it's defined in docker-compose.yml.")
+
+for attempt in range(5):
+    try:
+        # decode = Convert to Python Strings
+        redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+        logging.info("Redis connection established successfully on Order Service.")
+        break
+    except Exception as err:
+        print(f"Error Connecting to Redis, retrying. Error: {err}")
+        time.sleep(2)
+    pass
+else:
+    logging.error("Failed to connect to Redis after multiple attempts. Exiting...")
+    raise RuntimeError("Redis connection failed after 5 retries.")
 class OrderBook:
     def __init__(self):
         # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
@@ -56,33 +78,31 @@ class OrderBook:
         self.sell_orders = {}  
 
     def get_wallet_balance(self, user_id):
-        #Fetch wallet balance from MongoDB for the user_id.
+        """
+            Fetches wallet balance from Redis for the given user_id.
+            Returns the balance as an integer; if not found, returns 0.
+        """
         try:
-            wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
-            if wallet and "balance" in wallet:
-                return wallet["balance"]
-            return 0  # Default balance if wallet doesn't exist
+            balance = redis_client.get(f"wallet_balance:{user_id}")
+            return int(float(balance)) if balance else 0
         except Exception as e:
             logging.error(f"Error fetching wallet balance for {user_id}: {e}")
             return 0
 
     def update_wallet_balance(self, user_id, amount):
-        # Updates the user's wallet balance after a trade.
+        """
+        Updates the user's wallet balance in Redis by incrementing it by 'amount'.
+        Ensures that the wallet key exists by setting it to 0 if it is not present.
+        """
         try:
-            # Ensure a wallet document exists with a default balance of 0.
-            wallets_collection.update_one(
-                {"user_id": user_id},
-                {"$setOnInsert": {"balance": 0}},
-                upsert=True
-            )
-            # Now increment the balance.
-            wallets_collection.update_one(
-                {"user_id": user_id},
-                {"$inc": {"balance": amount}}
-            )
+            # Initialize the balance to 0 if the key does not exist
+            if redis_client.get(f"wallet_balance:{user_id}") is None:
+                redis_client.set(f"wallet_balance:{user_id}", 0)
+            # Increment the wallet balance by the given amount
+            redis_client.incrbyfloat(f"wallet_balance:{user_id}", amount)
             logging.info(f"Updated wallet balance for {user_id} by {amount}")
-        except Exception as e:
-            logging.error(f"Error updating wallet balance for {user_id}: {e}")
+        except Exception as err:
+            logging.error(f"Error updating wallet balance for {user_id}: {err}")
             
 
     def add_buy_order(self, user_id, stock_id, price, quantity):
