@@ -25258,3 +25258,59 @@
  * Running on http://127.0.0.1:5300
  * Running on http://172.23.0.8:5300
 2025-03-05 23:33:09,982 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-06 01:35:46,953 - WARNING - SELL ORDER FAILED: 1 does not own stock .
+2025-03-06 01:35:46,969 - INFO - 172.23.0.12 - - [06/Mar/2025 01:35:46] "[31m[1mPOST /placeOrder HTTP/1.1[0m" 400 -
+2025-03-06 01:35:46,990 - WARNING - SELL ORDER FAILED: 1 does not own stock .
+2025-03-06 01:35:46,990 - INFO - 172.23.0.12 - - [06/Mar/2025 01:35:46] "[31m[1mPOST /placeOrder HTTP/1.1[0m" 400 -
+2025-03-06 02:07:07,437 - INFO - MongoDB connection established successfully.
+2025-03-06 02:07:07,464 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-06 02:07:07,465 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-06 03:04:38,622 - INFO - MongoDB connection established successfully.
+2025-03-06 03:04:38,689 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.11:5300
+2025-03-06 03:04:38,696 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-06 18:03:12,895 - INFO - MongoDB connection established successfully.
+2025-03-06 18:03:12,914 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.12:5300
+2025-03-06 18:03:12,915 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-06 18:18:00,976 - INFO - MongoDB connection established successfully.
+2025-03-06 18:18:00,990 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-06 18:18:00,991 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-06 18:33:30,345 - INFO - MongoDB connection established successfully.
+2025-03-06 18:33:30,358 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.12:5300
+2025-03-06 18:33:30,358 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-06 18:35:59,774 - INFO - Removed stock 4ba1a20e-da08-474f-a286-53739f73b564 from user 2's portfolio (qty=0).
+2025-03-06 18:35:59,775 - INFO - Updated stock balance for user 2: -12488000000 shares of 4ba1a20e-da08-474f-a286-53739f73b564
+2025-03-06 18:35:59,779 - INFO - SELL ORDER: 2 listed 12488000000 shares of 4ba1a20e-da08-474f-a286-53739f73b564 at 135
+2025-03-06 18:35:59,780 - INFO - 172.23.0.13 - - [06/Mar/2025 18:35:59] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-06 18:35:59,792 - INFO - Removed stock b46faf53-4d10-4123-9818-23500696d475 from user 2's portfolio (qty=0).
+2025-03-06 18:35:59,793 - INFO - Updated stock balance for user 2: -15509763000 shares of b46faf53-4d10-4123-9818-23500696d475
+2025-03-06 18:35:59,794 - INFO - SELL ORDER: 2 listed 15509763000 shares of b46faf53-4d10-4123-9818-23500696d475 at 140
+2025-03-06 18:35:59,794 - INFO - 172.23.0.13 - - [06/Mar/2025 18:35:59] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-06 18:46:35,962 - INFO - MongoDB connection established successfully.
+2025-03-06 18:46:35,971 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.11:5300
+2025-03-06 18:46:35,971 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-06 18:49:27,058 - INFO - Removed stock 066cb3e8-ca6f-4e91-a966-6b85c2ef3a28 from user 2's portfolio (qty=0).
+2025-03-06 18:49:27,058 - INFO - Updated stock balance for user 2: -12488000000 shares of 066cb3e8-ca6f-4e91-a966-6b85c2ef3a28
+2025-03-06 18:49:27,059 - INFO - SELL ORDER: 2 listed 12488000000 shares of 066cb3e8-ca6f-4e91-a966-6b85c2ef3a28 at 135
+2025-03-06 18:49:27,060 - INFO - 172.23.0.13 - - [06/Mar/2025 18:49:27] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-06 18:49:27,072 - INFO - Removed stock 94261172-4bfd-4a33-986e-8d5b0a3d2412 from user 2's portfolio (qty=0).
+2025-03-06 18:49:27,073 - INFO - Updated stock balance for user 2: -15509763000 shares of 94261172-4bfd-4a33-986e-8d5b0a3d2412
+2025-03-06 18:49:27,074 - INFO - SELL ORDER: 2 listed 15509763000 shares of 94261172-4bfd-4a33-986e-8d5b0a3d2412 at 140
+2025-03-06 18:49:27,074 - INFO - 172.23.0.13 - - [06/Mar/2025 18:49:27] "POST /placeOrder HTTP/1.1" 200 -
