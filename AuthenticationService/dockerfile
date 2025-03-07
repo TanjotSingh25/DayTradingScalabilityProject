@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 COPY . /app
 
 # Install Python dependencies
-RUN pip install --no-cache-dir flask gunicorn flask-cors flask-jwt-extended flask-bcrypt flask-sqlalchemy python-dotenv psycopg2-binary redis flask-caching
+RUN pip install --no-cache-dir flask gunicorn flask-cors flask-jwt-extended flask-bcrypt flask-sqlalchemy python-dotenv psycopg2-binary redis flask-caching flask-migrate
 
 # Expose the application port
 EXPOSE 8000

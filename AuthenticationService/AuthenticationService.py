@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, Index, exists
 from sqlalchemy.orm import scoped_session, sessionmaker
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token
+from flask_migrate import Migrate
 import os
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -25,6 +26,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.getenv('DB_USER')}:{o
 
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
+migrate = Migrate(app,db)
 
 # Configure connection pooling separately
 engine = create_engine(
