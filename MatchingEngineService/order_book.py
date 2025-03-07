@@ -156,7 +156,7 @@ class OrderBook:
         # No sellers available at all (Mark status as INCOMPLETE) -> queue the entire order as unfilled
         if stock_id not in self.sell_orders or not self.sell_orders[stock_id]:
             self._queue_market_buy(user_id, None, quantity, parent_tx_id, stock_id) 
-            logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for {user_id}.")
+            logging.warning(f"BUY MARKET ORDER: No sellers. Queued {quantity} shares for User:{user_id}.")
             return {
                 "success": True,
                 "message": "No sellers available. Order queued as market buy.",
@@ -294,7 +294,7 @@ class OrderBook:
                 "seller_id": seller_id,
                 "time_stamp": datetime
             })
-            logging.info(f"BUY MARKET TRADE: {user_id} bought {trade_qty} shares of {stock_id} @ {sell_price}")
+            logging.info(f"BUY MARKET TRADE: User:{user_id} bought {trade_qty} shares of {stock_id} @ {sell_price}")
 
         # End of the while loop - Determine the final order status
         filled = quantity - remaining_qty
@@ -358,7 +358,7 @@ class OrderBook:
         # store price as None to represent a market buy
         self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
         # No deduction of funds, because no order has been completed
-        logging.info(f"Queued leftover market buy for {user_id}: {quantity} shares of {stock_id}")
+        logging.info(f"Queued leftover market buy for user: {user_id}: {quantity} shares of {stock_id}")
 
     # gets the stock info from the portflio collectoion in the db mongo
     def get_user_stock_balance(self, user_id, stock_id):
@@ -437,7 +437,7 @@ class OrderBook:
             return True
 
         except Exception as e:
-            logging.error(f"Error updating stock balance for {user_id}, {stock_id}: {e}")
+            logging.error(f"Error updating stock balance for user: {user_id}, {stock_id}: {e}")
             return False
 
     def add_sell_order(self, user_id, stock_id, price, quantity):
@@ -448,19 +448,19 @@ class OrderBook:
 
         # Ensure user has enough stock
         if stock_balance <= 0:
-            logging.warning(f"SELL ORDER FAILED: {user_id} does not own stock {stock_id}.")
+            logging.warning(f"SELL ORDER FAILED USER: {user_id} does not own stock {stock_id}.")
             return {"success": False, "error": "User does not own this stock."}
 
         # Amount you want to sell is more than the amount you want to sell
         if quantity > stock_balance:
-            logging.warning(f"SELL ORDER FAILED: {user_id} tried to sell {quantity} of {stock_id}, but only has {stock_balance}.")
+            logging.warning(f"SELL ORDER FAILED USER: {user_id} tried to sell {quantity} of {stock_id}, but only has {stock_balance}.")
             return {"success": False, "error": "Insufficient stock balance."}
 
         # Deduct stock from user's portfolio
         result = self.update_user_stock_balance(user_id, stock_id, -quantity)
 
         if result == False:
-            logging.error(f"SELL ORDER ERROR: Failed to update portfolio for {user_id}.")
+            logging.error(f"SELL ORDER ERROR: Failed to update portfolio for User: {user_id}.")
             return {"success": False, "error": "Portfolio update failed."}
 
         # Insert order into stock_transactions_collection
@@ -491,7 +491,7 @@ class OrderBook:
         # Ensure orders are sorted (Lowest price first, FIFO for equal prices)
         self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))
 
-        logging.info(f"SELL ORDER: {user_id} listed {quantity} shares of {stock_id} at {price}")
+        logging.info(f"SELL ORDER USER: {user_id} listed {quantity} shares of {stock_id} at {price}")
         return {"success": True, "message": "Sell order placed successfully"}
 
     def match_orders(self):
