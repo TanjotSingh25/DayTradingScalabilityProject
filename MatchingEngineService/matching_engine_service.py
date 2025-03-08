@@ -50,7 +50,13 @@ def place_order():
     try:
         if order_type == "MARKET":
             result = orderBookInst.add_buy_order(user_id, stock_id, price, quantity)
-            return jsonify(result), (200 if result["success"] else 400)
+            return jsonify({
+                "success": result.get("success", False),
+                "message": result.get("message", ""),
+                "order_status": str(result.get("order_status", "")),  # Ensure string format
+                "trade_details": [str(trade) for trade in result.get("trade_details", [])],  # Convert objects to string if needed
+                "stock_tx_id": result.get("stock_tx_id", "")
+            }), (200 if result.get("success", False) else 400)
         elif order_type == "LIMIT":
             result = orderBookInst.add_sell_order(user_id, stock_id, price, quantity)
             executed_trades = orderBookInst.match_orders()

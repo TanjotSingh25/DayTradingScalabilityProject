@@ -25,6 +25,16 @@ services:
             - "6381:6379"
         networks:
             - backend
+    
+    redis_wallet_cache:
+        image: redis:latest
+        container_name: redis_wallet_cache
+        command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru
+        restart: always
+        ports:
+            - "6382:6379"
+        networks:
+            - backend
 
     db1:
         image: postgres:13
@@ -238,6 +248,7 @@ services:
         environment:
             - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
             - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
 
         networks:
