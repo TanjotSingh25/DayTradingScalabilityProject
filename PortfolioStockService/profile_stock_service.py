@@ -183,7 +183,12 @@ class GetStockPortfolio(Resource):
             initialize_user_if_not_exists(user_id)
 
             portfolio = portfolios_collection.find_one({"user_id": user_id}, {"data": 1})
-            return {"success": True, "data": portfolio.get("data", [])}, 200
+            stocks = portfolio.get("data", [])
+
+            # Sort stocks by stock_name in lexicographically decreasing order
+            sorted_stocks = sorted(stocks, key=lambda x: x["stock_name"], reverse=True)
+
+            return {"success": True, "data": sorted_stocks}, 200
 
         except Exception as e:
             return {"success": False, "data": {"error": str(e)}}, 500
