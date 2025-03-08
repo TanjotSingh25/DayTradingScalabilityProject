@@ -25,7 +25,8 @@ if not MONGO_URI:
 
 for attempt in range(5):
     try:
-        client = MongoClient(MONGO_URI)
+        # 1.5 minutes
+        client = MongoClient(MONGO_URI, maxPoolSize=250, minPoolSize=50, maxIdleTimeMS=90000)
         db = client["trading_system"]
         # MongoDB collections
         wallet_transactions_collection = db["wallets_transaction"]
@@ -321,4 +322,4 @@ def get_wallet_transactions():
     return jsonify({"success": True, "data": wallet_transactions}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5200)
+    app.run(host='0.0.0.0', port=5200, debug=False)

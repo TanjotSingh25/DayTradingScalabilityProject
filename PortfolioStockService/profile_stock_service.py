@@ -23,7 +23,8 @@ if not MONGO_URI:
     raise RuntimeError("MONGO_URI is not set. Make sure it's defined in docker-compose.yml.")
 
 try:
-    client = MongoClient(MONGO_URI)
+    # 1.5 minutes
+    client = MongoClient(MONGO_URI, maxPoolSize=150, minPoolSize=50, maxIdleTimeMS=90000)
     db = client["trading_system"]
     stocks_collection = db["stocks"]
     portfolios_collection = db["portfolios"]
@@ -37,9 +38,10 @@ except errors.ConnectionFailure:
     print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
     raise
 
-# Initialize Redis connection
+# Initialize Redis connection with connection pooling
 try:
-    redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=100)
+    redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
 except Exception as e:
     print(f"Error connecting to Redis: {e}")
     raise

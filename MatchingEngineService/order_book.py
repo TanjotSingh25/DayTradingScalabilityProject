@@ -26,7 +26,8 @@ if not MONGO_URI:
 
 for attempt in range(max_retries):
     try:
-        client = MongoClient(MONGO_URI)
+        # 1.5 minutes
+        client = MongoClient(MONGO_URI, maxPoolSize=250, minPoolSize=50, maxIdleTimeMS=90000)
         # Initialize to mongodb client, and to the collections
         db = client["trading_system"]
         portfolios_collection = db["portfolios"]
@@ -60,7 +61,12 @@ if not REDIS_PORT:
 for attempt in range(5):
     try:
         # decode = Convert to Python Strings
-        redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+        # Create the connection pool with max connections, if there are too many connections,
+        # redis can refuse new connections
+        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=100)
+        # Create Redis client using the connection pool
+        redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
+        #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
         logging.info("Redis connection established successfully on Order Service.")
         break
     except Exception as err:
@@ -115,21 +121,44 @@ class OrderBook:
         except Exception as err:
             logging.error(f"Error updating wallet balances for buyer {buyer_id} and seller {seller_id}: {err}")
 
+    # def update_wallet_balance(self, user_id, amount):
+    #     """
+    #     Updates the user's wallet balance in Redis by incrementing it by 'amount'.
+    #     Ensures that the wallet key exists by setting it to 0 if it is not present.
+    #     """
+    #     try:
+    #         # Initialize the balance to 0 if the key does not exist
+    #         if redis_client.get(f"wallet_balance:{user_id}") is None:
+    #             redis_client.set(f"wallet_balance:{user_id}", 0)
+    #         # Increment the wallet balance by the given amount
+    #         redis_client.incrbyfloat(f"wallet_balance:{user_id}", amount)
+    #         logging.info(f"Updated wallet balance for {user_id} by {amount}")
+    #     except Exception as err:
+    #         logging.error(f"Error updating wallet balance for {user_id}: {err}")
     def update_wallet_balance(self, user_id, amount):
         """
         Updates the user's wallet balance in Redis by incrementing it by 'amount'.
         Ensures that the wallet key exists by setting it to 0 if it is not present.
+        Logs the balance before and after the increment.
         """
+        key = f"wallet_balance:{user_id}"
         try:
             # Initialize the balance to 0 if the key does not exist
-            if redis_client.get(f"wallet_balance:{user_id}") is None:
-                redis_client.set(f"wallet_balance:{user_id}", 0)
+            if redis_client.get(key) is None:
+                redis_client.set(key, 0)
+            
+            # Get the balance before increment and convert to float
+            before_balance = float(redis_client.get(key))
+            logging.info(f"Wallet balance for {user_id} before increment: {before_balance}")
+
             # Increment the wallet balance by the given amount
-            redis_client.incrbyfloat(f"wallet_balance:{user_id}", amount)
-            logging.info(f"Updated wallet balance for {user_id} by {amount}")
+            redis_client.incrbyfloat(key, amount)
+
+            # Get the balance after increment
+            after_balance = float(redis_client.get(key))
+            logging.info(f"Wallet balance for {user_id} after increment: {after_balance} (incremented by {amount})")
         except Exception as err:
             logging.error(f"Error updating wallet balance for {user_id}: {err}")
-            
 
     def add_buy_order(self, user_id, stock_id, price, quantity):
         """
@@ -738,6 +767,8 @@ class OrderBook:
                 lowest_price = None
 
             # Query MongoDB to get the stock name using the stock_id.
+
+            # Create stock_name dictionary---------------------------
             stock_doc = stocks_collection.find_one({"stock_id": ticker})
             stock_name = stock_doc.get("stock_name", "Unknown") if stock_doc else "Unknown"
 
@@ -746,5 +777,6 @@ class OrderBook:
                 "stock_name": stock_name,
                 "current_price": lowest_price
             })
+            # Sort lexographically
 
         return True, stock_prices
