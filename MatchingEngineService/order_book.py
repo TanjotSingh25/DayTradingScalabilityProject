@@ -14,7 +14,7 @@ load_dotenv()
 logging.basicConfig(filename='matching_engine.log', level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-
+cur_best_stock_prices = {}
 # MongoDB connection with retry mechanism
 max_retries = 5
 retry_delay = 3
@@ -63,7 +63,7 @@ for attempt in range(5):
         # decode = Convert to Python Strings
         # Create the connection pool with max connections, if there are too many connections,
         # redis can refuse new connections
-        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=100)
+        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=250)
         # Create Redis client using the connection pool
         redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
         #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
@@ -146,7 +146,7 @@ class OrderBook:
             # Initialize the balance to 0 if the key does not exist
             if redis_client.get(key) is None:
                 redis_client.set(key, 0)
-            
+            #make this int?s
             # Get the balance before increment and convert to float
             before_balance = float(redis_client.get(key))
             logging.info(f"Wallet balance for {user_id} before increment: {before_balance}")
@@ -167,7 +167,7 @@ class OrderBook:
         """        
         # unique transaction IDs for parent_tx_id which the child transactions will point to.
         parent_tx_id = str(uuid4())
-
+        global cur_best_stock_prices
         stock_transactions_collection.insert_one({
             "stock_tx_id": parent_tx_id,
             "parent_stock_tx_id": None,  # Explicitly setting parent_stock_tx_id as null, only child transactions set this.
@@ -254,6 +254,10 @@ class OrderBook:
             else:
                 # If fully filled, remove it
                 self.sell_orders[stock_id].pop(0)
+                if self.sell_orders[stock_id]:
+                    cur_best_stock_prices[stock_id] = self.sell_orders[stock_id][0]
+                else:
+                    del cur_best_stock_prices[stock_id]
             # 6. Update buyer's remaining quantity
             remaining_qty -= trade_qty
             
@@ -471,7 +475,7 @@ class OrderBook:
 
     def add_sell_order(self, user_id, stock_id, price, quantity):
         # Add sell order only if have enough quantity
-
+        global cur_best_stock_prices
         # Get the user's stock balance (returns an integer)
         stock_balance = self.get_user_stock_balance(user_id, stock_id)
 
@@ -519,6 +523,7 @@ class OrderBook:
 
         # Ensure orders are sorted (Lowest price first, FIFO for equal prices)
         self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))
+        cur_best_stock_prices[stock_id] = self.sell_orders[stock_id][0]
 
         logging.info(f"SELL ORDER USER: {user_id} listed {quantity} shares of {stock_id} at {price}")
         return {"success": True, "message": "Sell order placed successfully"}
@@ -526,6 +531,7 @@ class OrderBook:
     def match_orders(self):
         # Matches buy and sell orders using FIFO logic. Market orders execute immediately
         executed_trades = []
+        global cur_best_stock_prices
         # For loop to go through sell orders until all market buys are executed
         for cur_stock in list(self.sell_orders.keys()):
             while self.sell_orders.get(cur_stock) and self.buy_orders.get(cur_stock):
@@ -654,6 +660,10 @@ class OrderBook:
                     self.sell_orders[cur_stock][0][2] -= traded_quantity
                 else:
                     self.sell_orders[cur_stock].pop(0)  # Remove fully matched sell order
+                    if self.sell_orders[cur_stock]:
+                        cur_best_stock_prices[cur_stock] = self.sell_orders[cur_stock][0]
+                    else:
+                        del cur_best_stock_prices[cur_stock]
 
         return executed_trades
     
@@ -756,6 +766,7 @@ class OrderBook:
         return True, 200
     
     def find_stock_prices(self):
+        global cur_best_stock_prices
         stock_prices = []
         # Get stock name from stocks_collection
         for ticker, orders in self.sell_orders.items():

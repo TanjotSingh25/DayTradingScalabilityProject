@@ -24,7 +24,7 @@ if not MONGO_URI:
 
 try:
     # 1.5 minutes
-    client = MongoClient(MONGO_URI, maxPoolSize=150, minPoolSize=50, maxIdleTimeMS=90000)
+    client = MongoClient(MONGO_URI, maxPoolSize=250, minPoolSize=50, maxIdleTimeMS=90000)
     db = client["trading_system"]
     stocks_collection = db["stocks"]
     portfolios_collection = db["portfolios"]
@@ -40,7 +40,7 @@ except errors.ConnectionFailure:
 
 # Initialize Redis connection with connection pooling
 try:
-    pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=100)
+    pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=250)
     redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
 except Exception as e:
     print(f"Error connecting to Redis: {e}")
