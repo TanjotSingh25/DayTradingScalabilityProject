@@ -14,10 +14,9 @@ load_dotenv()
 logging.basicConfig(filename='matching_engine.log', level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-cur_best_stock_prices = {}
 # MongoDB connection with retry mechanism
 max_retries = 5
-retry_delay = 3
+retry_delay = 1
 
 MONGO_URI = os.getenv("MONGO_URI")
 
@@ -63,7 +62,7 @@ for attempt in range(5):
         # decode = Convert to Python Strings
         # Create the connection pool with max connections, if there are too many connections,
         # redis can refuse new connections
-        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=1000)
+        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=500)
         # Create Redis client using the connection pool
         redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
         #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
@@ -81,7 +80,11 @@ class OrderBook:
         # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
         self.buy_orders = {}
         # { "ticker": [[user_id, price, quantity, timestamp (datetime.now()), transaction_id], ...] }
-        self.sell_orders = {}  
+        self.sell_orders = {}
+        # Holds best prices only "stock_id" = 5
+        self.cur_best_stock_prices = {}
+        # Holds current active stock names; "stock_id" = 'stock_name'
+        self.Stock_id_mapped_to_names = {}
 
     def get_wallet_balance(self, user_id):
         """
@@ -152,7 +155,6 @@ class OrderBook:
         """        
         # unique transaction IDs for parent_tx_id which the child transactions will point to.
         parent_tx_id = str(uuid4())
-        global cur_best_stock_prices
         stock_transactions_collection.insert_one({
             "stock_tx_id": parent_tx_id,
             "parent_stock_tx_id": None,  # Explicitly setting parent_stock_tx_id as null, only child transactions set this.
@@ -223,7 +225,8 @@ class OrderBook:
                     trade_qty = max_shares_can_buy
                     trade_value = trade_qty * sell_price
                     logging.info(f"User {user_id} can only buy {trade_qty} shares due to insufficient funds.")
-                    
+
+            self.update_wallet_balance(buyer_id=user_id,seller_id=seller_id,trade_value=trade_value)# Buyer pays money
             # Update user portfolio (buyer gets stocks)
             r = self.update_user_stock_balance(user_id, stock_id, trade_qty)
             if r == False:
@@ -232,7 +235,7 @@ class OrderBook:
             # 4. Execute trade, update balance in mongodb wallets collection
             #self.update_wallet_balance(seller_id, trade_value)   # Seller receives money
             #self.update_wallet_balance(user_id, -trade_value)  
-            self.update_wallet_balance(buyer_id=user_id,seller_id=seller_id,trade_value=trade_value)# Buyer pays money
+            
 
             # 5. Update order books by adding stock quantity and removing order from sell_orders
             if sell_quantity > trade_qty:
@@ -241,9 +244,9 @@ class OrderBook:
                 # If fully filled, remove it
                 self.sell_orders[stock_id].pop(0)
                 if self.sell_orders[stock_id]:
-                    cur_best_stock_prices[stock_id] = self.sell_orders[stock_id][0]
+                    self.cur_best_stock_prices[stock_id] = self.sell_orders[stock_id][0]
                 else:
-                    del cur_best_stock_prices[stock_id]
+                    del self.cur_best_stock_prices[stock_id]
             # 6. Update buyer's remaining quantity
             remaining_qty -= trade_qty
             
@@ -414,8 +417,11 @@ class OrderBook:
                 # 2) Fallback if it's a brand-new BUY
                 if quantity > 0:
                     # Fetch the stock name from stocks_collection
-                    stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
-                    stock_name = stock_doc["stock_name"] if stock_doc else "Unknown"
+                    if stock_id not in self.Stock_id_mapped_to_names:
+                        stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
+                        self.Stock_id_mapped_to_names[stock_id] = stock_doc["stock_name"] if stock_doc else "Unknown"
+
+                    stock_name = self.Stock_id_mapped_to_names[stock_id]
 
                     portfolios_collection.update_one(
                         {"user_id": user_id},
@@ -461,7 +467,6 @@ class OrderBook:
 
     def add_sell_order(self, user_id, stock_id, price, quantity):
         # Add sell order only if have enough quantity
-        global cur_best_stock_prices
         # Get the user's stock balance (returns an integer)
         stock_balance = self.get_user_stock_balance(user_id, stock_id)
 
@@ -509,7 +514,7 @@ class OrderBook:
 
         # Ensure orders are sorted (Lowest price first, FIFO for equal prices)
         self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))
-        cur_best_stock_prices[stock_id] = self.sell_orders[stock_id][0]
+        self.cur_best_stock_prices[stock_id] = self.sell_orders[stock_id][0]
 
         logging.info(f"SELL ORDER USER: {user_id} listed {quantity} shares of {stock_id} at {price}")
         return {"success": True, "message": "Sell order placed successfully"}
@@ -517,7 +522,6 @@ class OrderBook:
     def match_orders(self):
         # Matches buy and sell orders using FIFO logic. Market orders execute immediately
         executed_trades = []
-        global cur_best_stock_prices
         # For loop to go through sell orders until all market buys are executed
         for cur_stock in list(self.sell_orders.keys()):
             while self.sell_orders.get(cur_stock) and self.buy_orders.get(cur_stock):
@@ -648,9 +652,9 @@ class OrderBook:
                 else:
                     self.sell_orders[cur_stock].pop(0)  # Remove fully matched sell order
                     if self.sell_orders[cur_stock]:
-                        cur_best_stock_prices[cur_stock] = self.sell_orders[cur_stock][0]
+                        self.cur_best_stock_prices[cur_stock] = self.sell_orders[cur_stock][0]
                     else:
-                        del cur_best_stock_prices[cur_stock]
+                        del self.cur_best_stock_prices[cur_stock]
 
         return executed_trades
     
@@ -727,9 +731,10 @@ class OrderBook:
             if result.matched_count == 0:
                 if quantity > 0:
                     # Fetch the stock name from stocks_collection
-                    stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
-                    stock_name = stock_doc["stock_name"] if stock_doc else "Unknown"
-
+                    if stock_id not in self.Stock_id_mapped_to_names:
+                        stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
+                        self.Stock_id_mapped_to_names[stock_id] = stock_doc["stock_name"] if stock_doc else "Unknown"
+                    stock_name = self.Stock_id_mapped_to_names[stock_id]
                     portfolios_collection.update_one(
                         {"user_id": user_id},
                         {
@@ -751,30 +756,24 @@ class OrderBook:
                     return False, 400
 
         return True, 200
-    
+
+
     def find_stock_prices(self):
-        global cur_best_stock_prices
         stock_prices = []
-        # Get stock name from stocks_collection
-        for ticker, orders in self.sell_orders.items():
-            # Compute the lowest price among all sell orders for this stock.
-            if orders:
-                lowest_price = orders[0][1]  # orders[0] first element in the main,
-                # and price is the second element in the list of the element: [user_id, price, quantity, timestamp, transaction_id]
-            else:
-                lowest_price = None
 
-            # Query MongoDB to get the stock name using the stock_id.
-
-            # Create stock_name dictionary---------------------------
-            stock_doc = stocks_collection.find_one({"stock_id": ticker})
-            stock_name = stock_doc.get("stock_name", "Unknown") if stock_doc else "Unknown"
+        for ticker, lowest_price in self.cur_best_stock_prices.items():
+            # Retrieve stock name if not already stored
+            if ticker not in self.Stock_id_mapped_to_names:
+                stock_doc = stocks_collection.find_one({"stock_id": ticker})
+                self.Stock_id_mapped_to_names[ticker] = stock_doc.get("stock_name", "Unknown") if stock_doc else "Unknown"
 
             stock_prices.append({
                 "stock_id": ticker,
-                "stock_name": stock_name,
+                "stock_name": self.Stock_id_mapped_to_names[ticker],
                 "current_price": lowest_price
             })
-            # Sort lexographically
+
+        # Sort by stock name in descending lexicographical order
+        stock_prices.sort(key=lambda x: x["stock_name"], reverse=True)
 
         return True, stock_prices
