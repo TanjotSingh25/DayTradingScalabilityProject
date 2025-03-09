@@ -27,7 +27,7 @@ if not MONGO_URI:
 for attempt in range(max_retries):
     try:
         # 1.5 minutes
-        client = MongoClient(MONGO_URI, maxPoolSize=250, minPoolSize=50, maxIdleTimeMS=90000)
+        client = MongoClient(MONGO_URI, maxPoolSize=500, minPoolSize=125, maxIdleTimeMS=90000)
         # Initialize to mongodb client, and to the collections
         db = client["trading_system"]
         portfolios_collection = db["portfolios"]
@@ -63,7 +63,7 @@ for attempt in range(5):
         # decode = Convert to Python Strings
         # Create the connection pool with max connections, if there are too many connections,
         # redis can refuse new connections
-        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=250)
+        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=1000)
         # Create Redis client using the connection pool
         redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
         #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
@@ -95,70 +95,55 @@ class OrderBook:
             logging.error(f"Error fetching wallet balance for {user_id}: {e}")
             return 0
 
-    def update_wallet_balance(self, buyer_id, seller_id, trade_value):
-        """
-        Updates both the buyer's and seller's wallet balances in Redis atomically.
-        The seller's balance is incremented by trade_value while the buyer's is decremented by trade_value.
-        Ensures that if the wallet key does not exist, it is first initialized to 0.
-        """
-        try:
-            pipe = redis_client.pipeline()
+    def update_wallet_balance(self, buyer_id, seller_id, trade_value, max_retries=5):
+            """
+            Atomically updates both the buyer's and seller's wallet balances in Redis using transactions.
+            - The seller's balance is incremented by trade_value.
+            - The buyer's balance is decremented by trade_value.
+            - Ensures that if the wallet key does not exist, it is first initialized to 0.
+            - Uses WATCH, MULTI, EXEC to prevent race conditions.
+            """
+
             buyer_key = f"wallet_balance:{buyer_id}"
             seller_key = f"wallet_balance:{seller_id}"
-            
-            # Ensure wallet keys exist by setting them to 0 if not already present
-            if redis_client.get(buyer_key) is None:
-                pipe.set(buyer_key, 0)
-            if redis_client.get(seller_key) is None:
-                pipe.set(seller_key, 0)
-                
-            # Perform both balance updates in one atomic pipeline call
-            pipe.incrbyfloat(seller_key, trade_value)
-            pipe.incrbyfloat(buyer_key, -trade_value)
-            pipe.execute()
-            
-            logging.info(f"Updated wallet balances: buyer {buyer_id} by {-trade_value}, seller {seller_id} by {trade_value}")
-        except Exception as err:
-            logging.error(f"Error updating wallet balances for buyer {buyer_id} and seller {seller_id}: {err}")
 
-    # def update_wallet_balance(self, user_id, amount):
-    #     """
-    #     Updates the user's wallet balance in Redis by incrementing it by 'amount'.
-    #     Ensures that the wallet key exists by setting it to 0 if it is not present.
-    #     """
-    #     try:
-    #         # Initialize the balance to 0 if the key does not exist
-    #         if redis_client.get(f"wallet_balance:{user_id}") is None:
-    #             redis_client.set(f"wallet_balance:{user_id}", 0)
-    #         # Increment the wallet balance by the given amount
-    #         redis_client.incrbyfloat(f"wallet_balance:{user_id}", amount)
-    #         logging.info(f"Updated wallet balance for {user_id} by {amount}")
-    #     except Exception as err:
-    #         logging.error(f"Error updating wallet balance for {user_id}: {err}")
-    def update_wallet_balance(self, user_id, amount):
-        """
-        Updates the user's wallet balance in Redis by incrementing it by 'amount'.
-        Ensures that the wallet key exists by setting it to 0 if it is not present.
-        Logs the balance before and after the increment.
-        """
-        key = f"wallet_balance:{user_id}"
-        try:
-            # Initialize the balance to 0 if the key does not exist
-            if redis_client.get(key) is None:
-                redis_client.set(key, 0)
-            #make this int?s
-            # Get the balance before increment and convert to float
-            before_balance = float(redis_client.get(key))
-            logging.info(f"Wallet balance for {user_id} before increment: {before_balance}")
+            for attempt in range(max_retries):
+                try:
+                    redis_client.watch(buyer_key, seller_key)  # Monitor keys for changes
 
-            # Increment the wallet balance by the given amount
-            redis_client.incrbyfloat(key, amount)
+                    # Fetch current balances in bulk using mget()
+                    balances = redis_client.mget([buyer_key, seller_key])
 
-            # Get the balance after increment
-            after_balance = float(redis_client.get(key))
-            logging.info(f"Wallet balance for {user_id} after increment: {after_balance} (incremented by {amount})")
-        except Exception as err:
-            logging.error(f"Error updating wallet balance for {user_id}: {err}")
+                    # Convert to float and default to 0 if not set
+                    buyer_balance = float(balances[0]) if balances[0] else 0
+                    seller_balance = float(balances[1]) if balances[1] else 0
+
+                    # Compute new balances
+                    new_buyer_balance = buyer_balance - trade_value
+                    new_seller_balance = seller_balance + trade_value
+
+                    # Ensure the buyer has sufficient balance
+                    if new_buyer_balance < 0:
+                        logging.warning(f"Transaction failed: Insufficient balance for buyer {buyer_id}.")
+                        redis_client.unwatch()
+                        return False  # Insufficient funds
+
+                    # Execute atomic transaction
+                    pipe = redis_client.pipeline()
+                    pipe.multi()
+                    # queue balance updates
+                    pipe.set(buyer_key, new_buyer_balance)
+                    pipe.set(seller_key, new_seller_balance)
+                    pipe.execute()  # Commit transaction
+
+                    logging.info(f"Updated wallet balances: buyer {buyer_id} -> {new_buyer_balance}, seller {seller_id} -> {new_seller_balance}")
+                    return True  # Success
+
+                except redis.WatchError:
+                    logging.warning(f"Race condition detected, retrying... Attempt {attempt + 1}/{max_retries}")
+
+            logging.error(f"Failed to update wallet balances after {max_retries} retries: buyer {buyer_id}, seller {seller_id}")
+            return False  # If it fails after retries, return False
 
     def add_buy_order(self, user_id, stock_id, price, quantity):
         """
@@ -245,8 +230,9 @@ class OrderBook:
                 return {"success": False, "error": "updateStockBalance,Returned false"}
 
             # 4. Execute trade, update balance in mongodb wallets collection
-            self.update_wallet_balance(seller_id, trade_value)   # Seller receives money
-            self.update_wallet_balance(user_id, -trade_value)    # Buyer pays money
+            #self.update_wallet_balance(seller_id, trade_value)   # Seller receives money
+            #self.update_wallet_balance(user_id, -trade_value)  
+            self.update_wallet_balance(buyer_id=user_id,seller_id=seller_id,trade_value=trade_value)# Buyer pays money
 
             # 5. Update order books by adding stock quantity and removing order from sell_orders
             if sell_quantity > trade_qty:
@@ -564,9 +550,10 @@ class OrderBook:
                 wallet_tx_id = str(uuid4()) #unique wallet transaction id
 
                 # Update seller's wallet balance (add money)
-                self.update_wallet_balance(seller_id, trade_value)  
+                #self.update_wallet_balance(seller_id, trade_value)  
                 # Deduct money from buyer's wallet
-                self.update_wallet_balance(buyer_id, -trade_value)  
+                #self.update_wallet_balance(buyer_id, -trade_value)
+                self.update_wallet_balance(buyer_id=buyer_id,seller_id=seller_id,trade_value=trade_value)
 
                 # Add stock to buyer's portfolio
                 result = portfolios_collection.update_one(
