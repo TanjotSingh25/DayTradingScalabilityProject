@@ -30,10 +30,13 @@ Click on frontend link
 <img width="1512" alt="image" src="https://github.com/user-attachments/assets/b7982143-e7de-42b8-99a9-b535a6d2878a" />
 
 --- Database Schema ---
+
 PostgreSQL:
+
 ![image](https://github.com/user-attachments/assets/93e29812-0abc-4b92-8bdd-8474d33f2414)
 
 MongoDB and Redis:
+
 ![image](https://github.com/user-attachments/assets/8d345f78-70de-4b47-ac87-a1182eb6c0e7)
 
 
