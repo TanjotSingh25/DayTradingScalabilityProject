@@ -112,38 +112,50 @@ class OrderBook:
 
             for attempt in range(max_retries):
                 try:
-                    redis_client.watch(buyer_key, seller_key)  # Monitor keys for changes
+                    # Monitor keys for changes
+                    redis_client.watch(buyer_key, seller_key)
 
-                    # Fetch current balances in bulk using mget()
-                    balances = redis_client.mget([buyer_key, seller_key])
+                    # # Fetch current balances in bulk using mget()
+                    # balances = redis_client.mget([buyer_key, seller_key])
 
-                    # Convert to float and default to 0 if not set
-                    buyer_balance = float(balances[0]) if balances[0] else 0
-                    seller_balance = float(balances[1]) if balances[1] else 0
+                    # # Convert to float and default to 0 if not set
+                    # buyer_balance = float(balances[0]) if balances[0] else 0
+                    # seller_balance = float(balances[1]) if balances[1] else 0
 
-                    # Compute new balances
-                    new_buyer_balance = buyer_balance - trade_value
-                    new_seller_balance = seller_balance + trade_value
+                    # # Compute new balances
+                    # new_buyer_balance = buyer_balance - trade_value
+                    # new_seller_balance = seller_balance + trade_value
 
-                    # Ensure the buyer has sufficient balance
-                    if new_buyer_balance < 0:
-                        logging.warning(f"Transaction failed: Insufficient balance for buyer {buyer_id}.")
-                        redis_client.unwatch()
-                        return False  # Insufficient funds
+                    # # Ensure the buyer has sufficient balance
+                    # if new_buyer_balance < 0:
+                    #     logging.warning(f"Transaction failed: Insufficient balance for buyer {buyer_id}.")
+                    #     redis_client.unwatch()
+                    #     return False  # Insufficient funds
+                    # # just do redis increment because if key does not exist, it will initialize, so remove top part
+                    # # Execute atomic transaction
+                    # pipe = redis_client.pipeline()
+                    # pipe.multi()
+                    # # queue balance updates
+                    # pipe.set(buyer_key, new_buyer_balance)
+                    # pipe.set(seller_key, new_seller_balance)
+                    # pipe.execute()  # Commit transaction
+                    # Monitor keys for changes
 
                     # Execute atomic transaction
                     pipe = redis_client.pipeline()
                     pipe.multi()
-                    # queue balance updates
-                    pipe.set(buyer_key, new_buyer_balance)
-                    pipe.set(seller_key, new_seller_balance)
-                    pipe.execute()  # Commit transaction
 
-                    logging.info(f"Updated wallet balances: buyer {buyer_id} -> {new_buyer_balance}, seller {seller_id} -> {new_seller_balance}")
+                    # Deduct from buyer and add to seller atomically
+                    pipe.incrbyfloat(buyer_key, -trade_value)
+                    pipe.incrbyfloat(seller_key, trade_value)
+                    pipe.execute()
+
+                    logging.info(f"Transaction successful: {trade_value} transferred from buyer {buyer_id} to seller {seller_id}")
                     return True  # Success
 
                 except redis.WatchError:
                     logging.warning(f"Race condition detected, retrying... Attempt {attempt + 1}/{max_retries}")
+                    redis_client.unwatch()
 
             logging.error(f"Failed to update wallet balances after {max_retries} retries: buyer {buyer_id}, seller {seller_id}")
             return False  # If it fails after retries, return False
