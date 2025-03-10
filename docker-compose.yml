@@ -266,8 +266,6 @@ services:
             context: ./PortfolioStockService
         volumes:
             - ./PortfolioStockService:/app
-        ports:
-            - "5005:5000"
         depends_on:
             mongo:
                 condition: service_healthy
@@ -275,6 +273,8 @@ services:
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
         networks:
             - backend
+        deploy:
+            replicas: 10
 
 networks:
     backend:
