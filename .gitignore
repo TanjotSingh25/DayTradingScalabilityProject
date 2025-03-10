@@ -1,6 +1,9 @@
 # Ignore Python bytecode files in __pycache__ for MatchingEngineService
 MatchingEngineService/__pycache__/order_book.cpython-311.pyc
-
+# ignore py cache files
+*.pyc
+# ignore log files
+*.log
 # Ignore Python bytecode files in __pycache__ for OrderService
 OrderService/__pycache__/helpers.cpython-39.pyc
 

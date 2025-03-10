@@ -9,7 +9,6 @@ import uuid
 import jwt
 import json
 import redis
-import logging
 
 # Initialize Flask app
 app = Flask(__name__)
