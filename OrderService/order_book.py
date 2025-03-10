@@ -98,6 +98,18 @@ class OrderBook:
             logging.error(f"Error fetching wallet balance for {user_id}: {e}")
             return 0
 
+    def set_wallet_balance(self, user_id, balance):
+        wallet_key = f"wallet_balance:{user_id}"
+        try:
+            # Set the wallet balance in Redis
+            redis_client.set(wallet_key, balance)
+            logging.info(f"Wallet balance for user {user_id} initialized/updated to {balance}.")
+            return True  # Success
+
+        except Exception as e:
+            logging.error(f"Failed to create wallet balance for {user_id}: {str(e)}")
+            return False  # Failure
+
     def update_wallet_balance(self, buyer_id, seller_id, trade_value, max_retries=5):
             """
             Atomically updates both the buyer's and seller's wallet balances in Redis using transactions.
@@ -114,32 +126,6 @@ class OrderBook:
                 try:
                     # Monitor keys for changes
                     redis_client.watch(buyer_key, seller_key)
-
-                    # # Fetch current balances in bulk using mget()
-                    # balances = redis_client.mget([buyer_key, seller_key])
-
-                    # # Convert to float and default to 0 if not set
-                    # buyer_balance = float(balances[0]) if balances[0] else 0
-                    # seller_balance = float(balances[1]) if balances[1] else 0
-
-                    # # Compute new balances
-                    # new_buyer_balance = buyer_balance - trade_value
-                    # new_seller_balance = seller_balance + trade_value
-
-                    # # Ensure the buyer has sufficient balance
-                    # if new_buyer_balance < 0:
-                    #     logging.warning(f"Transaction failed: Insufficient balance for buyer {buyer_id}.")
-                    #     redis_client.unwatch()
-                    #     return False  # Insufficient funds
-                    # # just do redis increment because if key does not exist, it will initialize, so remove top part
-                    # # Execute atomic transaction
-                    # pipe = redis_client.pipeline()
-                    # pipe.multi()
-                    # # queue balance updates
-                    # pipe.set(buyer_key, new_buyer_balance)
-                    # pipe.set(seller_key, new_seller_balance)
-                    # pipe.execute()  # Commit transaction
-                    # Monitor keys for changes
 
                     # Execute atomic transaction
                     pipe = redis_client.pipeline()

@@ -16,6 +16,7 @@
     #     networks:
     #         - backend
     
+version: '3.8'
 services:
     nginx:
         image: nginx:latest
@@ -29,11 +30,9 @@ services:
             - auth_service2
             - auth_service3
             - order_service
-            - matching_engine_service
-            - portfolio_stock_service
+            - portfolio_stock_service  # Removed matching_engine_service here -- Combined with Order service now
         networks:
             - backend
-
     redis:
         image: redis:latest
         container_name: redis_cache
@@ -43,7 +42,6 @@ services:
             - "6381:6379"
         networks:
             - backend
-    
     redis_wallet_cache:
         image: redis:latest
         container_name: redis_wallet_cache
@@ -73,19 +71,13 @@ services:
             timeout: 5s
             retries: 10
         command: [
-                "postgres",
-                "-c",
-                "max_connections=1000",
-                "-c",
-                "shared_buffers=3GB",
-                "-c",
-                "work_mem=16MB",
-                "-c",
-                "effective_cache_size=8GB",
-                "-c",
-                "synchronous_commit=off",
-                "-c",
-                "fsync=off",
+            "postgres",
+            "-c","max_connections=1000",
+            "-c","shared_buffers=3GB",
+            "-c","work_mem=16MB",
+            "-c","effective_cache_size=8GB",
+            "-c","synchronous_commit=off",
+            "-c","fsync=off"
             ]
 
     db2:
@@ -106,7 +98,6 @@ services:
             interval: 5s
             timeout: 5s
             retries: 10
-
     db3:
         image: postgres:13
         container_name: postgres_db3
@@ -206,6 +197,7 @@ services:
             - backend
 
     order_service:
+        container_name: order_service
         build:
             context: .
             dockerfile: OrderService/Dockerfile
@@ -214,33 +206,15 @@ services:
         ports:
             - "5201:5200"
         depends_on:
-            matching_engine_service:
-                condition: service_started
             mongo:
                 condition: service_healthy
         environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+            # Removed references to matching_engine_service
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
         networks:
             - backend
 
-    matching_engine_service:
-        build:
-            context: .
-            dockerfile: MatchingEngineService/Dockerfile
-        volumes:
-            - ./MatchingEngineService:/app
-        ports:
-            - "5301:5300"
-        depends_on:
-            mongo:
-                condition: service_healthy
-        environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+# [REMOVED matching_engine_service completely]
 
     mongo:
         image: mongo:6.0
@@ -260,6 +234,7 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
+        command: ["mongod", "--quiet", "--logpath", "/dev/null"]
 
     portfolio_stock_service:
         build:

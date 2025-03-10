@@ -8,6 +8,7 @@ import requests
 import uuid
 import datetime
 import time
+import order_book
 
 app = Flask(__name__)
 CORS(app)
@@ -15,6 +16,9 @@ CORS(app)
 # JWT Token Variables
 JWT_SECRET = "django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#"
 JWT_ALGORITHM = "HS256"
+
+# Orderbook instance
+orderBookInst = order_book.OrderBook()
 
 # --- Database Connections ---
 
@@ -46,9 +50,9 @@ else:
 # Endpoint of the Matching Engine Service for order matching
 # Do not need to create more endpoints, since i can call wallets_transaction, portfolios, and stock_transactions
 # Matching engine only handles: BUY, SELL, CANCEL, GETPRICES (getprices connects to redis, and can query without needing matching engine)
-MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
-MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
-MATCHING_ENGINE_STOCK_PRICES_URL = "http://matching_engine_service:5300/getPrices"
+#MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
+#MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
+#MATCHING_ENGINE_STOCK_PRICES_URL = "http://matching_engine_service:5300/getPrices"
 
 # Place new order -- Market Buy, Limit Sell
 # Process order details, communicate with matching engine, store in Orders table, etc.
@@ -60,7 +64,7 @@ def place_stock_order():
     """
     # Grabs the JSON body
     request_data = request.get_json()
-    logger.info(request_data, "Printing Here-----------------------------------")
+    logger.info(f"Printing Here----------------------------------- {request_data}")
     
     # 1 - Decrypt & validate token
     token = request.headers.get("token", "")
@@ -81,37 +85,29 @@ def place_stock_order():
     if not user_id:
         return jsonify({"success": False, "error": "No user_id in token"}), 400
 
-    order_payload = {
-        # generates Order_ID
-        "order_id": str(uuid.uuid4()),
-        
-        # set the information to pass to Matching Engine
-        "stock_id": request_data["stock_id"],
-        "order_type": request_data["order_type"],
-        "quantity": request_data["quantity"],
-        "price": request_data.get("price"),
-        
-        # Place token information in payload
-        "user_id": user_id
-        }
-
-    logger.warning(order_payload["order_id"])
-
     # Call the matching engine endpoint
     try:
-        response = requests.post(MATCHING_ENGINE_URL, json=order_payload)
-
-        # Check if the response is successful (status code 200)
-        if response.status_code == 200:
-            matching_result = response.json()
-            return matching_result, 200
+        if request_data["order_type"] == "MARKET":
+            result = orderBookInst.add_buy_order(
+                user_id, request_data["stock_id"], request_data.get("price"), request_data["quantity"]
+                )
         else:
-            matching_result = {"error": f"Matching engine responded with status {response.status_code}"}
+            result = orderBookInst.add_sell_order(
+                user_id, request_data["stock_id"], request_data.get("price"), request_data["quantity"]
+                )
+            executed_trades = orderBookInst.match_orders()
+            executed_trades.append(f"Sell order placed for {request_data['stock_id']}.")
+            return jsonify({"success": True, "message": executed_trades }), (200 if result["success"] else 400)
 
     except Exception as e:
-        matching_result = {"error": f"Request failed: {str(e)}"}
+        return jsonify({"success": False, "error": str(e)}), 500
 
-    return jsonify(matching_result), 200
+    return jsonify({
+        "success": result.get("success", False),
+        "message": result.get("message", ""),
+        "order_status": str(result.get("order_status", "")),  # Ensure string format
+        "trade_details": [str(trade) for trade in result.get("trade_details", [])],
+        "stock_tx_id": result.get("stock_tx_id", "")}), (200 if result.get("success", False) else 400)
 
 @app.route('/getStockTransactions', methods=['GET'])
 def get_stock_transactions():
@@ -199,7 +195,7 @@ def cancel_stock_transaction():
     if "error" in token_decoded:
         return jsonify({"success": False, "error": "Invalid token"}), 401
 
-    stock_tx_id = data.get("stock_tx_id")
+    stock_tx_id = data.get("stock_tx_id", "")
     if not stock_tx_id:
         return jsonify({"success": False, "error": "Missing stock transaction ID"}), 400
 
@@ -208,25 +204,18 @@ def cancel_stock_transaction():
     if not user_id:
         return jsonify({"success": False, "error": "Missing user ID in token"}), 400
 
-    # Prepares the cancellation payload for the Matching Engine
-    cancellation_payload = {
-        "user_id": user_id,
-        "stock_tx_id": stock_tx_id
-    }
-
     # Call the Matching Engine /cancelOrder endpoint
     try:
-        response = requests.post(MATCHING_ENGINE_CANCELLATION_URL, json=cancellation_payload)
-        if response.status_code == 200:
-            matching_result = response.json()
+        result, ret_code = orderBookInst.cancel_user_order(user_id, stock_tx_id)
+        if ret_code == 200:
+            matching_result = {"success" : True, "data": "Order Cancelled Successfully"}
         else:
             matching_result = {"success": False, "error": "Matching Engine error"}
-        code = response.status_code
     except Exception as e:
         matching_result = {"success": False, "error": str(e)}
-        code = 500
+        ret_code = 500
 
-    return jsonify(matching_result), code
+    return jsonify(matching_result), ret_code
 
 @app.route('/getStockPrices', methods=['GET'])
 def get_stock_prices():
@@ -244,8 +233,7 @@ def get_stock_prices():
     # Validate and decrypt token using JWT_SECRET
     token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
     if "error" in token_decoded:
-        error_msg = token_decoded.get("error")
-        return jsonify({"success": False, "error": error_msg}), 401
+        return jsonify({"success": False, "error": token_decoded.get("error")}), 401
 
     # Extracts the user details from token payload
     user_id = token_decoded.get("user_id")
@@ -254,18 +242,10 @@ def get_stock_prices():
 
     # Call the Matching Engine /cancelOrder endpoint
     try:
-        response = requests.get(MATCHING_ENGINE_STOCK_PRICES_URL, json={'user_id': user_id})
-        if response.status_code == 200:
-            matching_result = response.json()
-            code = 200
-        else:
-            matching_result = {"success": False, "error": "Matching Engine error"}
-            code = response.status_code
+        result, stock_prices = orderBookInst.find_stock_prices()
+        return jsonify({"success": result, "data": stock_prices}), 200
     except Exception as e:
-        matching_result = {"success": False, "error": str(e)}
-        code = 500
-
-    return jsonify(matching_result), code
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/getWalletTransactions', methods=['GET'])
 def get_wallet_transactions():
@@ -320,6 +300,42 @@ def get_wallet_transactions():
         })
 
     return jsonify({"success": True, "data": wallet_transactions}), 200
+
+@app.route('/setWallet', methods=['POST'])
+def set_wallet():
+    """
+    Sets or updates a user's wallet balance.
+    JSON expected: { "user_id": "uuid", "balance": 5000 }
+    """
+    #logging.info(orderBookInst.sell_orders)
+    #logging.info(orderBookInst.buy_orders)
+    token_header = request.headers.get("token")
+    if not token_header:
+        return jsonify({"success": False, "error": "Missing token header"}), 401
+
+    # Validate and decrypt token using JWT_SECRET
+    token_decoded = helpers.decrypt_and_validate_token(token_header, JWT_SECRET)
+    if "error" in token_decoded:
+        return jsonify({"success": False, "error": token_decoded.get("error")}), 401
+
+    # Extract user details from token payload
+    user_id = token_decoded.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Missing user ID in token"}), 400
+
+    # Parse JSON body
+    data = request.get_json() or {}
+
+    # Validate required fields from request data
+    balance = data.get("balance")
+    try:
+        if balance <= 0:
+            return jsonify({"success": False, "error": "Balance must be a positive integer"}), 400
+    except Exception as Err:
+        return jsonify({"success": False, "error": "Invalid balance value"}), 400
+
+    ret = orderBookInst.set_wallet_balance(user_id, balance)
+    return jsonify({"success": ret, "message": f"Wallet balance for {user_id} set to {balance} is {ret}"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5200, debug=False)
