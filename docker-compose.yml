@@ -1,3 +1,21 @@
+    # pgbouncer:
+    #     image: edoburu/pgbouncer
+    #     container_name: pgbouncer
+    #     restart: always
+    #     depends_on:
+    #         db:
+    #             condition: service_healthy
+    #     volumes:
+    #         - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+    #         - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    #     environment:
+    #         - DB_HOST=db
+    #         - DATABASES=authdb=host=db port=5432 user=admin password=adminpassword pool_size=100
+    #     ports:
+    #         - "6432:6432" # Expose PgBouncer on port 6432
+    #     networks:
+    #         - backend
+    
 services:
     nginx:
         image: nginx:latest
@@ -57,17 +75,17 @@ services:
         command: [
                 "postgres",
                 "-c",
-                "max_connections=1000", # Increase connections for high concurrency
+                "max_connections=1000",
                 "-c",
-                "shared_buffers=3GB", # Use more memory for caching
+                "shared_buffers=3GB",
                 "-c",
-                "work_mem=16MB", # Allocate more memory per operation
+                "work_mem=16MB",
                 "-c",
-                "effective_cache_size=8GB", # More cache for better query performance
+                "effective_cache_size=8GB",
                 "-c",
-                "synchronous_commit=off", # Improves performance (only for testing!)
+                "synchronous_commit=off",
                 "-c",
-                "fsync=off", # Disables disk sync (unsafe, but boosts speed)
+                "fsync=off",
             ]
 
     db2:
@@ -108,24 +126,6 @@ services:
             timeout: 5s
             retries: 10
 
-    # pgbouncer:
-    #     image: edoburu/pgbouncer
-    #     container_name: pgbouncer
-    #     restart: always
-    #     depends_on:
-    #         db:
-    #             condition: service_healthy
-    #     volumes:
-    #         - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
-    #         - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
-    #     environment:
-    #         - DB_HOST=db
-    #         - DATABASES=authdb=host=db port=5432 user=admin password=adminpassword pool_size=100
-    #     ports:
-    #         - "6432:6432" # Expose PgBouncer on port 6432
-    #     networks:
-    #         - backend
-
     auth_load_balancer:
         build:
             context: .
@@ -147,6 +147,7 @@ services:
             - ./AuthenticationService:/app
         ports:
             - "8004:8000"
+        restart: always
         depends_on:
             db1:
                 condition: service_healthy
@@ -168,6 +169,7 @@ services:
             - ./AuthenticationService:/app
         ports:
             - "8005:8000"
+        restart: always
         depends_on:
             db2:
                 condition: service_healthy
@@ -189,11 +191,12 @@ services:
             - ./AuthenticationService:/app
         ports:
             - "8006:8000"
+        restart: always
         depends_on:
             db3:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
             - DB_HOST=db3
             - DB_PORT=5432
             - DB_NAME=authdb3
@@ -209,7 +212,7 @@ services:
         volumes:
             - ./OrderService:/app
         ports:
-            - "5201:5200" # Expose Order Service on port 5200
+            - "5201:5200"
         depends_on:
             matching_engine_service:
                 condition: service_started
@@ -220,7 +223,6 @@ services:
             - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
             - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-
         networks:
             - backend
 
@@ -231,7 +233,7 @@ services:
         volumes:
             - ./MatchingEngineService:/app
         ports:
-            - "5301:5300" # Expose Matching Engine on port 5300
+            - "5301:5300"
         depends_on:
             mongo:
                 condition: service_healthy
@@ -240,7 +242,6 @@ services:
         networks:
             - backend
 
-    # New MongoDB service to be used by PortfolioStockService and other microservices
     mongo:
         image: mongo:6.0
         container_name: mongo_db
@@ -283,4 +284,3 @@ volumes:
     pgdata2:
     pgdata3:
     mongodb_data:
-    mongodbdata:
