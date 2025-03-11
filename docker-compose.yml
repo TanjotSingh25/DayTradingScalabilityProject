@@ -554,8 +554,6 @@ services:
             dockerfile: OrderService/Dockerfile
         volumes:
             - ./OrderService:/app
-        ports:
-            - "5201:5200"
         depends_on:
             matching_engine_service:
                 condition: service_started
@@ -568,6 +566,8 @@ services:
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
         networks:
             - backend
+        deploy:
+            replicas: 5
 
     matching_engine_service:
         build:

@@ -29,6 +29,7 @@ for attempt in range(5):
         client = MongoClient(MONGO_URI, maxPoolSize=250, minPoolSize=50, maxIdleTimeMS=90000)
         db = client["trading_system"]
         # MongoDB collections
+        wallets_collection = db["wallets"]
         wallet_transactions_collection = db["wallets_transaction"]
         portfolios_collection = db["portfolios"]  # this ensures portfolios collection is initialized
         stock_transactions_collection = db["stock_transactions"]  # instantiating new collection for transactions
