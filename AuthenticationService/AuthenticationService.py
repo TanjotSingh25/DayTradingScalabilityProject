@@ -63,11 +63,12 @@ def register():
     password = data.get('password')
     name = data.get('name')
 
-    if db.session.query(exists().where(Users.user_name == user_name)).scalar():
+    if Users.query.filter_by(user_name=user_name).count() > 0:
         return jsonify({"success": False, "data": {"error": "Username already exists"}}), 400
     
     try:
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        bcrypt_rounds = 10
+        hashed_password = bcrypt.generate_password_hash(password, rounds=bcrypt_rounds).decode('utf-8')
         user = Users(user_name=user_name, password=hashed_password, name=name)
         db.session.add(user)
         db.session.commit()
@@ -95,7 +96,7 @@ def login():
         # redis_client.delete(f"user_token:{user.id}")  # Delete token from cache after reading
         return jsonify({"success": True, "data": {"token": cached_token}})
     
-    user = Users.query.with_entities(Users.id, Users.password, Users.user_name).filter_by(user_name=user_name).first()
+    user = Users.query.with_entities(Users.id, Users.password).filter_by(user_name=user_name).first()
     
     if not user or not bcrypt.check_password_hash(user.password, password):
         return jsonify({"success": False, "data": {"error": "Invalid credentials"}}), 400

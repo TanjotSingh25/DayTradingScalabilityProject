@@ -10,6 +10,13 @@ services:
             - auth_service1
             - auth_service2
             - auth_service3
+            - auth_service4
+            - auth_service5
+            - auth_service6
+            - auth_service7
+            - auth_service8
+            - auth_service9
+            - auth_service10
             - order_service
             - matching_engine_service
             - portfolio_stock_service
@@ -61,13 +68,17 @@ services:
                 "-c",
                 "shared_buffers=1GB", # Reduced this value
                 "-c",
-                "work_mem=8MB", # Reduced this value
+                "work_mem=16MB", # Reduced this value
                 "-c",
                 "effective_cache_size=2GB", # Reduced this value
                 "-c",
                 "synchronous_commit=off", # Improves performance (only for testing!)
                 "-c",
                 "fsync=off", # Disables disk sync (unsafe, but boosts speed)
+                "-c",
+                "checkpoint_timeout=10min", # Checkpoint every 10 minutes
+                "-c",
+                "wal_writer_delay=1000ms", # Delay WAL writes by 1 second
             ]
 
     pgbouncer_db1:
@@ -103,198 +114,6 @@ services:
             timeout: 3s
             retries: 10
 
-    pgbouncer_db2:
-        image: edoburu/pgbouncer
-        container_name: pgbouncer_db2
-        restart: always
-        depends_on:
-            db2:
-                condition: service_healthy
-        volumes:
-            - ./pgbouncer/pgbouncer_db2.ini:/etc/pgbouncer/pgbouncer.ini
-            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
-        environment:
-            - DB_HOST=db2
-            - DATABASES=authdb2=host=db2 port=5432 user=admin password=adminpassword pool_size=100
-        ports:
-            - "6434:6432"
-        networks:
-            - backend
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "pg_isready",
-                    "-U",
-                    "admin",
-                    "-h",
-                    "localhost",
-                    "-p",
-                    "6432",
-                ]
-            interval: 5s
-            timeout: 3s
-            retries: 10
-
-    pgbouncer_db3:
-        image: edoburu/pgbouncer
-        container_name: pgbouncer_db3
-        restart: always
-        depends_on:
-            db3:
-                condition: service_healthy
-        volumes:
-            - ./pgbouncer/pgbouncer_db3.ini:/etc/pgbouncer/pgbouncer.ini
-            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
-        environment:
-            - DB_HOST=db3
-            - DATABASES=authdb3=host=db3 port=5432 user=admin password=adminpassword pool_size=100
-        ports:
-            - "6435:6432"
-        networks:
-            - backend
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "pg_isready",
-                    "-U",
-                    "admin",
-                    "-h",
-                    "localhost",
-                    "-p",
-                    "6432",
-                ]
-            interval: 5s
-            timeout: 3s
-            retries: 10
-
-    pgbouncer_db4:
-        image: edoburu/pgbouncer
-        container_name: pgbouncer_db4
-        restart: always
-        depends_on:
-            db4:
-                condition: service_healthy
-        volumes:
-            - ./pgbouncer/pgbouncer_db4.ini:/etc/pgbouncer/pgbouncer.ini
-            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
-        environment:
-            - DB_HOST=db4
-            - DATABASES=authdb4=host=db4 port=5432 user=admin password=adminpassword pool_size=100
-        ports:
-            - "6436:6432"
-        networks:
-            - backend
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "pg_isready",
-                    "-U",
-                    "admin",
-                    "-h",
-                    "localhost",
-                    "-p",
-                    "6432",
-                ]
-            interval: 5s
-            timeout: 3s
-            retries: 10
-
-    pgbouncer_db5:
-        image: edoburu/pgbouncer
-        container_name: pgbouncer_db5
-        restart: always
-        depends_on:
-            db5:
-                condition: service_healthy
-        volumes:
-            - ./pgbouncer/pgbouncer_db5.ini:/etc/pgbouncer/pgbouncer.ini
-            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
-        environment:
-            - DB_HOST=db5
-            - DATABASES=authdb5=host=db5 port=5432 user=admin password=adminpassword pool_size=100
-        ports:
-            - "6437:6432"
-        networks:
-            - backend
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "pg_isready",
-                    "-U",
-                    "admin",
-                    "-h",
-                    "localhost",
-                    "-p",
-                    "6432",
-                ]
-            interval: 5s
-            timeout: 3s
-            retries: 10
-
-    auth_load_balancer1:
-        build:
-            context: .
-            dockerfile: auth_load_balancer/Dockerfile
-        depends_on:
-            - auth_service1
-            - auth_service2
-            - auth_service3
-            - auth_service4
-            - auth_service5
-            - auth_service6
-            - auth_service7
-            - auth_service8
-            - auth_service9
-            - auth_service10
-        ports:
-            - "5001:5001"
-        networks:
-            - backend
-
-    auth_load_balancer2:
-        build:
-            context: .
-            dockerfile: auth_load_balancer/Dockerfile
-        depends_on:
-            - auth_service1
-            - auth_service2
-            - auth_service3
-            - auth_service4
-            - auth_service5
-            - auth_service6
-            - auth_service7
-            - auth_service8
-            - auth_service9
-            - auth_service10
-        ports:
-            - "5002:5001" # Expose another instance on port 5002
-        networks:
-            - backend
-
-    auth_load_balancer3:
-        build:
-            context: .
-            dockerfile: auth_load_balancer/Dockerfile
-        depends_on:
-            - auth_service1
-            - auth_service2
-            - auth_service3
-            - auth_service4
-            - auth_service5
-            - auth_service6
-            - auth_service7
-            - auth_service8
-            - auth_service9
-            - auth_service10
-        ports:
-            - "5003:5001" # Expose another instance on port 5003
-        networks:
-            - backend
-
     auth_service1:
         build:
             context: .
@@ -325,13 +144,13 @@ services:
         ports:
             - "8005:8000"
         depends_on:
-            pgbouncer_db2:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
             - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
-            - DB_HOST=pgbouncer_db2
+            - DB_HOST=pgbouncer_db1
             - DB_PORT=6432
-            - DB_NAME=authdb2
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -346,13 +165,13 @@ services:
         ports:
             - "8006:8000"
         depends_on:
-            pgbouncer_db3:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=pgbouncer_db3
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=pgbouncer_db1
             - DB_PORT=6432
-            - DB_NAME=authdb3
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -367,13 +186,13 @@ services:
         ports:
             - "8007:8000"
         depends_on:
-            pgbouncer_db4:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=pgbouncer_db4
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=pgbouncer_db1
             - DB_PORT=6432
-            - DB_NAME=authdb4
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -388,13 +207,13 @@ services:
         ports:
             - "8008:8000"
         depends_on:
-            pgbouncer_db5:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=pgbouncer_db5
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=pgbouncer_db1
             - DB_PORT=6432
-            - DB_NAME=authdb5
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -430,13 +249,13 @@ services:
         ports:
             - "8010:8000"
         depends_on:
-            pgbouncer_db2:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
             - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
-            - DB_HOST=pgbouncer_db2
+            - DB_HOST=pgbouncer_db1
             - DB_PORT=6432
-            - DB_NAME=authdb2
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -451,13 +270,13 @@ services:
         ports:
             - "8011:8000"
         depends_on:
-            pgbouncer_db3:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=pgbouncer_db3
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=pgbouncer_db1
             - DB_PORT=6432
-            - DB_NAME=authdb3
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -472,13 +291,13 @@ services:
         ports:
             - "8012:8000"
         depends_on:
-            pgbouncer_db4:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=pgbouncer_db4
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=pgbouncer_db1
             - DB_PORT=6432
-            - DB_NAME=authdb4
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -493,13 +312,13 @@ services:
         ports:
             - "8013:8000"
         depends_on:
-            pgbouncer_db5:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
-            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=pgbouncer_db5
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=pgbouncer_db1
             - DB_PORT=6432
-            - DB_NAME=authdb5
+            - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -583,9 +402,5 @@ networks:
 
 volumes:
     pgdata1:
-    pgdata2:
-    pgdata3:
-    pgdata4:
-    pgdata5:
     mongodb_data:
     mongodbdata:

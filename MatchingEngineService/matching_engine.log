@@ -25394,3 +25394,47 @@
 2025-03-10 23:57:50,070 - INFO - Updated stock balance for user 1: -15509763000 shares of de195527-45e7-4247-97e9-03281fbf31ef
 2025-03-10 23:57:50,071 - INFO - SELL ORDER: 1 listed 15509763000 shares of de195527-45e7-4247-97e9-03281fbf31ef at 140
 2025-03-10 23:57:50,073 - INFO - 172.23.0.27 - - [10/Mar/2025 23:57:50] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 00:44:20,933 - INFO - MongoDB connection established successfully.
+2025-03-11 00:44:20,942 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 00:44:20,986 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.8:5300
+2025-03-11 00:44:20,987 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 00:52:43,298 - INFO - MongoDB connection established successfully.
+2025-03-11 00:52:43,298 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 00:52:43,314 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.8:5300
+2025-03-11 00:52:43,314 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 00:55:46,804 - INFO - Removed stock 32b67ba5-1f41-4685-bd2e-b445e33afff0 from user 1's portfolio (qty=0).
+2025-03-11 00:55:46,804 - INFO - Updated stock balance for user 1: -12488000000 shares of 32b67ba5-1f41-4685-bd2e-b445e33afff0
+2025-03-11 00:55:46,808 - INFO - SELL ORDER: 1 listed 12488000000 shares of 32b67ba5-1f41-4685-bd2e-b445e33afff0 at 135
+2025-03-11 00:55:46,809 - INFO - 172.23.0.19 - - [11/Mar/2025 00:55:46] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 00:55:46,826 - INFO - Removed stock 31940cd8-ba5d-4eaa-b7a6-59ac70bd2d8f from user 1's portfolio (qty=0).
+2025-03-11 00:55:46,827 - INFO - Updated stock balance for user 1: -15509763000 shares of 31940cd8-ba5d-4eaa-b7a6-59ac70bd2d8f
+2025-03-11 00:55:46,828 - INFO - SELL ORDER: 1 listed 15509763000 shares of 31940cd8-ba5d-4eaa-b7a6-59ac70bd2d8f at 140
+2025-03-11 00:55:46,829 - INFO - 172.23.0.19 - - [11/Mar/2025 00:55:46] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 01:49:31,886 - INFO - MongoDB connection established successfully.
+2025-03-11 01:49:31,886 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 01:49:31,892 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-11 01:49:31,892 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 01:54:56,547 - INFO - MongoDB connection established successfully.
+2025-03-11 01:54:56,548 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 01:54:56,562 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.8:5300
+2025-03-11 01:54:56,562 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 01:55:23,650 - INFO - Removed stock 8820c540-24c7-42dc-b866-cd3e378a9773 from user 1's portfolio (qty=0).
+2025-03-11 01:55:23,651 - INFO - Updated stock balance for user 1: -12488000000 shares of 8820c540-24c7-42dc-b866-cd3e378a9773
+2025-03-11 01:55:23,652 - INFO - SELL ORDER: 1 listed 12488000000 shares of 8820c540-24c7-42dc-b866-cd3e378a9773 at 135
+2025-03-11 01:55:23,653 - INFO - 172.23.0.19 - - [11/Mar/2025 01:55:23] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 01:55:23,666 - INFO - Removed stock 617023f4-db83-4ab6-a07e-63cc5eb65c92 from user 1's portfolio (qty=0).
+2025-03-11 01:55:23,666 - INFO - Updated stock balance for user 1: -15509763000 shares of 617023f4-db83-4ab6-a07e-63cc5eb65c92
+2025-03-11 01:55:23,667 - INFO - SELL ORDER: 1 listed 15509763000 shares of 617023f4-db83-4ab6-a07e-63cc5eb65c92 at 140
+2025-03-11 01:55:23,668 - INFO - 172.23.0.19 - - [11/Mar/2025 01:55:23] "POST /placeOrder HTTP/1.1" 200 -
