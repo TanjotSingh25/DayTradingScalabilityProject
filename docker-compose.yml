@@ -332,8 +332,6 @@ services:
             dockerfile: OrderService/Dockerfile
         volumes:
             - ./OrderService:/app
-        # ports:
-        #     - "5201:5200"
         depends_on:
             matching_engine_service:
                 condition: service_started
