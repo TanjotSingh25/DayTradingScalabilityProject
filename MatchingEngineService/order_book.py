@@ -5,7 +5,6 @@ from pymongo import MongoClient, errors, UpdateOne
 import os
 from dotenv import load_dotenv
 from uuid import uuid4
-import redis
 
 # Load environment variables
 load_dotenv()
@@ -30,6 +29,7 @@ for attempt in range(max_retries):
         # Initialize to mongodb client, and to the collections
         db = client["trading_system"]
         portfolios_collection = db["portfolios"]
+        wallets_collection = db["wallets"]
         # New collection for transactions
         stock_transactions_collection = db["stock_transactions"]
         wallet_transactions_collection = db["wallets_transaction"]
@@ -48,33 +48,33 @@ else:
     logging.error("Failed to connect to MongoDB after multiple attempts. Exiting...")
     raise RuntimeError("MongoDB connection failed after 5 retries.")
 
-# Attempt to connect to Redis
-REDIS_HOST = os.getenv("REDIS_HOST", "redis_wallet_cache")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+# # Attempt to connect to Redis
+# REDIS_HOST = os.getenv("REDIS_HOST", "redis_wallet_cache")
+# REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
-if not REDIS_HOST:
-    raise RuntimeError("REDIS_HOST is not set. Make sure it's defined in docker-compose.yml.")
-if not REDIS_PORT:
-    raise RuntimeError("REDIS_PORT is not set. Make sure it's defined in docker-compose.yml.")
+# if not REDIS_HOST:
+#     raise RuntimeError("REDIS_HOST is not set. Make sure it's defined in docker-compose.yml.")
+# if not REDIS_PORT:
+#     raise RuntimeError("REDIS_PORT is not set. Make sure it's defined in docker-compose.yml.")
 
-for attempt in range(5):
-    try:
-        # decode = Convert to Python Strings
-        # Create the connection pool with max connections, if there are too many connections,
-        # redis can refuse new connections
-        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=500)
-        # Create Redis client using the connection pool
-        redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
-        #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-        logging.info("Redis connection established successfully on Order Service.")
-        break
-    except Exception as err:
-        print(f"Error Connecting to Redis, retrying. Error: {err}")
-        time.sleep(2)
-    pass
-else:
-    logging.error("Failed to connect to Redis after multiple attempts. Exiting...")
-    raise RuntimeError("Redis connection failed after 5 retries.")
+# for attempt in range(5):
+#     try:
+#         # decode = Convert to Python Strings
+#         # Create the connection pool with max connections, if there are too many connections,
+#         # redis can refuse new connections
+#         pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=500)
+#         # Create Redis client using the connection pool
+#         redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
+#         #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+#         logging.info("Redis connection established successfully on Order Service.")
+#         break
+#     except Exception as err:
+#         print(f"Error Connecting to Redis, retrying. Error: {err}")
+#         time.sleep(2)
+#     pass
+# else:
+#     logging.error("Failed to connect to Redis after multiple attempts. Exiting...")
+#     raise RuntimeError("Redis connection failed after 5 retries.")
 class OrderBook:
     def __init__(self):
         # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
@@ -91,74 +91,80 @@ class OrderBook:
             Fetches wallet balance from Redis for the given user_id.
             Returns the balance as an integer; if not found, returns 0.
         """
+        # try:
+        #     balance = redis_client.get(f"wallet_balance:{user_id}")
+        #     return int(float(balance)) if balance else 0
+        # except Exception as e:
+        #     logging.error(f"Error fetching wallet balance for {user_id}: {e}")
+        #     return 0
         try:
-            balance = redis_client.get(f"wallet_balance:{user_id}")
-            return int(float(balance)) if balance else 0
+            doc = wallets_collection.find_one({"user_id": user_id}, {"balance": 1, "_id": 0})
+            if not doc:
+                return 0
+            return doc.get("balance", 0)
         except Exception as e:
             logging.error(f"Error fetching wallet balance for {user_id}: {e}")
             return 0
 
     def update_wallet_balance(self, buyer_id, seller_id, trade_value, max_retries=5):
-            """
-            Atomically updates both the buyer's and seller's wallet balances in Redis using transactions.
-            - The seller's balance is incremented by trade_value.
-            - The buyer's balance is decremented by trade_value.
-            - Ensures that if the wallet key does not exist, it is first initialized to 0.
-            - Uses WATCH, MULTI, EXEC to prevent race conditions.
-            """
+        """
+        Moves 'trade_value' from the buyer's wallet to the seller's wallet in MongoDB's 'wallets' collection.
+        
+        Steps:
+        1 & 3) Fetch buyer & seller docs in one query.
+        5) Use a single bulk upsert operation for updated balances.
+        (No funds check. We always move 'trade_value'.)
+        """
+        for attempt in range(max_retries):
+            try:
+                # Fetch both docs in ONE query
+                # This returns up to two documents with fields: {user_id, balance}
+                docs = list(wallets_collection.find(
+                    {"user_id": {"$in": [buyer_id, seller_id]}},
+                    {"user_id": 1, "balance": 1, "_id": 0}
+                ))
 
-            buyer_key = f"wallet_balance:{buyer_id}"
-            seller_key = f"wallet_balance:{seller_id}"
+                # Initialize buyer/seller balances to 0
+                buyer_balance = 0
+                seller_balance = 0
 
-            for attempt in range(max_retries):
-                try:
-                    # Monitor keys for changes
-                    redis_client.watch(buyer_key, seller_key)
+                # Parse each doc from the query
+                for doc in docs:
+                    if doc["user_id"] == buyer_id:
+                        buyer_balance = doc.get("balance", 0)
+                    elif doc["user_id"] == seller_id:
+                        seller_balance = doc.get("balance", 0)
 
-                    # # Fetch current balances in bulk using mget()
-                    # balances = redis_client.mget([buyer_key, seller_key])
+                # Compute new balances
+                new_buyer_balance = buyer_balance - trade_value
+                new_seller_balance = seller_balance + trade_value
 
-                    # # Convert to float and default to 0 if not set
-                    # buyer_balance = float(balances[0]) if balances[0] else 0
-                    # seller_balance = float(balances[1]) if balances[1] else 0
+                # Single bulk update for buyer/seller
+                ops = [
+                    UpdateOne(
+                        {"user_id": buyer_id},
+                        {"$set": {"balance": new_buyer_balance}},
+                        upsert=True
+                    ),
+                    UpdateOne(
+                        {"user_id": seller_id},
+                        {"$set": {"balance": new_seller_balance}},
+                        upsert=True
+                    )
+                ]
+                wallets_collection.bulk_write(ops)
 
-                    # # Compute new balances
-                    # new_buyer_balance = buyer_balance - trade_value
-                    # new_seller_balance = seller_balance + trade_value
+                logging.info(f"[Mongo] Moved {trade_value} from buyer={buyer_id} to seller={seller_id}")
+                return True
 
-                    # # Ensure the buyer has sufficient balance
-                    # if new_buyer_balance < 0:
-                    #     logging.warning(f"Transaction failed: Insufficient balance for buyer {buyer_id}.")
-                    #     redis_client.unwatch()
-                    #     return False  # Insufficient funds
-                    # # just do redis increment because if key does not exist, it will initialize, so remove top part
-                    # # Execute atomic transaction
-                    # pipe = redis_client.pipeline()
-                    # pipe.multi()
-                    # # queue balance updates
-                    # pipe.set(buyer_key, new_buyer_balance)
-                    # pipe.set(seller_key, new_seller_balance)
-                    # pipe.execute()  # Commit transaction
-                    # Monitor keys for changes
+            except Exception as e:
+                logging.warning(f"Error on attempt {attempt+1}/{max_retries} updating wallet: {e}")
+                time.sleep(1)
 
-                    # Execute atomic transaction
-                    pipe = redis_client.pipeline()
-                    pipe.multi()
+        logging.error(f"Failed to update wallet after {max_retries} attempts (buyer={buyer_id}, seller={seller_id})")
+        return False
 
-                    # Deduct from buyer and add to seller atomically
-                    pipe.incrbyfloat(buyer_key, -trade_value)
-                    pipe.incrbyfloat(seller_key, trade_value)
-                    pipe.execute()
-
-                    logging.info(f"Transaction successful: {trade_value} transferred from buyer {buyer_id} to seller {seller_id}")
-                    return True  # Success
-
-                except redis.WatchError:
-                    logging.warning(f"Race condition detected, retrying... Attempt {attempt + 1}/{max_retries}")
-                    redis_client.unwatch()
-
-            logging.error(f"Failed to update wallet balances after {max_retries} retries: buyer {buyer_id}, seller {seller_id}")
-            return False  # If it fails after retries, return False
+        
 
     def add_buy_order(self, user_id, stock_id, price, quantity):
         """
