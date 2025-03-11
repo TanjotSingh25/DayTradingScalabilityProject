@@ -10,12 +10,19 @@ AUTH_SERVICES = {
     0: "http://auth_service1:8000",
     1: "http://auth_service2:8000",
     2: "http://auth_service3:8000",
+    3: "http://auth_service4:8000",
+    4: "http://auth_service5:8000",
+    5: "http://auth_service6:8000",
+    6: "http://auth_service7:8000",
+    7: "http://auth_service8:8000",
+    8: "http://auth_service9:8000",
+    9: "http://auth_service10:8000",
 }
 
 def get_auth_service(username):
     """Hash username and determine which auth service to use."""
     hash_value = int(hashlib.md5(username.encode()).hexdigest(), 16)
-    return AUTH_SERVICES[hash_value % 3]  
+    return AUTH_SERVICES[hash_value % len(AUTH_SERVICES)]  
 
 @app.route('/<path:path>', methods=['POST', 'GET', 'PUT', 'DELETE'])
 def route_request(path):
