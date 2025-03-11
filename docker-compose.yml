@@ -32,6 +32,9 @@ services:
             - order_service3
             - order_service4
             - order_service5
+            - order_service6
+            - order_service7
+            - order_service8
             - matching_engine_service
             - portfolio_stock_service1
             - portfolio_stock_service2
@@ -340,6 +343,217 @@ services:
             - DB_PASSWORD=adminpassword
         networks:
             - backend
+        
+    # auth_service11:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8014:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service12:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8015:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service13:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8016:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service14:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8017:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service15:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8018:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service16:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8019:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service17:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8020:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service18:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8011:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service19:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8012:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
+    # auth_service20:
+    #     build:
+    #         context: .
+    #         dockerfile: AuthenticationService/Dockerfile
+    #     volumes:
+    #         - ./AuthenticationService:/app
+    #     ports:
+    #         - "8013:8000"
+    #     restart: always
+    #     depends_on:
+    #         - pgbouncer_db1
+    #     environment:
+    #         - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+    #         - DB_HOST=pgbouncer_db1
+    #         - DB_PORT=6432
+    #         - DB_NAME=authdb1
+    #         - DB_USER=admin
+    #         - DB_PASSWORD=adminpassword
+    #     networks:
+    #         - backend
+
 
     # auth_service11:
     #     build:
@@ -645,6 +859,69 @@ services:
             - ./OrderService:/app
         ports:
             - "5205:5200"
+        depends_on:
+            matching_engine_service:
+                condition: service_started
+            mongo:
+                condition: service_healthy
+        environment:
+            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+        networks:
+            - backend
+    
+    order_service6:
+        build:
+            context: .
+            dockerfile: OrderService/Dockerfile
+        volumes:
+            - ./OrderService:/app
+        ports:
+            - "5206:5200"
+        depends_on:
+            matching_engine_service:
+                condition: service_started
+            mongo:
+                condition: service_healthy
+        environment:
+            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+        networks:
+            - backend
+    
+    order_service7:
+        build:
+            context: .
+            dockerfile: OrderService/Dockerfile
+        volumes:
+            - ./OrderService:/app
+        ports:
+            - "5207:5200"
+        depends_on:
+            matching_engine_service:
+                condition: service_started
+            mongo:
+                condition: service_healthy
+        environment:
+            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+        networks:
+            - backend
+    
+    order_service8:
+        build:
+            context: .
+            dockerfile: OrderService/Dockerfile
+        volumes:
+            - ./OrderService:/app
+        ports:
+            - "5208:5200"
         depends_on:
             matching_engine_service:
                 condition: service_started
