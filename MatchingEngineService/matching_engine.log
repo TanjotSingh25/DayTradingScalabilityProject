@@ -25438,3 +25438,114 @@
 2025-03-11 01:55:23,666 - INFO - Updated stock balance for user 1: -15509763000 shares of 617023f4-db83-4ab6-a07e-63cc5eb65c92
 2025-03-11 01:55:23,667 - INFO - SELL ORDER: 1 listed 15509763000 shares of 617023f4-db83-4ab6-a07e-63cc5eb65c92 at 140
 2025-03-11 01:55:23,668 - INFO - 172.23.0.19 - - [11/Mar/2025 01:55:23] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 02:17:53,961 - INFO - MongoDB connection established successfully.
+2025-03-11 02:17:53,962 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 02:17:53,981 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-11 02:17:53,982 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 02:22:57,736 - INFO - MongoDB connection established successfully.
+2025-03-11 02:22:57,738 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 02:22:57,772 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-11 02:22:57,781 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 02:23:33,503 - WARNING - SELL ORDER FAILED USER: 1 does not own stock .
+2025-03-11 02:23:33,505 - INFO - 172.23.0.20 - - [11/Mar/2025 02:23:33] "[31m[1mPOST /placeOrder HTTP/1.1[0m" 400 -
+2025-03-11 02:23:33,519 - WARNING - SELL ORDER FAILED USER: 1 does not own stock .
+2025-03-11 02:23:33,520 - INFO - 172.23.0.20 - - [11/Mar/2025 02:23:33] "[31m[1mPOST /placeOrder HTTP/1.1[0m" 400 -
+2025-03-11 02:24:15,637 - WARNING - SELL ORDER FAILED USER: 1 does not own stock .
+2025-03-11 02:24:15,638 - INFO - 172.23.0.20 - - [11/Mar/2025 02:24:15] "[31m[1mPOST /placeOrder HTTP/1.1[0m" 400 -
+2025-03-11 02:24:15,650 - WARNING - SELL ORDER FAILED USER: 1 does not own stock .
+2025-03-11 02:24:15,650 - INFO - 172.23.0.20 - - [11/Mar/2025 02:24:15] "[31m[1mPOST /placeOrder HTTP/1.1[0m" 400 -
+2025-03-11 02:31:13,564 - INFO - MongoDB connection established successfully.
+2025-03-11 02:31:13,565 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 02:31:13,584 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.8:5300
+2025-03-11 02:31:13,584 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 02:34:55,079 - INFO - MongoDB connection established successfully.
+2025-03-11 02:34:55,082 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 02:34:55,094 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-11 02:34:55,096 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 02:35:39,337 - INFO - Removed stock 18b1f68e-9837-4622-93f9-c080ec7229cc from user 1's portfolio (qty=0).
+2025-03-11 02:35:39,337 - INFO - Updated stock balance for user 1: -12488000000 shares of 18b1f68e-9837-4622-93f9-c080ec7229cc
+2025-03-11 02:35:39,341 - INFO - SELL ORDER USER: 1 listed 12488000000 shares of 18b1f68e-9837-4622-93f9-c080ec7229cc at 135
+2025-03-11 02:35:39,342 - INFO - 172.23.0.17 - - [11/Mar/2025 02:35:39] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 02:35:39,354 - INFO - Removed stock 257ff1fc-b33b-4136-923f-60032b82b623 from user 1's portfolio (qty=0).
+2025-03-11 02:35:39,355 - INFO - Updated stock balance for user 1: -15509763000 shares of 257ff1fc-b33b-4136-923f-60032b82b623
+2025-03-11 02:35:39,355 - INFO - SELL ORDER USER: 1 listed 15509763000 shares of 257ff1fc-b33b-4136-923f-60032b82b623 at 140
+2025-03-11 02:35:39,356 - INFO - 172.23.0.17 - - [11/Mar/2025 02:35:39] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 02:41:47,976 - INFO - MongoDB connection established successfully.
+2025-03-11 02:41:47,977 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 02:41:47,986 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-11 02:41:47,988 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 02:42:29,728 - INFO - Removed stock f6995db5-9eb6-454b-a2f4-5261de67a099 from user 1's portfolio (qty=0).
+2025-03-11 02:42:29,729 - INFO - Updated stock balance for user 1: -12488000000 shares of f6995db5-9eb6-454b-a2f4-5261de67a099
+2025-03-11 02:42:29,730 - INFO - SELL ORDER USER: 1 listed 12488000000 shares of f6995db5-9eb6-454b-a2f4-5261de67a099 at 135
+2025-03-11 02:42:29,731 - INFO - 172.23.0.17 - - [11/Mar/2025 02:42:29] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 02:42:29,745 - INFO - Removed stock dfb53a49-b636-4d14-930e-63fb63571c74 from user 1's portfolio (qty=0).
+2025-03-11 02:42:29,745 - INFO - Updated stock balance for user 1: -15509763000 shares of dfb53a49-b636-4d14-930e-63fb63571c74
+2025-03-11 02:42:29,746 - INFO - SELL ORDER USER: 1 listed 15509763000 shares of dfb53a49-b636-4d14-930e-63fb63571c74 at 140
+2025-03-11 02:42:29,747 - INFO - 172.23.0.17 - - [11/Mar/2025 02:42:29] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 02:58:30,514 - INFO - MongoDB connection established successfully.
+2025-03-11 02:58:30,524 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 02:58:30,576 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.27:5300
+2025-03-11 02:58:30,578 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 02:59:13,048 - INFO - Removed stock 32687245-e17c-47c1-bf67-3d894279b0f6 from user 1's portfolio (qty=0).
+2025-03-11 02:59:13,048 - INFO - Updated stock balance for user 1: -12488000000 shares of 32687245-e17c-47c1-bf67-3d894279b0f6
+2025-03-11 02:59:13,049 - INFO - SELL ORDER USER: 1 listed 12488000000 shares of 32687245-e17c-47c1-bf67-3d894279b0f6 at 135
+2025-03-11 02:59:13,050 - INFO - 172.23.0.30 - - [11/Mar/2025 02:59:13] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 02:59:13,065 - INFO - Removed stock b1429a4b-ecc1-4b40-8b0c-f82b4bf58a1a from user 1's portfolio (qty=0).
+2025-03-11 02:59:13,065 - INFO - Updated stock balance for user 1: -15509763000 shares of b1429a4b-ecc1-4b40-8b0c-f82b4bf58a1a
+2025-03-11 02:59:13,066 - INFO - SELL ORDER USER: 1 listed 15509763000 shares of b1429a4b-ecc1-4b40-8b0c-f82b4bf58a1a at 140
+2025-03-11 02:59:13,067 - INFO - 172.23.0.30 - - [11/Mar/2025 02:59:13] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 03:19:14,723 - INFO - MongoDB connection established successfully.
+2025-03-11 03:19:14,723 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 03:19:14,760 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-11 03:19:14,761 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 03:24:32,952 - INFO - MongoDB connection established successfully.
+2025-03-11 03:24:32,953 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 03:24:33,037 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.7:5300
+2025-03-11 03:24:33,041 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 03:25:05,493 - INFO - Removed stock 574d0527-09cc-4381-845c-88dc91a49d6e from user 1's portfolio (qty=0).
+2025-03-11 03:25:05,493 - INFO - Updated stock balance for user 1: -12488000000 shares of 574d0527-09cc-4381-845c-88dc91a49d6e
+2025-03-11 03:25:05,494 - INFO - SELL ORDER USER: 1 listed 12488000000 shares of 574d0527-09cc-4381-845c-88dc91a49d6e at 135
+2025-03-11 03:25:05,495 - INFO - 172.23.0.17 - - [11/Mar/2025 03:25:05] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 03:25:05,513 - INFO - Removed stock 5191a297-c917-42fe-9874-48c7787b0f9c from user 1's portfolio (qty=0).
+2025-03-11 03:25:05,513 - INFO - Updated stock balance for user 1: -15509763000 shares of 5191a297-c917-42fe-9874-48c7787b0f9c
+2025-03-11 03:25:05,514 - INFO - SELL ORDER USER: 1 listed 15509763000 shares of 5191a297-c917-42fe-9874-48c7787b0f9c at 140
+2025-03-11 03:25:05,515 - INFO - 172.23.0.17 - - [11/Mar/2025 03:25:05] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 04:13:55,259 - INFO - MongoDB connection established successfully.
+2025-03-11 04:13:55,276 - INFO - Redis connection established successfully on Order Service.
+2025-03-11 04:13:55,448 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.18.0.8:5300
+2025-03-11 04:13:55,464 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-11 04:16:27,284 - INFO - Removed stock b47a04ec-f2f6-4318-b9a3-24d2d27827aa from user 1's portfolio (qty=0).
+2025-03-11 04:16:27,285 - INFO - Updated stock balance for user 1: -12488000000 shares of b47a04ec-f2f6-4318-b9a3-24d2d27827aa
+2025-03-11 04:16:27,287 - INFO - SELL ORDER USER: 1 listed 12488000000 shares of b47a04ec-f2f6-4318-b9a3-24d2d27827aa at 135
+2025-03-11 04:16:27,288 - INFO - 172.18.0.30 - - [11/Mar/2025 04:16:27] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-11 04:16:27,303 - INFO - Removed stock 00c698a7-8bd9-466a-b9e8-5ae85131c483 from user 1's portfolio (qty=0).
+2025-03-11 04:16:27,303 - INFO - Updated stock balance for user 1: -15509763000 shares of 00c698a7-8bd9-466a-b9e8-5ae85131c483
+2025-03-11 04:16:27,304 - INFO - SELL ORDER USER: 1 listed 15509763000 shares of 00c698a7-8bd9-466a-b9e8-5ae85131c483 at 140
+2025-03-11 04:16:27,304 - INFO - 172.18.0.30 - - [11/Mar/2025 04:16:27] "POST /placeOrder HTTP/1.1" 200 -
