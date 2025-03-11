@@ -8,7 +8,6 @@ import os
 import uuid
 import jwt
 import json
-import redis
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -16,34 +15,25 @@ CORS(app)
 api = Api(app)
 
 MONGO_URI = os.getenv("MONGO_URI")
-REDIS_HOST = os.getenv("REDIS_HOST", "redis_wallet_cache")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI is not set. Make sure it's defined in docker-compose.yml.")
 
 try:
-    # 1.5 minutes
-    client = MongoClient(MONGO_URI, maxPoolSize=250, minPoolSize=50, maxIdleTimeMS=90000)
+    client = MongoClient(MONGO_URI)
     db = client["trading_system"]
     stocks_collection = db["stocks"]
     portfolios_collection = db["portfolios"]
+    wallets_collection = db["wallets"]
 
     # Ensure necessary indexes for faster lookups
     stocks_collection.create_index("stock_id", unique=True)
     stocks_collection.create_index("stock_name", unique=True)  # Prevent duplicate stock names
     portfolios_collection.create_index("user_id", unique=True)
+    wallets_collection.create_index("user_id", unique=True)
 
 except errors.ConnectionFailure:
     print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
-    raise
-
-# Initialize Redis connection with connection pooling
-try:
-    pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=250)
-    redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
-except Exception as e:
-    print(f"Error connecting to Redis: {e}")
     raise
 
 # -----------------------
@@ -97,6 +87,12 @@ def initialize_user_if_not_exists(user_id):
     portfolios_collection.update_one(
         {"user_id": user_id},
         {"$setOnInsert": {"user_id": user_id, "data": []}},
+        upsert=True
+    )
+
+    wallets_collection.update_one(
+        {"user_id": user_id},
+        {"$setOnInsert": {"user_id": user_id, "balance": 0}},
         upsert=True
     )
 
@@ -183,15 +179,16 @@ class GetStockPortfolio(Resource):
             initialize_user_if_not_exists(user_id)
 
             portfolio = portfolios_collection.find_one({"user_id": user_id}, {"data": 1})
-            stocks = portfolio.get("data", [])
 
-            # Sort stocks by stock_name in lexicographically decreasing order
-            sorted_stocks = sorted(stocks, key=lambda x: x["stock_name"], reverse=True)
-
-            return {"success": True, "data": sorted_stocks}, 200
+            if portfolio and "data" in portfolio:
+                sorted_data = sorted(portfolio["data"], key=lambda x: x["stock_name"], reverse=True)
+                return {"success": True, "data": sorted_data}, 200
+            else:
+                return {"success": False, "data": {"error": "No portfolio found."}}, 404
 
         except Exception as e:
             return {"success": False, "data": {"error": str(e)}}, 500
+
 
 # -----------------------
 # Wallet Management APIs
@@ -205,14 +202,19 @@ class AddMoneyToWallet(Resource):
                 return {"success": False, "data": {"error": user_data["error"]}}, 401
 
             user_id = user_data["user_id"]
+            initialize_user_if_not_exists(user_id)
+
             data = get_request_data()
             amount = data.get("amount")
 
-            if not isinstance(amount, (int, float)) or amount <= 0:
-                return {"success": False, "data": {"error": "Amount must be a valid number greater than zero"}}, 400
+            if amount is None or amount <= 0:
+                return {"success": False, "data": {"error": "Amount must be greater than zero"}}, 400
 
-            # Update balance in Redis
-            redis_client.incrbyfloat(f"wallet_balance:{user_id}", amount)
+            wallets_collection.update_one(
+                {"user_id": user_id},
+                {"$inc": {"balance": amount}},
+                upsert=True
+            )
 
             return {"success": True, "data": None}, 200
 
@@ -227,11 +229,11 @@ class GetWalletBalance(Resource):
                 return {"success": False, "data": {"error": user_data["error"]}}, 401
 
             user_id = user_data["user_id"]
-            
-            # Fetch balance from Redis
-            balance = redis_client.get(f"wallet_balance:{user_id}")
-            balance = int(float(balance)) if balance else 0
-            
+            initialize_user_if_not_exists(user_id)
+
+            wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
+            balance = wallet.get("balance", 0) if wallet else 0
+
             return {"success": True, "data": {"balance": balance}}, 200
 
         except Exception as e:
