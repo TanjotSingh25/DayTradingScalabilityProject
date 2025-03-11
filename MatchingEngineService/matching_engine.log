@@ -25314,3 +25314,83 @@
 2025-03-06 18:49:27,073 - INFO - Updated stock balance for user 2: -15509763000 shares of 94261172-4bfd-4a33-986e-8d5b0a3d2412
 2025-03-06 18:49:27,074 - INFO - SELL ORDER: 2 listed 15509763000 shares of 94261172-4bfd-4a33-986e-8d5b0a3d2412 at 140
 2025-03-06 18:49:27,074 - INFO - 172.23.0.13 - - [06/Mar/2025 18:49:27] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-10 18:53:32,564 - INFO - MongoDB connection established successfully.
+2025-03-10 18:53:32,565 - INFO - Redis connection established successfully on Order Service.
+2025-03-10 18:53:32,582 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.22:5300
+2025-03-10 18:53:32,582 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 19:08:03,306 - INFO - Removed stock 3b984637-2461-49ad-913e-7defee04cf5d from user 1's portfolio (qty=0).
+2025-03-10 19:08:03,306 - INFO - Updated stock balance for user 1: -12488000000 shares of 3b984637-2461-49ad-913e-7defee04cf5d
+2025-03-10 19:08:03,307 - INFO - SELL ORDER: 1 listed 12488000000 shares of 3b984637-2461-49ad-913e-7defee04cf5d at 135
+2025-03-10 19:08:03,308 - INFO - 172.23.0.23 - - [10/Mar/2025 19:08:03] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-10 19:08:03,317 - INFO - Removed stock 2eb5123e-0483-4628-b21e-500b95dfe6b3 from user 1's portfolio (qty=0).
+2025-03-10 19:08:03,317 - INFO - Updated stock balance for user 1: -15509763000 shares of 2eb5123e-0483-4628-b21e-500b95dfe6b3
+2025-03-10 19:08:03,318 - INFO - SELL ORDER: 1 listed 15509763000 shares of 2eb5123e-0483-4628-b21e-500b95dfe6b3 at 140
+2025-03-10 19:08:03,318 - INFO - 172.23.0.23 - - [10/Mar/2025 19:08:03] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-10 19:27:55,130 - INFO - MongoDB connection established successfully.
+2025-03-10 19:27:55,130 - INFO - Redis connection established successfully on Order Service.
+2025-03-10 19:27:55,137 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.15:5300
+2025-03-10 19:27:55,137 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 20:07:58,323 - INFO - MongoDB connection established successfully.
+2025-03-10 20:07:58,324 - INFO - Redis connection established successfully on Order Service.
+2025-03-10 20:07:58,331 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.16:5300
+2025-03-10 20:07:58,331 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 20:14:27,770 - INFO - MongoDB connection established successfully.
+2025-03-10 20:14:27,771 - INFO - Redis connection established successfully on Order Service.
+2025-03-10 20:14:27,779 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.15:5300
+2025-03-10 20:14:27,779 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 23:16:17,175 - INFO - MongoDB connection established successfully.
+2025-03-10 23:16:17,176 - INFO - Redis connection established successfully on Order Service.
+2025-03-10 23:16:17,185 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.16:5300
+2025-03-10 23:16:17,185 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 23:22:43,907 - INFO - MongoDB connection established successfully.
+2025-03-10 23:22:43,908 - INFO - Redis connection established successfully on Order Service.
+2025-03-10 23:22:43,930 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.16:5300
+2025-03-10 23:22:43,931 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 23:35:19,740 - INFO - MongoDB connection established successfully.
+2025-03-10 23:35:19,745 - INFO - Redis connection established successfully on Order Service.
+2025-03-10 23:35:19,779 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.16:5300
+2025-03-10 23:35:19,792 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 23:37:40,156 - INFO - Removed stock b553a11e-8e4e-4fd2-97c2-9e3370f69f81 from user 1's portfolio (qty=0).
+2025-03-10 23:37:40,157 - INFO - Updated stock balance for user 1: -12488000000 shares of b553a11e-8e4e-4fd2-97c2-9e3370f69f81
+2025-03-10 23:37:40,158 - INFO - SELL ORDER: 1 listed 12488000000 shares of b553a11e-8e4e-4fd2-97c2-9e3370f69f81 at 135
+2025-03-10 23:37:40,159 - INFO - 172.23.0.21 - - [10/Mar/2025 23:37:40] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-10 23:37:40,172 - INFO - Removed stock 654ad40c-6c9c-4b1f-9624-e25fcac62dec from user 1's portfolio (qty=0).
+2025-03-10 23:37:40,172 - INFO - Updated stock balance for user 1: -15509763000 shares of 654ad40c-6c9c-4b1f-9624-e25fcac62dec
+2025-03-10 23:37:40,173 - INFO - SELL ORDER: 1 listed 15509763000 shares of 654ad40c-6c9c-4b1f-9624-e25fcac62dec at 140
+2025-03-10 23:37:40,173 - INFO - 172.23.0.21 - - [10/Mar/2025 23:37:40] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-10 23:55:35,751 - INFO - MongoDB connection established successfully.
+2025-03-10 23:55:35,753 - INFO - Redis connection established successfully on Order Service.
+2025-03-10 23:55:35,804 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5300
+ * Running on http://172.23.0.17:5300
+2025-03-10 23:55:35,804 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 23:57:50,049 - INFO - Removed stock dbe5585f-1f81-419e-a101-7043b9334659 from user 1's portfolio (qty=0).
+2025-03-10 23:57:50,049 - INFO - Updated stock balance for user 1: -12488000000 shares of dbe5585f-1f81-419e-a101-7043b9334659
+2025-03-10 23:57:50,051 - INFO - SELL ORDER: 1 listed 12488000000 shares of dbe5585f-1f81-419e-a101-7043b9334659 at 135
+2025-03-10 23:57:50,054 - INFO - 172.23.0.27 - - [10/Mar/2025 23:57:50] "POST /placeOrder HTTP/1.1" 200 -
+2025-03-10 23:57:50,069 - INFO - Removed stock de195527-45e7-4247-97e9-03281fbf31ef from user 1's portfolio (qty=0).
+2025-03-10 23:57:50,070 - INFO - Updated stock balance for user 1: -15509763000 shares of de195527-45e7-4247-97e9-03281fbf31ef
+2025-03-10 23:57:50,071 - INFO - SELL ORDER: 1 listed 15509763000 shares of de195527-45e7-4247-97e9-03281fbf31ef at 140
+2025-03-10 23:57:50,073 - INFO - 172.23.0.27 - - [10/Mar/2025 23:57:50] "POST /placeOrder HTTP/1.1" 200 -

@@ -29,10 +29,10 @@ db = SQLAlchemy(app)
 # Configure connection pooling separately
 engine = create_engine(
     app.config['SQLALCHEMY_DATABASE_URI'],
-    pool_size=1000,      
-    max_overflow=1000,   
-    pool_timeout=60,   
-    pool_recycle=900  
+    # pool_size=1000,      
+    # max_overflow=1000,   
+    # pool_timeout=60,   
+    # pool_recycle=900  
 )
 
 # Set up scoped session

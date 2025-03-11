@@ -25,7 +25,7 @@ services:
             - "6381:6379"
         networks:
             - backend
-    
+
     redis_wallet_cache:
         image: redis:latest
         container_name: redis_wallet_cache
@@ -70,93 +70,172 @@ services:
                 "fsync=off", # Disables disk sync (unsafe, but boosts speed)
             ]
 
-    db2:
-        image: postgres:13
-        container_name: postgres_db2
-        environment:
-            POSTGRES_DB: authdb2
-            POSTGRES_USER: admin
-            POSTGRES_PASSWORD: adminpassword
-        ports:
-            - "5434:5432"
+    pgbouncer_db1:
+        image: edoburu/pgbouncer
+        container_name: pgbouncer_db1
+        restart: always
+        depends_on:
+            db1:
+                condition: service_healthy
         volumes:
-            - pgdata2:/var/lib/postgresql/data
+            - ./pgbouncer/pgbouncer_db1.ini:/etc/pgbouncer/pgbouncer.ini:ro
+            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+        environment:
+            - DB_HOST=db1
+            - DATABASES=authdb1=host=db1 port=5432 user=admin password=adminpassword pool_size=100
+        ports:
+            - "6433:6432"
         networks:
             - backend
         healthcheck:
-            test: ["CMD", "pg_isready", "-U", "admin", "-d", "authdb2"]
+            test:
+                [
+                    "CMD",
+                    "pg_isready",
+                    "-U",
+                    "admin",
+                    "-h",
+                    "localhost",
+                    "-p",
+                    "6432",
+                ]
             interval: 5s
-            timeout: 5s
+            timeout: 3s
             retries: 10
-        command: [
-                "postgres",
-                "-c",
-                "max_connections=500", # Reduced this value
-                "-c",
-                "shared_buffers=1GB", # Reduced this value
-                "-c",
-                "work_mem=8MB", # Reduced this value
-                "-c",
-                "effective_cache_size=2GB", # Reduced this value
-                "-c",
-                "synchronous_commit=off", # Improves performance (only for testing!)
-                "-c",
-                "fsync=off", # Disables disk sync (unsafe, but boosts speed)
-            ]
 
-    db3:
-        image: postgres:13
-        container_name: postgres_db3
-        environment:
-            POSTGRES_DB: authdb3
-            POSTGRES_USER: admin
-            POSTGRES_PASSWORD: adminpassword
-        ports:
-            - "5435:5432"
+    pgbouncer_db2:
+        image: edoburu/pgbouncer
+        container_name: pgbouncer_db2
+        restart: always
+        depends_on:
+            db2:
+                condition: service_healthy
         volumes:
-            - pgdata3:/var/lib/postgresql/data
+            - ./pgbouncer/pgbouncer_db2.ini:/etc/pgbouncer/pgbouncer.ini
+            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+        environment:
+            - DB_HOST=db2
+            - DATABASES=authdb2=host=db2 port=5432 user=admin password=adminpassword pool_size=100
+        ports:
+            - "6434:6432"
         networks:
             - backend
         healthcheck:
-            test: ["CMD", "pg_isready", "-U", "admin", "-d", "authdb3"]
+            test:
+                [
+                    "CMD",
+                    "pg_isready",
+                    "-U",
+                    "admin",
+                    "-h",
+                    "localhost",
+                    "-p",
+                    "6432",
+                ]
             interval: 5s
-            timeout: 5s
+            timeout: 3s
             retries: 10
-        command: [
-                "postgres",
-                "-c",
-                "max_connections=500", # Reduced this value
-                "-c",
-                "shared_buffers=1GB", # Reduced this value
-                "-c",
-                "work_mem=8MB", # Reduced this value
-                "-c",
-                "effective_cache_size=2GB", # Reduced this value
-                "-c",
-                "synchronous_commit=off", # Improves performance (only for testing!)
-                "-c",
-                "fsync=off", # Disables disk sync (unsafe, but boosts speed)
-            ]
 
-    # pgbouncer:
-    #     image: edoburu/pgbouncer
-    #     container_name: pgbouncer
-    #     restart: always
-    #     depends_on:
-    #         db:
-    #             condition: service_healthy
-    #     volumes:
-    #         - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
-    #         - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
-    #     environment:
-    #         - DB_HOST=db
-    #         - DATABASES=authdb=host=db port=5432 user=admin password=adminpassword pool_size=100
-    #     ports:
-    #         - "6432:6432" # Expose PgBouncer on port 6432
-    #     networks:
-    #         - backend
+    pgbouncer_db3:
+        image: edoburu/pgbouncer
+        container_name: pgbouncer_db3
+        restart: always
+        depends_on:
+            db3:
+                condition: service_healthy
+        volumes:
+            - ./pgbouncer/pgbouncer_db3.ini:/etc/pgbouncer/pgbouncer.ini
+            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+        environment:
+            - DB_HOST=db3
+            - DATABASES=authdb3=host=db3 port=5432 user=admin password=adminpassword pool_size=100
+        ports:
+            - "6435:6432"
+        networks:
+            - backend
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "pg_isready",
+                    "-U",
+                    "admin",
+                    "-h",
+                    "localhost",
+                    "-p",
+                    "6432",
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 10
 
-    auth_load_balancer:
+    pgbouncer_db4:
+        image: edoburu/pgbouncer
+        container_name: pgbouncer_db4
+        restart: always
+        depends_on:
+            db4:
+                condition: service_healthy
+        volumes:
+            - ./pgbouncer/pgbouncer_db4.ini:/etc/pgbouncer/pgbouncer.ini
+            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+        environment:
+            - DB_HOST=db4
+            - DATABASES=authdb4=host=db4 port=5432 user=admin password=adminpassword pool_size=100
+        ports:
+            - "6436:6432"
+        networks:
+            - backend
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "pg_isready",
+                    "-U",
+                    "admin",
+                    "-h",
+                    "localhost",
+                    "-p",
+                    "6432",
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    pgbouncer_db5:
+        image: edoburu/pgbouncer
+        container_name: pgbouncer_db5
+        restart: always
+        depends_on:
+            db5:
+                condition: service_healthy
+        volumes:
+            - ./pgbouncer/pgbouncer_db5.ini:/etc/pgbouncer/pgbouncer.ini
+            - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+        environment:
+            - DB_HOST=db5
+            - DATABASES=authdb5=host=db5 port=5432 user=admin password=adminpassword pool_size=100
+        ports:
+            - "6437:6432"
+        networks:
+            - backend
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "pg_isready",
+                    "-U",
+                    "admin",
+                    "-h",
+                    "localhost",
+                    "-p",
+                    "6432",
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    auth_load_balancer1:
         build:
             context: .
             dockerfile: auth_load_balancer/Dockerfile
@@ -164,8 +243,55 @@ services:
             - auth_service1
             - auth_service2
             - auth_service3
+            - auth_service4
+            - auth_service5
+            - auth_service6
+            - auth_service7
+            - auth_service8
+            - auth_service9
+            - auth_service10
         ports:
             - "5001:5001"
+        networks:
+            - backend
+
+    auth_load_balancer2:
+        build:
+            context: .
+            dockerfile: auth_load_balancer/Dockerfile
+        depends_on:
+            - auth_service1
+            - auth_service2
+            - auth_service3
+            - auth_service4
+            - auth_service5
+            - auth_service6
+            - auth_service7
+            - auth_service8
+            - auth_service9
+            - auth_service10
+        ports:
+            - "5002:5001" # Expose another instance on port 5002
+        networks:
+            - backend
+
+    auth_load_balancer3:
+        build:
+            context: .
+            dockerfile: auth_load_balancer/Dockerfile
+        depends_on:
+            - auth_service1
+            - auth_service2
+            - auth_service3
+            - auth_service4
+            - auth_service5
+            - auth_service6
+            - auth_service7
+            - auth_service8
+            - auth_service9
+            - auth_service10
+        ports:
+            - "5003:5001" # Expose another instance on port 5003
         networks:
             - backend
 
@@ -178,12 +304,12 @@ services:
         ports:
             - "8004:8000"
         depends_on:
-            db1:
+            pgbouncer_db1:
                 condition: service_healthy
         environment:
             - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
-            - DB_HOST=db1
-            - DB_PORT=5432
+            - DB_HOST=pgbouncer_db1
+            - DB_PORT=6432
             - DB_NAME=authdb1
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
@@ -199,12 +325,12 @@ services:
         ports:
             - "8005:8000"
         depends_on:
-            db2:
+            pgbouncer_db2:
                 condition: service_healthy
         environment:
             - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
-            - DB_HOST=db2
-            - DB_PORT=5432
+            - DB_HOST=pgbouncer_db2
+            - DB_PORT=6432
             - DB_NAME=authdb2
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
@@ -220,13 +346,160 @@ services:
         ports:
             - "8006:8000"
         depends_on:
-            db3:
+            pgbouncer_db3:
                 condition: service_healthy
         environment:
             - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
-            - DB_HOST=db3
-            - DB_PORT=5432
+            - DB_HOST=pgbouncer_db3
+            - DB_PORT=6432
             - DB_NAME=authdb3
+            - DB_USER=admin
+            - DB_PASSWORD=adminpassword
+        networks:
+            - backend
+
+    auth_service4:
+        build:
+            context: .
+            dockerfile: AuthenticationService/Dockerfile
+        volumes:
+            - ./AuthenticationService:/app
+        ports:
+            - "8007:8000"
+        depends_on:
+            pgbouncer_db4:
+                condition: service_healthy
+        environment:
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - DB_HOST=pgbouncer_db4
+            - DB_PORT=6432
+            - DB_NAME=authdb4
+            - DB_USER=admin
+            - DB_PASSWORD=adminpassword
+        networks:
+            - backend
+
+    auth_service5:
+        build:
+            context: .
+            dockerfile: AuthenticationService/Dockerfile
+        volumes:
+            - ./AuthenticationService:/app
+        ports:
+            - "8008:8000"
+        depends_on:
+            pgbouncer_db5:
+                condition: service_healthy
+        environment:
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - DB_HOST=pgbouncer_db5
+            - DB_PORT=6432
+            - DB_NAME=authdb5
+            - DB_USER=admin
+            - DB_PASSWORD=adminpassword
+        networks:
+            - backend
+
+    auth_service6:
+        build:
+            context: .
+            dockerfile: AuthenticationService/Dockerfile
+        volumes:
+            - ./AuthenticationService:/app
+        ports:
+            - "8009:8000"
+        depends_on:
+            pgbouncer_db1:
+                condition: service_healthy
+        environment:
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=pgbouncer_db1
+            - DB_PORT=6432
+            - DB_NAME=authdb1
+            - DB_USER=admin
+            - DB_PASSWORD=adminpassword
+        networks:
+            - backend
+
+    auth_service7:
+        build:
+            context: .
+            dockerfile: AuthenticationService/Dockerfile
+        volumes:
+            - ./AuthenticationService:/app
+        ports:
+            - "8010:8000"
+        depends_on:
+            pgbouncer_db2:
+                condition: service_healthy
+        environment:
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173
+            - DB_HOST=pgbouncer_db2
+            - DB_PORT=6432
+            - DB_NAME=authdb2
+            - DB_USER=admin
+            - DB_PASSWORD=adminpassword
+        networks:
+            - backend
+
+    auth_service8:
+        build:
+            context: .
+            dockerfile: AuthenticationService/Dockerfile
+        volumes:
+            - ./AuthenticationService:/app
+        ports:
+            - "8011:8000"
+        depends_on:
+            pgbouncer_db3:
+                condition: service_healthy
+        environment:
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - DB_HOST=pgbouncer_db3
+            - DB_PORT=6432
+            - DB_NAME=authdb3
+            - DB_USER=admin
+            - DB_PASSWORD=adminpassword
+        networks:
+            - backend
+
+    auth_service9:
+        build:
+            context: .
+            dockerfile: AuthenticationService/Dockerfile
+        volumes:
+            - ./AuthenticationService:/app
+        ports:
+            - "8012:8000"
+        depends_on:
+            pgbouncer_db4:
+                condition: service_healthy
+        environment:
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - DB_HOST=pgbouncer_db4
+            - DB_PORT=6432
+            - DB_NAME=authdb4
+            - DB_USER=admin
+            - DB_PASSWORD=adminpassword
+        networks:
+            - backend
+
+    auth_service10:
+        build:
+            context: .
+            dockerfile: AuthenticationService/Dockerfile
+        volumes:
+            - ./AuthenticationService:/app
+        ports:
+            - "8013:8000"
+        depends_on:
+            pgbouncer_db5:
+                condition: service_healthy
+        environment:
+            - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173 #Maybe
+            - DB_HOST=pgbouncer_db5
+            - DB_PORT=6432
+            - DB_NAME=authdb5
             - DB_USER=admin
             - DB_PASSWORD=adminpassword
         networks:
@@ -312,5 +585,7 @@ volumes:
     pgdata1:
     pgdata2:
     pgdata3:
+    pgdata4:
+    pgdata5:
     mongodb_data:
     mongodbdata:
