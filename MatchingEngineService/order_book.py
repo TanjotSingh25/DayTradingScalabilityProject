@@ -66,6 +66,7 @@ else:
 #         # Create Redis client using the connection pool
 #         redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
 #         #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+#         redis_client.config_set("maxmemory-policy", "noeviction")
 #         logging.info("Redis connection established successfully on Order Service.")
 #         break
 #     except Exception as err:
