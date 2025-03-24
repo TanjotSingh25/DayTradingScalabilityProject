@@ -139,6 +139,91 @@ services:
         networks:
             - backend
 
+    # auth_service6:
+    #     build:
+    #         context: ./AuthenticationServiceGolang
+    #         dockerfile: dockerfile
+    #     restart: always
+    #     depends_on:
+    #         - mongo_auth
+    #         - redis
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - REDIS_HOST=redis_cache
+    #         - REDIS_PORT=6379
+    #         - SECRET_KEY=your_secret
+    #         - DB_NAME=authdb
+    #     networks:
+    #         - backend
+
+    # auth_service7:
+    #     build:
+    #         context: ./AuthenticationServiceGolang
+    #         dockerfile: dockerfile
+    #     restart: always
+    #     depends_on:
+    #         - mongo_auth
+    #         - redis
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - REDIS_HOST=redis_cache
+    #         - REDIS_PORT=6379
+    #         - SECRET_KEY=your_secret
+    #         - DB_NAME=authdb
+    #     networks:
+    #         - backend
+
+    # auth_service8:
+    #     build:
+    #         context: ./AuthenticationServiceGolang
+    #         dockerfile: dockerfile
+    #     restart: always
+    #     depends_on:
+    #         - mongo_auth
+    #         - redis
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - REDIS_HOST=redis_cache
+    #         - REDIS_PORT=6379
+    #         - SECRET_KEY=your_secret
+    #         - DB_NAME=authdb
+    #     networks:
+    #         - backend
+
+    # auth_service9:
+    #     build:
+    #         context: ./AuthenticationServiceGolang
+    #         dockerfile: dockerfile
+    #     restart: always
+    #     depends_on:
+    #         - mongo_auth
+    #         - redis
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - REDIS_HOST=redis_cache
+    #         - REDIS_PORT=6379
+    #         - SECRET_KEY=your_secret
+    #         - DB_NAME=authdb
+    #     networks:
+    #         - backend
+
+    # auth_service10:
+    #     build:
+    #         context: ./AuthenticationServiceGolang
+    #         dockerfile: dockerfile
+    #     restart: always
+    #     depends_on:
+    #         - mongo_auth
+    #         - redis
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - REDIS_HOST=redis_cache
+    #         - REDIS_PORT=6379
+    #         - SECRET_KEY=your_secret
+    #         - DB_NAME=authdb
+    #     networks:
+    #         - backend
+
     # Load Testing Service (Locust)
     locust:
         image: locustio/locust

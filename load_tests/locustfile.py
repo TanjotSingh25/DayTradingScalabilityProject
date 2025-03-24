@@ -5,8 +5,8 @@ class AuthUser(HttpUser):
 
     @task
     def login(self):
-        self.client.post("/login", json={"user_name": "testuser", "password": "password"})
+        self.client.post("/authentication/login", json={"user_name": "testuser", "password": "password"})
 
     @task
     def register(self):
-        self.client.post("/register", json={"user_name": "newuser", "password": "password", "name": "Test User"})
+        self.client.post("/authentication/register", json={"user_name": "newuser", "password": "password", "name": "Test User"})

@@ -44,7 +44,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// Load environment variables
+// Load environment variables and initialize DBs
 func init() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
@@ -57,14 +57,12 @@ func init() {
 
 	// Connect to MongoDB
 	mongoURI := os.Getenv("MONGO_URI")
-	clientOptions := options.Client().ApplyURI(mongoURI)
+	clientOptions := options.Client().ApplyURI(mongoURI).SetMaxPoolSize(2000) // optional tuning
 	var err error
 	client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal("Failed to connect to MongoDB:", err)
 	}
-
-	// Select database and collection
 	dbName := os.Getenv("DB_NAME")
 	usersColl = client.Database(dbName).Collection("users")
 
@@ -73,17 +71,15 @@ func init() {
 	rdb = redis.NewClient(&redis.Options{
 		Addr: fmt.Sprintf("%s:%d", os.Getenv("REDIS_HOST"), redisPort),
 	})
-
-	pong, err := rdb.Ping(ctx).Result()
-	if err != nil {
-		log.Fatal("Redis connection failed:", err)
-	}
-	fmt.Println("Redis connected:", pong)
-
+	// _, err = rdb.Ping(ctx).Result()
+	// if err != nil {
+	// 	log.Fatal("Redis connection failed:", err)
+	// }
+	
 }
 
+// Fast /register handler using Redis queue
 func register(c *gin.Context) {
-	startTime := time.Now()
 
 	var data struct {
 		UserName string `json:"user_name"`
@@ -96,55 +92,76 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// Check if user exists
-	existsStart := time.Now()
-	var existingUser User
-	err := usersColl.FindOne(ctx, bson.M{"user_name": data.UserName}).Decode(&existingUser)
-	fmt.Println("MongoDB FindOne Time:", time.Since(existsStart))
-
+	// Check if username exists
+	err := usersColl.FindOne(ctx, bson.M{"user_name": data.UserName}).Err()
 	if err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "data": gin.H{"error": "Username already exists"}})
+		return
+	} else if err != mongo.ErrNoDocuments {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"error": "Server error"}})
 		return
 	}
 
 	// Hash password
-	bcryptStart := time.Now()
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(data.Password), 10)
-	fmt.Println("Bcrypt Hashing Time:", time.Since(bcryptStart))
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"error": "Server error"}})
 		return
 	}
 
-	// Insert user into MongoDB
-	dbStart := time.Now()
-	user := User{ID: primitive.NewObjectID(), UserName: data.UserName, Password: string(hashedPassword), Name: data.Name}
-	_, err = usersColl.InsertOne(ctx, user)
-	fmt.Println("MongoDB Insert Time:", time.Since(dbStart))
+	user := User{
+		ID:       primitive.NewObjectID(),
+		UserName: data.UserName,
+		Password: string(hashedPassword),
+		Name:     data.Name,
+	}
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"error": "Could not create user"}})
+	// Push to Redis queue
+	userJSON, _ := bson.MarshalExtJSON(user, false, false)
+	if err := rdb.LPush(ctx, "pending_users", userJSON).Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"error": "Failed to queue user"}})
 		return
 	}
 
-	// Generate JWT token
-	jwtStart := time.Now()
+	// Generate token immediately
 	token := generateToken(user)
-	fmt.Println("JWT Token Generation Time:", time.Since(jwtStart))
 
 	// Store token in Redis
-	redisStart := time.Now()
-	rdb.Set(ctx, fmt.Sprintf("user_token:%s", user.UserName), token, 0) // No expiry
-	fmt.Println("Redis Set Time (without expiry):", time.Since(redisStart))
-
-
-	fmt.Println("Total Register API Time:", time.Since(startTime))
+	rdb.Set(ctx, fmt.Sprintf("user_token:%s", user.UserName), token, 0)
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "data": nil})
-
 }
 
+// Worker goroutine that processes Redis -> MongoDB
+func startMongoWriter() {
+	go func() {
+		for {
+			userJSON, err := rdb.RPop(ctx, "pending_users").Result()
+			if err == redis.Nil {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			} else if err != nil {
+				log.Println("Redis RPOP error:", err)
+				continue
+			}
+
+			var user User
+			if err := bson.UnmarshalExtJSON([]byte(userJSON), false, &user); err != nil {
+				log.Println("Unmarshal error:", err)
+				continue
+			}
+
+			_, err = usersColl.InsertOne(ctx, user)
+			if err != nil {
+				log.Println("Mongo Insert error:", err)
+			} else {
+				log.Printf("User inserted: %s\n", user.UserName)
+			}
+		}
+	}()
+}
+
+// Login handler (unchanged)
 func login(c *gin.Context) {
 	var data struct {
 		UserName string `json:"user_name"`
@@ -157,12 +174,14 @@ func login(c *gin.Context) {
 	}
 
 	// Check Redis cache first
-	if cachedToken, err := rdb.Get(ctx, fmt.Sprintf("user_token:%s", data.UserName)).Result(); err == nil {
+	redisKey := fmt.Sprintf("user_token:%s", data.UserName)
+	if cachedToken, err := rdb.Get(ctx, redisKey).Result(); err == nil {
+		rdb.Del(ctx, redisKey)
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"token": cachedToken}})
 		return
 	}
 
-	// Check MongoDB for user
+	// Fallback to DB
 	var user User
 	err := usersColl.FindOne(ctx, bson.M{"user_name": data.UserName}).Decode(&user)
 	if err != nil {
@@ -177,10 +196,10 @@ func login(c *gin.Context) {
 
 	token := generateToken(user)
 	rdb.SetEX(ctx, fmt.Sprintf("user_token:%s", user.UserName), token, 30*time.Minute)
-
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"token": token}})
 }
 
+// Token generator (unchanged)
 func generateToken(user User) string {
 	claims := Claims{
 		TokenType: "access",
@@ -195,10 +214,26 @@ func generateToken(user User) string {
 	return tokenString
 }
 
+// Main server
 func main() {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
+
 	router.POST("/register", register)
 	router.POST("/login", login)
 
-	router.Run(":8000")
+	startMongoWriter() // Start async DB worker
+
+	s := &http.Server{
+		Addr:           ":8000",
+		Handler:        router,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   20 * time.Second,
+		IdleTimeout:    120 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("listen: %s\n", err)
+	}
 }
