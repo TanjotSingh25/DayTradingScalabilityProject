@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -57,7 +57,7 @@ func init() {
 
 	// Connect to MongoDB
 	mongoURI := os.Getenv("MONGO_URI")
-	clientOptions := options.Client().ApplyURI(mongoURI).SetMaxPoolSize(2000) // optional tuning
+	clientOptions := options.Client().ApplyURI(mongoURI).SetMaxPoolSize(2000)
 	var err error
 	client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
@@ -71,16 +71,17 @@ func init() {
 	rdb = redis.NewClient(&redis.Options{
 		Addr: fmt.Sprintf("%s:%d", os.Getenv("REDIS_HOST"), redisPort),
 	})
+	// Optional: Ping Redis
 	// _, err = rdb.Ping(ctx).Result()
 	// if err != nil {
 	// 	log.Fatal("Redis connection failed:", err)
 	// }
-	
+
+	log.SetOutput(io.Discard) // Disable all logging for load test
 }
 
-// Fast /register handler using Redis queue
+// Fast /register handler without password hashing
 func register(c *gin.Context) {
-
 	var data struct {
 		UserName string `json:"user_name"`
 		Password string `json:"password"`
@@ -102,17 +103,11 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(data.Password), 10)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"error": "Server error"}})
-		return
-	}
-
+	// Create user without hashing
 	user := User{
 		ID:       primitive.NewObjectID(),
 		UserName: data.UserName,
-		Password: string(hashedPassword),
+		Password: data.Password, // raw password
 		Name:     data.Name,
 	}
 
@@ -123,13 +118,13 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// Generate token immediately
+	// Generate token
 	token := generateToken(user)
 
-	// Store token in Redis
+	// Optional: Store token in Redis
 	rdb.Set(ctx, fmt.Sprintf("user_token:%s", user.UserName), token, 0)
 
-	c.JSON(http.StatusCreated, gin.H{"success": true, "data": nil})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "data": gin.H{"token": token}})
 }
 
 // Worker goroutine that processes Redis -> MongoDB
@@ -141,27 +136,20 @@ func startMongoWriter() {
 				time.Sleep(100 * time.Millisecond)
 				continue
 			} else if err != nil {
-				log.Println("Redis RPOP error:", err)
 				continue
 			}
 
 			var user User
 			if err := bson.UnmarshalExtJSON([]byte(userJSON), false, &user); err != nil {
-				log.Println("Unmarshal error:", err)
 				continue
 			}
 
-			_, err = usersColl.InsertOne(ctx, user)
-			if err != nil {
-				log.Println("Mongo Insert error:", err)
-			} else {
-				log.Printf("User inserted: %s\n", user.UserName)
-			}
+			_, _ = usersColl.InsertOne(ctx, user)
 		}
 	}()
 }
 
-// Login handler (unchanged)
+// Login handler without bcrypt
 func login(c *gin.Context) {
 	var data struct {
 		UserName string `json:"user_name"`
@@ -173,7 +161,7 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// Check Redis cache first
+	// Check Redis token first
 	redisKey := fmt.Sprintf("user_token:%s", data.UserName)
 	if cachedToken, err := rdb.Get(ctx, redisKey).Result(); err == nil {
 		rdb.Del(ctx, redisKey)
@@ -181,7 +169,7 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// Fallback to DB
+	// Check in DB
 	var user User
 	err := usersColl.FindOne(ctx, bson.M{"user_name": data.UserName}).Decode(&user)
 	if err != nil {
@@ -189,7 +177,8 @@ func login(c *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password)); err != nil {
+	// Plain-text comparison
+	if user.Password != data.Password {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "data": gin.H{"error": "Invalid credentials"}})
 		return
 	}
@@ -222,7 +211,7 @@ func main() {
 	router.POST("/register", register)
 	router.POST("/login", login)
 
-	startMongoWriter() // Start async DB worker
+	startMongoWriter()
 
 	s := &http.Server{
 		Addr:           ":8000",
