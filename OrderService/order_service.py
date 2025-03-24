@@ -8,6 +8,7 @@ import requests
 import uuid
 import datetime
 import time
+import redis
 
 app = Flask(__name__)
 CORS(app)
@@ -42,6 +43,35 @@ for attempt in range(5):
 else:
     logger.error("Failed to connect to MongoDB after multiple attempts. Exiting...")
     raise RuntimeError("MongoDB connection failed after 5 retries.")
+
+# Attempt to connect to Redis
+REDIS_HOST = os.getenv("REDIS_HOST", "redis_stockPrices_cache")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+
+if not REDIS_HOST:
+    raise RuntimeError("REDIS_HOST is not set. Make sure it's defined in docker-compose.yml.")
+if not REDIS_PORT:
+    raise RuntimeError("REDIS_PORT is not set. Make sure it's defined in docker-compose.yml.")
+
+for attempt in range(5):
+    try:
+        # decode = Convert to Python Strings
+        # Create the connection pool with max connections, if there are too many connections,
+        # redis can refuse new connections
+        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=500)
+        # Create Redis client using the connection pool
+        redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
+        #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+        redis_client.config_set("maxmemory-policy", "noeviction")
+        logger.info("Redis connection established successfully on Order Service.")
+        break
+    except Exception as err:
+        print(f"Error Connecting to Redis, retrying. Error: {err}")
+        time.sleep(2)
+    pass
+else:
+    logger.error("Failed to connect to Redis after multiple attempts. Exiting...")
+    raise RuntimeError("Redis connection failed after 5 retries.")
 
 
 # Endpoint of the Matching Engine Service for order matching
@@ -253,20 +283,34 @@ def get_stock_prices():
     if not user_id:
         return jsonify({"success": False, "error": "Missing user ID in token"}), 400
 
-    # Call the Matching Engine /cancelOrder endpoint
-    try:
-        response = requests.get(MATCHING_ENGINE_STOCK_PRICES_URL, json={'user_id': user_id})
-        if response.status_code == 200:
-            matching_result = response.json()
-            code = 200
-        else:
-            matching_result = {"success": False, "error": "Matching Engine error"}
-            code = response.status_code
-    except Exception as e:
-        matching_result = {"success": False, "error": str(e)}
-        code = 500
+    # # Call the Matching Engine /cancelOrder endpoint
+    # try:
+    #     response = requests.get(MATCHING_ENGINE_STOCK_PRICES_URL, json={'user_id': user_id})
+    #     if response.status_code == 200:
+    #         matching_result = response.json()
+    #         code = 200
+    #     else:
+    #         matching_result = {"success": False, "error": "Matching Engine error"}
+    #         code = response.status_code
+    # except Exception as e:
+    #     matching_result = {"success": False, "error": str(e)}
+    #     code = 500
 
-    return jsonify(matching_result), code
+    # return jsonify(matching_result), code
+    try:
+        keys = redis_client.keys("stock:*")
+        stock_prices = []
+        for key in keys:
+            val = redis_client.get(key)
+            if val:
+                stock_prices.append(eval(val))  # or json.loads(val) if stored as JSON
+
+        # Sort by stock name in reverse lex order
+        stock_prices.sort(key=lambda x: x["stock_name"], reverse=True)
+
+        return jsonify({"success": True, "data": stock_prices}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/getWalletTransactions', methods=['GET'])
 def get_wallet_transactions():
