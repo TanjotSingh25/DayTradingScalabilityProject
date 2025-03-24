@@ -86,7 +86,7 @@ class OrderBook:
         # Holds current active stock names; "stock_id" = 'stock_name'
         self.Stock_id_mapped_to_names = {}
 
-    def get_wallet_balance(self, user_id):
+    def get_wallet_balance(self, user_id) -> int:
         """
             Fetches wallet balance from Redis for the given user_id.
             Returns the balance as an integer; if not found, returns 0.
@@ -106,7 +106,7 @@ class OrderBook:
             logging.error(f"Error fetching wallet balance for {user_id}: {e}")
             return 0
 
-    def update_wallet_balance(self, buyer_id, seller_id, trade_value, max_retries=5):
+    def update_wallet_balance(self, buyer_id, seller_id, trade_value, max_retries=5) -> bool:
         """
         Moves 'trade_value' from the buyer's wallet to the seller's wallet in MongoDB's 'wallets' collection.
         
@@ -387,7 +387,7 @@ class OrderBook:
             "stock_tx_id": parent_tx_id
     }
 
-    def _queue_market_buy(self, user_id, price, quantity, order_id, stock_id):
+    def _queue_market_buy(self, user_id, price, quantity, order_id, stock_id) -> None:
         # Helper method to queue leftover market buy orders
         if quantity <= 0:
             return
@@ -401,7 +401,7 @@ class OrderBook:
         logging.info(f"Queued leftover market buy for user: {user_id}: {quantity} shares of {stock_id}")
 
     # gets the stock info from the portflio collectoion in the db mongo
-    def get_user_stock_balance(self, user_id, stock_id):
+    def get_user_stock_balance(self, user_id, stock_id) -> int:
         # Fetches the user's stock balance for a given stock_id from MongoDB portfolios collection
         try:
             user_portfolio = portfolios_collection.find_one(
@@ -419,7 +419,7 @@ class OrderBook:
             logging.error(f"Error fetching stock balance for {user_id}, {stock_id}: {e}")
             return 0
 
-    def update_user_stock_balance(self, user_id, stock_id, quantity):
+    def update_user_stock_balance(self, user_id, stock_id, quantity) -> bool:
         """
         Works for both BUY (quantity>0) and SELL (quantity<0).
         Removes the stock from 'data' if new quantity is 0.
@@ -483,7 +483,7 @@ class OrderBook:
             logging.error(f"Error updating stock balance for user: {user_id}, {stock_id}: {e}")
             return False
 
-    def add_sell_order(self, user_id, stock_id, price, quantity):
+    def add_sell_order(self, user_id, stock_id, price, quantity) -> dict:
         # Add sell order only if have enough quantity
         # Get the user's stock balance (returns an integer)
         stock_balance = self.get_user_stock_balance(user_id, stock_id)
