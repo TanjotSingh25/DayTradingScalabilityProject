@@ -261,7 +261,7 @@ services:
         container_name: mongo_db
         restart: always
         ports:
-            - "27018:27017"
+            - "27019:27017"
         volumes:
             - mongodb_data:/data/db
         environment:
