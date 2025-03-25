@@ -79,7 +79,13 @@ else:
 # Matching engine only handles: BUY, SELL, CANCEL, GETPRICES (getprices connects to redis, and can query without needing matching engine)
 MATCHING_ENGINE_URL = "http://matching_engine_service:5300/placeOrder"
 MATCHING_ENGINE_CANCELLATION_URL = "http://matching_engine_service:5300/cancelOrder"
-MATCHING_ENGINE_STOCK_PRICES_URL = "http://matching_engine_service:5300/getPrices"
+#MATCHING_ENGINE_STOCK_PRICES_URL = "http://matching_engine_service:5300/getPrices"
+
+#second matching engine instance
+MATCHING_ENGINE_URL_2 = "http://matching_engine_service_2:5300/placeOrder"
+MATCHING_ENGINE_CANCELLATION_URL_2 = "http://matching_engine_service_2:5300/cancelOrder"
+
+
 
 # Place new order -- Market Buy, Limit Sell
 # Process order details, communicate with matching engine, store in Orders table, etc.
@@ -129,8 +135,14 @@ def place_stock_order():
     logger.warning(order_payload["order_id"])
 
     # Call the matching engine endpoint
+    # try:
+    #     response = requests.post(MATCHING_ENGINE_URL, json=order_payload)
+    
     try:
-        response = requests.post(MATCHING_ENGINE_URL, json=order_payload)
+        if int(request_data["stock_id"])% 2 == 0:
+            response = requests.post(MATCHING_ENGINE_URL, json=order_payload)
+        else:
+            response = requests.post(MATCHING_ENGINE_URL_2, json=order_payload)
 
         # Check if the response is successful (status code 200)
         if response.status_code == 200:

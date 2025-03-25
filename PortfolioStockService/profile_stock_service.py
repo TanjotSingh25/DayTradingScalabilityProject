@@ -127,7 +127,7 @@ class CreateStock(Resource):
             if stocks_collection.find_one({"stock_name": stock_name}):
                 return {"success": False, "data": {"error": "A stock with this name already exists."}}, 400
 
-            stock_id = get_next_stock_id()
+            stock_id = str(get_next_stock_id())
 
             stock = {
                 "stock_id": stock_id,
