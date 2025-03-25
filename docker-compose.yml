@@ -230,7 +230,7 @@ services:
         volumes:
             - ./MatchingEngineService:/app
         ports:
-            - "5301:5300"
+            - "5307:5300"
         depends_on:
             mongo:
                 condition: service_healthy
@@ -247,7 +247,7 @@ services:
         volumes:
             - ./MatchingEngineService:/app
         ports:
-            - "5302:5300" # Host:Container
+            - "5308:5300" # Host:Container
         depends_on:
             mongo:
                 condition: service_healthy
