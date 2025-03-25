@@ -25,16 +25,6 @@ services:
         networks:
             - backend
 
-    # redis_wallet_cache:
-    #     image: redis:latest
-    #     container_name: redis_wallet_cache
-    #     command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru
-    #     restart: always
-    #     ports:
-    #         - "6382:6379"
-    #     networks:
-    #         - backend
-
     mongo_auth:
         image: mongo:6.0
         container_name: mongo_auth
@@ -239,81 +229,8 @@ services:
         networks:
             - backend
 
-    # order_service1:
-    #     build:
-    #         context: .
-    #         dockerfile: OrderService/Dockerfile
-    #     volumes:
-    #         - ./OrderService:/app
-    #     ports:
-    #         - "5201:5200"
-    #     depends_on:
-    #         matching_engine_service:
-    #             condition: service_started
-    #         mongo:
-    #             condition: service_healthy
-    #     environment:
-    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-    #     networks:
-    #         - backend
-
-    # matching_engine_service:
-    #     build:
-    #         context: .
-    #         dockerfile: MatchingEngineService/Dockerfile
-    #     volumes:
-    #         - ./MatchingEngineService:/app
-    #     ports:
-    #         - "5301:5300"
-    #     depends_on:
-    #         mongo:
-    #             condition: service_healthy
-    #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-    #     networks:
-    #         - backend
-
-    # mongo:
-    #     image: mongo:6.0
-    #     container_name: mongo_db
-    #     restart: always
-    #     ports:
-    #         - "27018:27017"
-    #     volumes:
-    #         - mongodb_data:/data/db
-    #     environment:
-    #         MONGO_INITDB_ROOT_USERNAME: admin
-    #         MONGO_INITDB_ROOT_PASSWORD: adminpassword
-    #     networks:
-    #         - backend
-    #     healthcheck:
-    #         test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
-    #         interval: 10s
-    #         timeout: 5s
-    #         retries: 5
-
-    # portfolio_stock_service1:
-    #     build:
-    #         context: ./PortfolioStockService
-    #     ports:
-    #         - "5001:5000"
-    #     volumes:
-    #         - ./PortfolioStockService:/app
-    #     depends_on:
-    #         mongo:
-    #             condition: service_healthy
-    #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-    #     networks:
-    #         - backend
-
 networks:
     backend:
 
 volumes:
     mongo_auth_data:
-    # mongodb_data:
-    # mongodbdata:

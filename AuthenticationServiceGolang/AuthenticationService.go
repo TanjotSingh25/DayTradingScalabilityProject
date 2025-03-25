@@ -124,7 +124,7 @@ func register(c *gin.Context) {
 	// Optional: Store token in Redis
 	rdb.Set(ctx, fmt.Sprintf("user_token:%s", user.UserName), token, 0)
 
-	c.JSON(http.StatusCreated, gin.H{"success": true, "data": gin.H{"token": token}})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "data": nil})
 }
 
 // Worker goroutine that processes Redis -> MongoDB
