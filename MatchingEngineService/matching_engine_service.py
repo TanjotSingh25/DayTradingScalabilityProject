@@ -94,15 +94,15 @@ def cancel_order():
 
     return {"success" : result, "data": return_message}, code
 
-@app.route('/getPrices', methods=['GET'])
-def getPrices():
-    # this calls orderbookInst to get current prices of each limit sell ticker
-    #logging.info(orderBookInst.sell_orders)
-    #logging.info(orderBookInst.buy_orders)
-    data = request.get_json()
-    result, stock_prices = orderBookInst.find_stock_prices()
+# @app.route('/getPrices', methods=['GET'])
+# def getPrices():
+#     # this calls orderbookInst to get current prices of each limit sell ticker
+#     #logging.info(orderBookInst.sell_orders)
+#     #logging.info(orderBookInst.buy_orders)
+#     data = request.get_json()
+#     result, stock_prices = orderBookInst.find_stock_prices()
 
-    return {"success" : result, "data": stock_prices}, 200
+#     return {"success" : result, "data": stock_prices}, 200
 
 if __name__ == '__main__':
     

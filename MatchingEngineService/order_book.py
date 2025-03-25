@@ -5,6 +5,8 @@ from pymongo import MongoClient, errors, UpdateOne
 import os
 from dotenv import load_dotenv
 from uuid import uuid4
+import redis
+import json
 
 # Load environment variables
 load_dotenv()
@@ -48,33 +50,34 @@ else:
     logging.error("Failed to connect to MongoDB after multiple attempts. Exiting...")
     raise RuntimeError("MongoDB connection failed after 5 retries.")
 
-# # Attempt to connect to Redis
-# REDIS_HOST = os.getenv("REDIS_HOST", "redis_wallet_cache")
-# REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+# Attempt to connect to Redis
+REDIS_HOST = os.getenv("REDIS_HOST", "redis_stockPrices_cache")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
-# if not REDIS_HOST:
-#     raise RuntimeError("REDIS_HOST is not set. Make sure it's defined in docker-compose.yml.")
-# if not REDIS_PORT:
-#     raise RuntimeError("REDIS_PORT is not set. Make sure it's defined in docker-compose.yml.")
+if not REDIS_HOST:
+    raise RuntimeError("REDIS_HOST is not set. Make sure it's defined in docker-compose.yml.")
+if not REDIS_PORT:
+    raise RuntimeError("REDIS_PORT is not set. Make sure it's defined in docker-compose.yml.")
 
-# for attempt in range(5):
-#     try:
-#         # decode = Convert to Python Strings
-#         # Create the connection pool with max connections, if there are too many connections,
-#         # redis can refuse new connections
-#         pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=500)
-#         # Create Redis client using the connection pool
-#         redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
-#         #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-#         logging.info("Redis connection established successfully on Order Service.")
-#         break
-#     except Exception as err:
-#         print(f"Error Connecting to Redis, retrying. Error: {err}")
-#         time.sleep(2)
-#     pass
-# else:
-#     logging.error("Failed to connect to Redis after multiple attempts. Exiting...")
-#     raise RuntimeError("Redis connection failed after 5 retries.")
+for attempt in range(5):
+    try:
+        # decode = Convert to Python Strings
+        # Create the connection pool with max connections, if there are too many connections,
+        # redis can refuse new connections
+        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=500)
+        # Create Redis client using the connection pool
+        redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
+        #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+        redis_client.config_set("maxmemory-policy", "noeviction")
+        logging.info("Redis connection established successfully on Order Service.")
+        break
+    except Exception as err:
+        print(f"Error Connecting to Redis, retrying. Error: {err}")
+        time.sleep(2)
+    pass
+else:
+    logging.error("Failed to connect to Redis after multiple attempts. Exiting...")
+    raise RuntimeError("Redis connection failed after 5 retries.")
 class OrderBook:
     def __init__(self):
         # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
@@ -265,6 +268,8 @@ class OrderBook:
                     self.cur_best_stock_prices[stock_id] = self.sell_orders[stock_id][0]
                 else:
                     del self.cur_best_stock_prices[stock_id]
+                self.update_stock_price_in_redis(stock_id)
+
             # 6. Update buyer's remaining quantity
             remaining_qty -= trade_qty
             
@@ -533,7 +538,7 @@ class OrderBook:
         # Ensure orders are sorted (Lowest price first, FIFO for equal prices)
         self.sell_orders[stock_id].sort(key=lambda x: (x[1], x[3]))
         self.cur_best_stock_prices[stock_id] = self.sell_orders[stock_id][0]
-
+        self.update_stock_price_in_redis(stock_id)
         logging.info(f"SELL ORDER USER: {user_id} listed {quantity} shares of {stock_id} at {price}")
         return {"success": True, "message": "Sell order placed successfully"}
 
@@ -673,6 +678,7 @@ class OrderBook:
                         self.cur_best_stock_prices[cur_stock] = self.sell_orders[cur_stock][0]
                     else:
                         del self.cur_best_stock_prices[cur_stock]
+                    self.update_stock_price_in_redis(cur_stock)
 
         return executed_trades
     
@@ -776,22 +782,40 @@ class OrderBook:
         return True, 200
 
 
-    def find_stock_prices(self):
-        stock_prices = []
+    def update_stock_price_in_redis(self, stock_id):
+        if stock_id in self.cur_best_stock_prices:
+            price_info = self.cur_best_stock_prices[stock_id]
+            if stock_id not in self.Stock_id_mapped_to_names:
+                stock_doc = stocks_collection.find_one({"stock_id": stock_id}, {"stock_name": 1})
+                self.Stock_id_mapped_to_names[stock_id] = stock_doc.get("stock_name", "Unknown") if stock_doc else "Unknown"
+            stock_name = self.Stock_id_mapped_to_names[stock_id]
 
-        for ticker, lowest_price in self.cur_best_stock_prices.items():
-            # Retrieve stock name if not already stored
-            if ticker not in self.Stock_id_mapped_to_names:
-                stock_doc = stocks_collection.find_one({"stock_id": ticker})
-                self.Stock_id_mapped_to_names[ticker] = stock_doc.get("stock_name", "Unknown") if stock_doc else "Unknown"
+            data = {
+                "stock_id": stock_id,
+                "stock_name": stock_name,
+                "current_price": price_info[1]  # price is at index 1
+            }
+            #redis_client.set(f"stock:{stock_id}", str(data))
+            redis_client.set(f"stock:{stock_id}", json.dumps(data))
+        else:
+            redis_client.delete(f"stock:{stock_id}")
 
-            stock_prices.append({
-                "stock_id": ticker,
-                "stock_name": self.Stock_id_mapped_to_names[ticker],
-                "current_price": lowest_price
-            })
+    # def find_stock_prices(self):
+    #     stock_prices = []
 
-        # Sort by stock name in descending lexicographical order
-        stock_prices.sort(key=lambda x: x["stock_name"], reverse=True)
+    #     for ticker, lowest_price in self.cur_best_stock_prices.items():
+    #         # Retrieve stock name if not already stored
+    #         if ticker not in self.Stock_id_mapped_to_names:
+    #             stock_doc = stocks_collection.find_one({"stock_id": ticker})
+    #             self.Stock_id_mapped_to_names[ticker] = stock_doc.get("stock_name", "Unknown") if stock_doc else "Unknown"
 
-        return True, stock_prices
+    #         stock_prices.append({
+    #             "stock_id": ticker,
+    #             "stock_name": self.Stock_id_mapped_to_names[ticker],
+    #             "current_price": lowest_price
+    #         })
+
+    #     # Sort by stock name in descending lexicographical order
+    #     stock_prices.sort(key=lambda x: x["stock_name"], reverse=True)
+
+    #     return True, stock_prices

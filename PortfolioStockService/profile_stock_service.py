@@ -22,6 +22,7 @@ if not MONGO_URI:
 try:
     client = MongoClient(MONGO_URI)
     db = client["trading_system"]
+    counters_collection = db["counters"]
     stocks_collection = db["stocks"]
     portfolios_collection = db["portfolios"]
     wallets_collection = db["wallets"]
@@ -96,6 +97,16 @@ def initialize_user_if_not_exists(user_id):
         upsert=True
     )
 
+# increment stock id by 1 each time a new one is created
+def get_next_stock_id():
+    result = counters_collection.find_one_and_update(
+        {"_id": "stock_id"},
+        {"$inc": {"sequence_value": 1}},
+        upsert=True,
+        return_document=True
+    )
+    return result["sequence_value"]
+
 # -----------------------
 # Stock Management APIs
 # -----------------------
@@ -112,19 +123,23 @@ class CreateStock(Resource):
                 return {"success": False, "data": {"error": "Missing stock_name"}}, 400
 
             stock_name = data["stock_name"].strip()
-            
-            # Check if stock with the same name already exists
+
             if stocks_collection.find_one({"stock_name": stock_name}):
                 return {"success": False, "data": {"error": "A stock with this name already exists."}}, 400
 
-            stock_id = str(uuid.uuid4())
-            stock = {"stock_id": stock_id, "stock_name": stock_name}
+            stock_id = str(get_next_stock_id())
+
+            stock = {
+                "stock_id": stock_id,
+                "stock_name": stock_name
+            }
             stocks_collection.insert_one(stock)
 
             return {"success": True, "data": {"stock_id": stock_id}}, 201
 
         except Exception as e:
             return {"success": False, "data": {"error": str(e)}}, 500
+
 
 class AddStockToUser(Resource):
     def post(self):
