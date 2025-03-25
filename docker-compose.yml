@@ -306,7 +306,7 @@ services:
             - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
-            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
             - DB_NAME=authdb
         networks:
             - backend
@@ -323,7 +323,7 @@ services:
             - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
-            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
             - DB_NAME=authdb
         networks:
             - backend
@@ -340,7 +340,7 @@ services:
             - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
-            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
             - DB_NAME=authdb
         networks:
             - backend
@@ -357,7 +357,7 @@ services:
             - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
-            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
             - DB_NAME=authdb
         networks:
             - backend
@@ -374,7 +374,7 @@ services:
             - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
-            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
             - DB_NAME=authdb
         networks:
             - backend
@@ -392,7 +392,7 @@ services:
     #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
     #         - DB_NAME=authdb
     #     networks:
     #         - backend
@@ -409,7 +409,7 @@ services:
     #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
     #         - DB_NAME=authdb
     #     networks:
     #         - backend
@@ -426,7 +426,7 @@ services:
     #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
     #         - DB_NAME=authdb
     #     networks:
     #         - backend
@@ -443,7 +443,7 @@ services:
     #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
     #         - DB_NAME=authdb
     #     networks:
     #         - backend
@@ -460,7 +460,7 @@ services:
     #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl-^s84djzyn5ws6vt7@&h!tpxf)p05t#
+    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
     #         - DB_NAME=authdb
     #     networks:
     #         - backend
