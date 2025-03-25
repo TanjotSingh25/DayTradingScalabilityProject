@@ -20,17 +20,17 @@ services:
             - order_service1
             - order_service2
             - order_service3
-            - order_service4
-            - order_service5
-            - order_service6
-            - order_service7
-            - order_service8
+            # - order_service4
+            # - order_service5
+            # - order_service6
+            # - order_service7
+            # - order_service8
             - matching_engine_service
             - matching_engine_service_2
             - portfolio_stock_service1
             - portfolio_stock_service2
-            - portfolio_stock_service3
-            - portfolio_stock_service4
+            # - portfolio_stock_service3
+            # - portfolio_stock_service4
         networks:
             - backend
 
