@@ -937,6 +937,7 @@ services:
             - backend
 
     matching_engine_service:
+        cpus: "2.0"
         build:
             context: .
             dockerfile: MatchingEngineService/Dockerfile
@@ -953,6 +954,7 @@ services:
             - backend
 
     matching_engine_service_2:
+        cpus: "2.0"
         build:
             context: .
             dockerfile: MatchingEngineService/Dockerfile
