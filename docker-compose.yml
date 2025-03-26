@@ -260,29 +260,10 @@ services:
         image: mongo:6.0
         container_name: mongo_db
         restart: always
-        # ports:
-        #     - "27020:27017"
+        ports:
+            - "27020:27017"
         volumes:
             - mongodb_data:/data/db
-        environment:
-            MONGO_INITDB_ROOT_USERNAME: admin
-            MONGO_INITDB_ROOT_PASSWORD: adminpassword
-        networks:
-            - backend
-        healthcheck:
-            test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-
-    mongo_auth:
-        image: mongo:6.0
-        container_name: mongo_auth
-        restart: always
-        # ports:
-        #     - "27019:27017"
-        volumes:
-            - mongo_auth_data:/data/db
         environment:
             MONGO_INITDB_ROOT_USERNAME: admin
             MONGO_INITDB_ROOT_PASSWORD: adminpassword
@@ -300,10 +281,10 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
@@ -317,10 +298,10 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
@@ -334,10 +315,10 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
@@ -351,10 +332,10 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
@@ -368,117 +349,16 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
             - DB_NAME=authdb
         networks:
             - backend
-
-    #
-    # auth_service6:
-    #     build:
-    #         context: ./AuthenticationServiceGolang
-    #         dockerfile: dockerfile
-    #     restart: always
-    #     depends_on:
-    #         - mongo_auth
-    #         - redis
-    #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
-    #         - REDIS_HOST=redis_cache
-    #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
-    #         - DB_NAME=authdb
-    #     networks:
-    #         - backend
-    #
-    # auth_service7:
-    #     build:
-    #         context: ./AuthenticationServiceGolang
-    #         dockerfile: dockerfile
-    #     restart: always
-    #     depends_on:
-    #         - mongo_auth
-    #         - redis
-    #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
-    #         - REDIS_HOST=redis_cache
-    #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
-    #         - DB_NAME=authdb
-    #     networks:
-    #         - backend
-
-    # auth_service8:
-    #     build:
-    #         context: ./AuthenticationServiceGolang
-    #         dockerfile: dockerfile
-    #     restart: always
-    #     depends_on:
-    #         - mongo_auth
-    #         - redis
-    #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
-    #         - REDIS_HOST=redis_cache
-    #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
-    #         - DB_NAME=authdb
-    #     networks:
-    #         - backend
-
-    # auth_service9:
-    #     build:
-    #         context: ./AuthenticationServiceGolang
-    #         dockerfile: dockerfile
-    #     restart: always
-    #     depends_on:
-    #         - mongo_auth
-    #         - redis
-    #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
-    #         - REDIS_HOST=redis_cache
-    #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
-    #         - DB_NAME=authdb
-    #     networks:
-    #         - backend
-
-    # auth_service10:
-    #     build:
-    #         context: ./AuthenticationServiceGolang
-    #         dockerfile: dockerfile
-    #     restart: always
-    #     depends_on:
-    #         - mongo_auth
-    #         - redis
-    #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
-    #         - REDIS_HOST=redis_cache
-    #         - REDIS_PORT=6379
-    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
-    #         - DB_NAME=authdb
-    #     networks:
-    #         - backend
-    #
-
-    # locust:
-    #     image: locustio/locust
-    #     container_name: locust
-    #     volumes:
-    #         - ./load_tests:/mnt/locust
-    #     ports:
-    #         - "8089:8089"
-    #     command: >
-    #         -f /mnt/locust/locustfile.py --host=http://nginx:8080 --users 5000 --spawn-rate 500 --run-time 10m
-    #     depends_on:
-    #         - nginx
-    #     networks:
-    #         - backend
 
     portfolio_stock_service1:
         build:
@@ -544,6 +424,4 @@ networks:
     backend:
 
 volumes:
-    mongo_auth_data:
     mongodb_data:
-    mongodbdata:
