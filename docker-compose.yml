@@ -50,7 +50,7 @@ services:
         command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru
         restart: always
         ports:
-            - "6382:6379"
+            - "6383:6379"
         networks:
             - backend
 
