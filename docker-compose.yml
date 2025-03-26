@@ -18,19 +18,19 @@ services:
             # - auth_service9
             # - auth_service10
             - order_service1
-            - order_service2
-            - order_service3
-            - order_service4
-            - order_service5
-            - order_service6
-            - order_service7
-            - order_service8
+            # - order_service2
+            # - order_service3
+            # - order_service4
+            # - order_service5
+            # - order_service6
+            # - order_service7
+            # - order_service8
             - matching_engine_service
             - matching_engine_service_2
             - portfolio_stock_service1
-            - portfolio_stock_service2
-            - portfolio_stock_service3
-            - portfolio_stock_service4
+            # - portfolio_stock_service2
+            # - portfolio_stock_service3
+            # - portfolio_stock_service4
         networks:
             - backend
 
@@ -75,152 +75,152 @@ services:
         networks:
             - backend
 
-    order_service2:
-        build:
-            context: .
-            dockerfile: OrderService/Dockerfile
-        volumes:
-            - ./OrderService:/app
-        ports:
-            - "5202:5200"
-        depends_on:
-            matching_engine_service:
-                condition: service_started
-            mongo:
-                condition: service_healthy
-        environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+    # order_service2:
+    #     build:
+    #         context: .
+    #         dockerfile: OrderService/Dockerfile
+    #     volumes:
+    #         - ./OrderService:/app
+    #     # ports:
+    #     #     - "5202:5200"
+    #     depends_on:
+    #         matching_engine_service:
+    #             condition: service_started
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
-    order_service3:
-        build:
-            context: .
-            dockerfile: OrderService/Dockerfile
-        volumes:
-            - ./OrderService:/app
-        ports:
-            - "5203:5200"
-        depends_on:
-            matching_engine_service:
-                condition: service_started
-            mongo:
-                condition: service_healthy
-        environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+    # order_service3:
+    #     build:
+    #         context: .
+    #         dockerfile: OrderService/Dockerfile
+    #     volumes:
+    #         - ./OrderService:/app
+    #     # ports:
+    #     #     - "5203:5200"
+    #     depends_on:
+    #         matching_engine_service:
+    #             condition: service_started
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
-    order_service4:
-        build:
-            context: .
-            dockerfile: OrderService/Dockerfile
-        volumes:
-            - ./OrderService:/app
-        ports:
-            - "5204:5200"
-        depends_on:
-            matching_engine_service:
-                condition: service_started
-            mongo:
-                condition: service_healthy
-        environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+    # order_service4:
+    #     build:
+    #         context: .
+    #         dockerfile: OrderService/Dockerfile
+    #     volumes:
+    #         - ./OrderService:/app
+    #     ports:
+    #         - "5204:5200"
+    #     depends_on:
+    #         matching_engine_service:
+    #             condition: service_started
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
-    order_service5:
-        build:
-            context: .
-            dockerfile: OrderService/Dockerfile
-        volumes:
-            - ./OrderService:/app
-        ports:
-            - "5205:5200"
-        depends_on:
-            matching_engine_service:
-                condition: service_started
-            mongo:
-                condition: service_healthy
-        environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+    # order_service5:
+    #     build:
+    #         context: .
+    #         dockerfile: OrderService/Dockerfile
+    #     volumes:
+    #         - ./OrderService:/app
+    #     ports:
+    #         - "5205:5200"
+    #     depends_on:
+    #         matching_engine_service:
+    #             condition: service_started
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
-    order_service6:
-        build:
-            context: .
-            dockerfile: OrderService/Dockerfile
-        volumes:
-            - ./OrderService:/app
-        ports:
-            - "5206:5200"
-        depends_on:
-            matching_engine_service:
-                condition: service_started
-            mongo:
-                condition: service_healthy
-        environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+    # order_service6:
+    #     build:
+    #         context: .
+    #         dockerfile: OrderService/Dockerfile
+    #     volumes:
+    #         - ./OrderService:/app
+    #     ports:
+    #         - "5206:5200"
+    #     depends_on:
+    #         matching_engine_service:
+    #             condition: service_started
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
-    order_service7:
-        build:
-            context: .
-            dockerfile: OrderService/Dockerfile
-        volumes:
-            - ./OrderService:/app
-        ports:
-            - "5207:5200"
-        depends_on:
-            matching_engine_service:
-                condition: service_started
-            mongo:
-                condition: service_healthy
-        environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+    # order_service7:
+    #     build:
+    #         context: .
+    #         dockerfile: OrderService/Dockerfile
+    #     volumes:
+    #         - ./OrderService:/app
+    #     ports:
+    #         - "5207:5200"
+    #     depends_on:
+    #         matching_engine_service:
+    #             condition: service_started
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
-    order_service8:
-        build:
-            context: .
-            dockerfile: OrderService/Dockerfile
-        volumes:
-            - ./OrderService:/app
-        ports:
-            - "5208:5200"
-        depends_on:
-            matching_engine_service:
-                condition: service_started
-            mongo:
-                condition: service_healthy
-        environment:
-            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+    # order_service8:
+    #     build:
+    #         context: .
+    #         dockerfile: OrderService/Dockerfile
+    #     volumes:
+    #         - ./OrderService:/app
+    #     ports:
+    #         - "5208:5200"
+    #     depends_on:
+    #         matching_engine_service:
+    #             condition: service_started
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
     matching_engine_service:
         build:
@@ -273,35 +273,16 @@ services:
             timeout: 5s
             retries: 5
 
-    mongo_auth:
-        image: mongo:6.0
-        container_name: mongo_auth
-        restart: always
-        ports:
-            - "27019:27017"
-        volumes:
-            - mongo_auth_data:/data/db
-        environment:
-            MONGO_INITDB_ROOT_USERNAME: admin
-            MONGO_INITDB_ROOT_PASSWORD: adminpassword
-        networks:
-            - backend
-        healthcheck:
-            test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-
     auth_service1:
         build:
             context: ./AuthenticationServiceGolang
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=your_secret
@@ -315,10 +296,10 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=your_secret
@@ -332,10 +313,10 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=your_secret
@@ -349,10 +330,10 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=your_secret
@@ -366,10 +347,10 @@ services:
             dockerfile: dockerfile
         restart: always
         depends_on:
-            - mongo_auth
+            - mongo
             - redis
         environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+            - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
             - REDIS_HOST=redis_cache
             - REDIS_PORT=6379
             - SECRET_KEY=your_secret
@@ -384,10 +365,10 @@ services:
     #         dockerfile: dockerfile
     #     restart: always
     #     depends_on:
-    #         - mongo_auth
+    #         - mongo
     #         - redis
     #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
     #         - SECRET_KEY=your_secret
@@ -401,10 +382,10 @@ services:
     #         dockerfile: dockerfile
     #     restart: always
     #     depends_on:
-    #         - mongo_auth
+    #         - mongo
     #         - redis
     #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
     #         - SECRET_KEY=your_secret
@@ -418,10 +399,10 @@ services:
     #         dockerfile: dockerfile
     #     restart: always
     #     depends_on:
-    #         - mongo_auth
+    #         - mongo
     #         - redis
     #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
     #         - SECRET_KEY=your_secret
@@ -435,10 +416,10 @@ services:
     #         dockerfile: dockerfile
     #     restart: always
     #     depends_on:
-    #         - mongo_auth
+    #         - mongo
     #         - redis
     #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
     #         - SECRET_KEY=your_secret
@@ -452,10 +433,10 @@ services:
     #         dockerfile: dockerfile
     #     restart: always
     #     depends_on:
-    #         - mongo_auth
+    #         - mongo
     #         - redis
     #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_auth:27017/authdb?authSource=admin
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo_db:27017/authdb?authSource=admin
     #         - REDIS_HOST=redis_cache
     #         - REDIS_PORT=6379
     #         - SECRET_KEY=your_secret
@@ -493,20 +474,20 @@ services:
         networks:
             - backend
 
-    portfolio_stock_service2:
-        build:
-            context: ./PortfolioStockService
-        ports:
-            - "5002:5000"
-        volumes:
-            - ./PortfolioStockService:/app
-        depends_on:
-            mongo:
-                condition: service_healthy
-        environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-        networks:
-            - backend
+    # portfolio_stock_service2:
+    #     build:
+    #         context: ./PortfolioStockService
+    #     # ports:
+    #     #     - "5002:5000"
+    #     volumes:
+    #         - ./PortfolioStockService:/app
+    #     depends_on:
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
     portfolio_stock_service3:
         build:
@@ -542,6 +523,4 @@ networks:
     backend:
 
 volumes:
-    mongo_auth_data:
     mongodb_data:
-    mongodbdata:
