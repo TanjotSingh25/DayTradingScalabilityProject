@@ -222,6 +222,7 @@ services:
     #     networks:
     #         - backend
 
+    # Increase cpu with matching engine and mongodb
     matching_engine_service:
         cpus: "2.0"
         build:
@@ -256,6 +257,7 @@ services:
         networks:
             - backend
 
+    # set cpu to 2
     mongo:
         image: mongo:6.0
         container_name: mongo_db
@@ -274,6 +276,7 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
+        command: ["mongod", "--quiet"] # Reduce verbosity with quiet mode
 
     auth_service1:
         build:

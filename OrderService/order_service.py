@@ -27,7 +27,7 @@ if not MONGO_URI:
 for attempt in range(5):
     try:
         # 1.5 minutes
-        client = MongoClient(MONGO_URI, maxPoolSize=250, minPoolSize=50, maxIdleTimeMS=90000)
+        client = MongoClient(MONGO_URI, maxPoolSize=500, minPoolSize=250, maxIdleTimeMS=90000)
         db = client["trading_system"]
         # MongoDB collections
         wallets_collection = db["wallets"]
