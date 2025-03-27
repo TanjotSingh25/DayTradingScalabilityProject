@@ -31,7 +31,7 @@ for attempt in range(max_retries):
         # Initialize to mongodb client, and to the collections
         db = client["trading_system"]
         portfolios_collection = db["portfolios"]
-        wallets_collection = db["wallets"]
+        #wallets_collection = db["wallets"]
         # New collection for transactions
         stock_transactions_collection = db["stock_transactions"]
         wallet_transactions_collection = db["wallets_transaction"]
@@ -78,6 +78,31 @@ for attempt in range(5):
 else:
     logging.error("Failed to connect to Redis after multiple attempts. Exiting...")
     raise RuntimeError("Redis connection failed after 5 retries.")
+
+#redis code for walletCollection
+# Attempt to connect to Redis (wallet balances)
+REDIS_WALLET_HOST = os.getenv("REDIS_WALLET_HOST", "redis_wallet_balance")
+REDIS_WALLET_PORT = int(os.getenv("REDIS_WALLET_PORT", 6379))
+
+for attempt in range(5):
+    try:
+        wallet_pool = redis.ConnectionPool(
+            host=REDIS_WALLET_HOST,
+            port=REDIS_WALLET_PORT,
+            db=0,
+            max_connections=500,
+            decode_responses=True
+        )
+        redis_wallet = redis.StrictRedis(connection_pool=wallet_pool)
+        redis_wallet.config_set("maxmemory-policy", "noeviction")
+        logging.info("Redis Wallet connection established successfully.")
+        break
+    except Exception as err:
+        print(f"Error Connecting to Redis Wallet, retrying. Error: {err}")
+        time.sleep(2)
+else:
+    logging.error("Failed to connect to Redis Wallet after multiple attempts. Exiting...")
+    raise RuntimeError("Redis Wallet connection failed after 5 retries.")
 class OrderBook:
     def __init__(self):
         # self.buy_orders[stock_id].append([user_id, price, quantity, datetime.now(), order_id])
@@ -94,81 +119,100 @@ class OrderBook:
             Fetches wallet balance from Redis for the given user_id.
             Returns the balance as an integer; if not found, returns 0.
         """
-        # try:
-        #     balance = redis_client.get(f"wallet_balance:{user_id}")
-        #     return int(float(balance)) if balance else 0
-        # except Exception as e:
-        #     logging.error(f"Error fetching wallet balance for {user_id}: {e}")
-        #     return 0
         try:
-            doc = wallets_collection.find_one({"user_id": user_id}, {"balance": 1, "_id": 0})
-            if not doc:
-                return 0
-            return doc.get("balance", 0)
+            balance = redis_wallet.get(f"wallet:{user_id}")
+            return int(float(balance)) if balance else 0
         except Exception as e:
             logging.error(f"Error fetching wallet balance for {user_id}: {e}")
             return 0
-
-    def update_wallet_balance(self, buyer_id, seller_id, trade_value, max_retries=5):
-        """
-        Moves 'trade_value' from the buyer's wallet to the seller's wallet in MongoDB's 'wallets' collection.
+        # try:
+        #     doc = wallets_collection.find_one({"user_id": user_id}, {"balance": 1, "_id": 0})
+        #     if not doc:
+        #         return 0
+        #     return doc.get("balance", 0)
+        # except Exception as e:
+        #     logging.error(f"Error fetching wallet balance for {user_id}: {e}")
+        #     return 0
         
-        Steps:
-        1 & 3) Fetch buyer & seller docs in one query.
-        5) Use a single bulk upsert operation for updated balances.
-        (No funds check. We always move 'trade_value'.)
-        """
-        for attempt in range(max_retries):
-            try:
-                # Fetch both docs in ONE query
-                # This returns up to two documents with fields: {user_id, balance}
-                docs = list(wallets_collection.find(
-                    {"user_id": {"$in": [buyer_id, seller_id]}},
-                    {"user_id": 1, "balance": 1, "_id": 0}
-                ))
-
-                # Initialize buyer/seller balances to 0
-                buyer_balance = 0
-                seller_balance = 0
-
-                # Parse each doc from the query
-                for doc in docs:
-                    if doc["user_id"] == buyer_id:
-                        buyer_balance = doc.get("balance", 0)
-                    elif doc["user_id"] == seller_id:
-                        seller_balance = doc.get("balance", 0)
-
-                # Compute new balances
-                new_buyer_balance = buyer_balance - trade_value
-                new_seller_balance = seller_balance + trade_value
-
-                # Single bulk update for buyer/seller
-                ops = [
-                    UpdateOne(
-                        {"user_id": buyer_id},
-                        {"$set": {"balance": new_buyer_balance}},
-                        upsert=True
-                    ),
-                    UpdateOne(
-                        {"user_id": seller_id},
-                        {"$set": {"balance": new_seller_balance}},
-                        upsert=True
-                    )
-                ]
-                wallets_collection.bulk_write(ops)
-
-                logging.info(f"[Mongo] Moved {trade_value} from buyer={buyer_id} to seller={seller_id}")
-                return True
-
-            except Exception as e:
-                logging.warning(f"Error on attempt {attempt+1}/{max_retries} updating wallet: {e}")
-                time.sleep(1)
-
-        logging.error(f"Failed to update wallet after {max_retries} attempts (buyer={buyer_id}, seller={seller_id})")
-        return False
-
+    # def update_wallet_balance(self, buyer_id, seller_id, trade_value, max_retries=5):
+    #     """
+    #     Moves 'trade_value' from the buyer's wallet to the seller's wallet in MongoDB's 'wallets' collection.
         
+    #     Steps:
+    #     1 & 3) Fetch buyer & seller docs in one query.
+    #     5) Use a single bulk upsert operation for updated balances.
+    #     (No funds check. We always move 'trade_value'.)
+    #     """
+    #     for attempt in range(max_retries):
+    #         try:
+    #             # Fetch both docs in ONE query
+    #             # This returns up to two documents with fields: {user_id, balance}
+    #             docs = list(wallets_collection.find(
+    #                 {"user_id": {"$in": [buyer_id, seller_id]}},
+    #                 {"user_id": 1, "balance": 1, "_id": 0}
+    #             ))
 
+    #             # Initialize buyer/seller balances to 0
+    #             buyer_balance = 0
+    #             seller_balance = 0
+
+    #             # Parse each doc from the query
+    #             for doc in docs:
+    #                 if doc["user_id"] == buyer_id:
+    #                     buyer_balance = doc.get("balance", 0)
+    #                 elif doc["user_id"] == seller_id:
+    #                     seller_balance = doc.get("balance", 0)
+
+    #             # Compute new balances
+    #             new_buyer_balance = buyer_balance - trade_value
+    #             new_seller_balance = seller_balance + trade_value
+
+    #             # Single bulk update for buyer/seller
+    #             ops = [
+    #                 UpdateOne(
+    #                     {"user_id": buyer_id},
+    #                     {"$set": {"balance": new_buyer_balance}},
+    #                     upsert=True
+    #                 ),
+    #                 UpdateOne(
+    #                     {"user_id": seller_id},
+    #                     {"$set": {"balance": new_seller_balance}},
+    #                     upsert=True
+    #                 )
+    #             ]
+    #             wallets_collection.bulk_write(ops)
+
+    #             logging.info(f"[Mongo] Moved {trade_value} from buyer={buyer_id} to seller={seller_id}")
+    #             return True
+
+    #         except Exception as e:
+    #             logging.warning(f"Error on attempt {attempt+1}/{max_retries} updating wallet: {e}")
+    #             time.sleep(1)
+
+    #     logging.error(f"Failed to update wallet after {max_retries} attempts (buyer={buyer_id}, seller={seller_id})")
+    #     return False
+
+    def update_wallet_balance(self, buyer_id, seller_id, trade_value):
+        """
+        Moves 'trade_value' from buyer to seller using Redis incrbyfloat.
+        No funds check — value is always moved.
+        """
+        try:
+            buyer_key = f"wallet:{buyer_id}"
+            seller_key = f"wallet:{seller_id}"
+
+            pipe = redis_wallet.pipeline()
+            pipe.incrbyfloat(f"wallet:{buyer_id}", -trade_value)
+            pipe.incrbyfloat(f"wallet:{seller_id}", trade_value)
+            pipe.execute()
+
+            logging.info(f"[Redis] Moved {trade_value} from buyer={buyer_id} to seller={seller_id}")
+            return True
+
+        except Exception as e:
+            logging.error(f"Error updating Redis wallet balances: {e}")
+            return False
+        
     def add_buy_order(self, user_id, stock_id, price, quantity):
         """
         Handles a MARKET BUY order in a loop, allowing partial fills.

@@ -20,7 +20,7 @@ services:
             - order_service1
             - order_service2
             - order_service3
-            # - order_service4
+            - order_service4
             # - order_service5
             # - order_service6
             # - order_service7
@@ -51,6 +51,16 @@ services:
         restart: always
         # ports:
         #     - "6383:6379"
+        networks:
+            - backend
+        
+    redis_wallet_balance:
+        image: redis:latest
+        container_name: redis_wallet_balance
+        command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru
+        restart: always
+        # ports:
+        #     - "6379:6379"
         networks:
             - backend
 
@@ -91,6 +101,8 @@ services:
         environment:
             - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
             - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+            - MATCHING_ENGINE_URL_2 = "http://matching_engine_service_2:5300/placeOrder"
+            - MATCHING_ENGINE_CANCELLATION_URL_2 = "http://matching_engine_service_2:5300/cancelOrder"
             - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
         networks:
@@ -117,26 +129,26 @@ services:
         networks:
             - backend
 
-    # order_service4:
-    #     build:
-    #         context: .
-    #         dockerfile: OrderService/Dockerfile
-    #     volumes:
-    #         - ./OrderService:/app
-    #     # ports:
-    #     #     - "5204:5200"
-    #     depends_on:
-    #         matching_engine_service:
-    #             condition: service_started
-    #         mongo:
-    #             condition: service_healthy
-    #     environment:
-    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-    #     networks:
-    #         - backend
+    order_service4:
+        build:
+            context: .
+            dockerfile: OrderService/Dockerfile
+        volumes:
+            - ./OrderService:/app
+        # ports:
+        #     - "5204:5200"
+        depends_on:
+            matching_engine_service:
+                condition: service_started
+            mongo:
+                condition: service_healthy
+        environment:
+            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+        networks:
+            - backend
 
     # order_service5:
     #     build:

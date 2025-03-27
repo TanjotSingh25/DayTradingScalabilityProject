@@ -8,6 +8,7 @@ import os
 import uuid
 import jwt
 import json
+import redis
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -25,16 +26,35 @@ try:
     counters_collection = db["counters"]
     stocks_collection = db["stocks"]
     portfolios_collection = db["portfolios"]
-    wallets_collection = db["wallets"]
+    # wallets_collection = db["wallets"]
 
     # Ensure necessary indexes for faster lookups
     stocks_collection.create_index("stock_id", unique=True)
     stocks_collection.create_index("stock_name", unique=True)  # Prevent duplicate stock names
     portfolios_collection.create_index("user_id", unique=True)
-    wallets_collection.create_index("user_id", unique=True)
+    # wallets_collection.create_index("user_id", unique=True)
 
 except errors.ConnectionFailure:
     print("Error: Unable to connect to MongoDB. Ensure MongoDB is running in Docker.")
+    raise
+
+REDIS_WALLET_HOST = "redis_wallet_balance"
+REDIS_WALLET_PORT = 6379
+try:
+    #Set up connection pool
+    wallet_pool = redis.ConnectionPool(
+        host=REDIS_WALLET_HOST,
+        port=REDIS_WALLET_PORT,
+        db=0,
+        max_connections=500,
+        decode_responses=True
+    )
+    # Redis client using the pool
+    redis_wallet = redis.StrictRedis(connection_pool=wallet_pool)
+    redis_wallet.config_set("maxmemory-policy", "noeviction")
+    
+except errors.ConnectionFailure:
+    print("Error: Unable to connect to Redis. Ensure Redis is running in Docker.")
     raise
 
 # -----------------------
@@ -90,12 +110,15 @@ def initialize_user_if_not_exists(user_id):
         {"$setOnInsert": {"user_id": user_id, "data": []}},
         upsert=True
     )
+    
+    key = f"wallet:{user_id}"
+    redis_wallet.setnx(key, 0)
 
-    wallets_collection.update_one(
-        {"user_id": user_id},
-        {"$setOnInsert": {"user_id": user_id, "balance": 0}},
-        upsert=True
-    )
+    # wallets_collection.update_one(
+    #     {"user_id": user_id},
+    #     {"$setOnInsert": {"user_id": user_id, "balance": 0}},
+    #     upsert=True
+    # )
 
 # increment stock id by 1 each time a new one is created
 def get_next_stock_id():
@@ -225,11 +248,13 @@ class AddMoneyToWallet(Resource):
             if amount is None or amount <= 0:
                 return {"success": False, "data": {"error": "Amount must be greater than zero"}}, 400
 
-            wallets_collection.update_one(
-                {"user_id": user_id},
-                {"$inc": {"balance": amount}},
-                upsert=True
-            )
+            key = f"wallet:{user_id}"
+            redis_wallet.incrby(key, amount)
+            # wallets_collection.update_one(
+            #     {"user_id": user_id},
+            #     {"$inc": {"balance": amount}},
+            #     upsert=True
+            # )
 
             return {"success": True, "data": None}, 200
 
@@ -246,8 +271,11 @@ class GetWalletBalance(Resource):
             user_id = user_data["user_id"]
             initialize_user_if_not_exists(user_id)
 
-            wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
-            balance = wallet.get("balance", 0) if wallet else 0
+            #wallet = wallets_collection.find_one({"user_id": user_id}, {"balance": 1})
+            #balance = wallet.get("balance", 0) if wallet else 0
+            key = f"wallet:{user_id}"
+            balance = redis_wallet.get(key)
+            balance = int(balance) if balance else 0
 
             return {"success": True, "data": {"balance": balance}}, 200
 
