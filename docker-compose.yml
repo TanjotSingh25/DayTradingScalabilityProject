@@ -235,7 +235,7 @@ services:
 
     # Increase cpu with matching engine and mongodb
     matching_engine_service:
-        cpus: "2.0"
+        #cpus: "2.0"
         build:
             context: .
             dockerfile: MatchingEngineService/Dockerfile
@@ -252,7 +252,7 @@ services:
             - backend
 
     matching_engine_service_2:
-        cpus: "2.0"
+        #cpus: "2.0"
         build:
             context: .
             dockerfile: MatchingEngineService/Dockerfile
@@ -273,6 +273,7 @@ services:
         image: mongo:6.0
         container_name: mongo_db
         restart: always
+        #cpus: "2.0"
         ports:
             - "27020:27017"
         volumes:
