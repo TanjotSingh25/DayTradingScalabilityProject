@@ -11,7 +11,7 @@ services:
             - auth_service2
             - auth_service3
             - auth_service4
-            - auth_service5
+            # - auth_service5
             # - auth_service6
             # - auth_service7
             # - auth_service8
@@ -30,7 +30,7 @@ services:
             - portfolio_stock_service1
             - portfolio_stock_service2
             - portfolio_stock_service3
-            # - portfolio_stock_service4
+            - portfolio_stock_service4
         networks:
             - backend
 
@@ -358,22 +358,22 @@ services:
         networks:
             - backend
 
-    auth_service5:
-        build:
-            context: ./AuthenticationServiceGolang
-            dockerfile: dockerfile
-        restart: always
-        depends_on:
-            - mongo
-            - redis
-        environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
-            - REDIS_HOST=redis_cache
-            - REDIS_PORT=6379
-            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
-            - DB_NAME=authdb
-        networks:
-            - backend
+    # auth_service5:
+    #     build:
+    #         context: ./AuthenticationServiceGolang
+    #         dockerfile: dockerfile
+    #     restart: always
+    #     depends_on:
+    #         - mongo
+    #         - redis
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
+    #         - REDIS_HOST=redis_cache
+    #         - REDIS_PORT=6379
+    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
+    #         - DB_NAME=authdb
+    #     networks:
+    #         - backend
 
     portfolio_stock_service1:
         build:
@@ -420,20 +420,20 @@ services:
         networks:
             - backend
 
-    # portfolio_stock_service4:
-    #     build:
-    #         context: ./PortfolioStockService
-    #     # ports:
-    #     #     - "5004:5000"
-    #     volumes:
-    #         - ./PortfolioStockService:/app
-    #     depends_on:
-    #         mongo:
-    #             condition: service_healthy
-    #     environment:
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-    #     networks:
-    #         - backend
+    portfolio_stock_service4:
+        build:
+            context: ./PortfolioStockService
+        # ports:
+        #     - "5004:5000"
+        volumes:
+            - ./PortfolioStockService:/app
+        depends_on:
+            mongo:
+                condition: service_healthy
+        environment:
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+        networks:
+            - backend
 
 networks:
     backend:
