@@ -10,7 +10,7 @@ services:
             - auth_service1
             - auth_service2
             - auth_service3
-            - auth_service4
+            # - auth_service4
             # - auth_service5
             # - auth_service6
             # - auth_service7
@@ -21,7 +21,9 @@ services:
             - order_service2
             - order_service3
             - order_service4
-            # - order_service5
+            - order_service5
+            # - order_service6
+            # - order_service7
             # - order_service6
             # - order_service7
             # - order_service8
@@ -31,6 +33,9 @@ services:
             - portfolio_stock_service2
             - portfolio_stock_service3
             - portfolio_stock_service4
+            - portfolio_stock_service5
+            #- portfolio_stock_service6
+            #- portfolio_stock_service7
         networks:
             - backend
 
@@ -149,26 +154,26 @@ services:
         networks:
             - backend
 
-    # order_service5:
-    #     build:
-    #         context: .
-    #         dockerfile: OrderService/Dockerfile
-    #     volumes:
-    #         - ./OrderService:/app
-    #     # ports:
-    #     #     - "5205:5200"
-    #     depends_on:
-    #         matching_engine_service:
-    #             condition: service_started
-    #         mongo:
-    #             condition: service_healthy
-    #     environment:
-    #         - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
-    #         - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
-    #         - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
-    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
-    #     networks:
-    #         - backend
+    order_service5:
+        build:
+            context: .
+            dockerfile: OrderService/Dockerfile
+        volumes:
+            - ./OrderService:/app
+        # ports:
+        #     - "5205:5200"
+        depends_on:
+            matching_engine_service:
+                condition: service_started
+            mongo:
+                condition: service_healthy
+        environment:
+            - MATCHING_ENGINE_URL=http://matching_engine_service:5300/placeOrder
+            - MATCHING_ENGINE_CANCELLATION_URL=http://matching_engine_service:5300/cancelOrder
+            - MATCHING_ENGINE_STOCK_PRICES_URL=http://matching_engine_service:5300/getPrice
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+        networks:
+            - backend
 
     # order_service6:
     #     build:
@@ -341,22 +346,22 @@ services:
         networks:
             - backend
 
-    auth_service4:
-        build:
-            context: ./AuthenticationServiceGolang
-            dockerfile: dockerfile
-        restart: always
-        depends_on:
-            - mongo
-            - redis
-        environment:
-            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
-            - REDIS_HOST=redis_cache
-            - REDIS_PORT=6379
-            - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
-            - DB_NAME=authdb
-        networks:
-            - backend
+    # auth_service4:
+    #     build:
+    #         context: ./AuthenticationServiceGolang
+    #         dockerfile: dockerfile
+    #     restart: always
+    #     depends_on:
+    #         - mongo
+    #         - redis
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/authdb?authSource=admin
+    #         - REDIS_HOST=redis_cache
+    #         - REDIS_PORT=6379
+    #         - SECRET_KEY=django-insecure-uj@e4q80n@l2ml)rl*-^s84djzyn5ws6vt7@&h!tp*xf)p05t#
+    #         - DB_NAME=authdb
+    #     networks:
+    #         - backend
 
     # auth_service5:
     #     build:
@@ -434,6 +439,49 @@ services:
             - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
         networks:
             - backend
+    
+    portfolio_stock_service5:
+        build:
+            context: ./PortfolioStockService
+        # ports:
+        #     - "5004:5000"
+        volumes:
+            - ./PortfolioStockService:/app
+        depends_on:
+            mongo:
+                condition: service_healthy
+        environment:
+            - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+        networks:
+            - backend
+    # portfolio_stock_service6:
+    #     build:
+    #         context: ./PortfolioStockService
+    #     # ports:
+    #     #     - "5004:5000"
+    #     volumes:
+    #         - ./PortfolioStockService:/app
+    #     depends_on:
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
+    # portfolio_stock_service7:
+    #     build:
+    #         context: ./PortfolioStockService
+    #     # ports:
+    #     #     - "5004:5000"
+    #     volumes:
+    #         - ./PortfolioStockService:/app
+    #     depends_on:
+    #         mongo:
+    #             condition: service_healthy
+    #     environment:
+    #         - MONGO_URI=mongodb://admin:adminpassword@mongo:27017/trading_system?authSource=admin
+    #     networks:
+    #         - backend
 
 networks:
     backend:
