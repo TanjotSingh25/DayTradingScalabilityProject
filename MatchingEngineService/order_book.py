@@ -27,7 +27,7 @@ if not MONGO_URI:
 for attempt in range(max_retries):
     try:
         # 1.5 minutes
-        client = MongoClient(MONGO_URI, maxPoolSize=500, minPoolSize=125, maxIdleTimeMS=90000)
+        client = MongoClient(MONGO_URI, maxPoolSize=750, minPoolSize=500, maxIdleTimeMS=90000)
         # Initialize to mongodb client, and to the collections
         db = client["trading_system"]
         portfolios_collection = db["portfolios"]
@@ -64,7 +64,7 @@ for attempt in range(5):
         # decode = Convert to Python Strings
         # Create the connection pool with max connections, if there are too many connections,
         # redis can refuse new connections
-        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=500)
+        pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0, max_connections=2000)
         # Create Redis client using the connection pool
         redis_client = redis.StrictRedis(connection_pool=pool, decode_responses=True)
         #redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
